@@ -99,18 +99,20 @@ export function CreateProjectForm({ onClose, onSuccess }) {
             }
 
             const selectedTeacher = availableTeachers.find(t => t.id === form.docenteId);
+
+            // Fix: Map fields to match Backend 'CreateProjectRequest' DTO
             await api.post('/api/projects', {
                 titulo: form.titulo,
                 materia: selectedTeacher?.asignatura || form.materia,
                 materiaId: selectedTeacher?.materiaId || 'MAT-DEFAULT',
                 docenteId: form.docenteId,
                 ciclo: form.ciclo,
-                liderId: userData.userId,
-                liderNombre: userData.nombre,
-                grupoId: userData.grupoId,
+                userId: userData.userId, // Was 'liderId'
+                userGroupId: userData.grupoId, // Was 'grupoId'
                 stackTecnologico: form.stackTecnologico.split(',').map(s => s.trim()).filter(Boolean),
                 miembrosIds: form.miembrosIds,
-                videoUrl: videoUrl
+                videoUrl: videoUrl,
+                repositorioUrl: '' // Added explicitly to avoid null issues if strict
             });
             onSuccess();
         } catch (err) {
@@ -343,7 +345,7 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                                                 className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex-shrink-0 ${isSelected
                                                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
                                                     : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-300'
-                                                }`}
+                                                    }`}
                                             >
                                                 {isSelected ? 'Quitar' : 'Añadir'}
                                             </button>

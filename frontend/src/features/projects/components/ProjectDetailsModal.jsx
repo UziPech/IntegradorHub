@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/hooks/useAuth';
 import api from '../../../lib/axios';
 import { EvaluationPanel } from '../../evaluations/components/EvaluationPanel';
+import { CanvasEditor } from './CanvasEditor';
 
 export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate }) {
     const { userData } = useAuth();
     const [project, setProject] = useState(initialProject);
+    const [activeTab, setActiveTab] = useState('docs'); // 'docs' | 'eval'
     const [newMemberEmail, setNewMemberEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [fetchingDetails, setFetchingDetails] = useState(true);
@@ -22,7 +24,10 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     const fetchDetails = async () => {
         try {
             const response = await api.get(`/api/projects/${initialProject.id}`);
-            setProject(response.data);
+            const projectData = response.data;
+            // Normalize canvas/canvasBlocks if needed
+            if (!projectData.canvas) projectData.canvas = projectData.canvasBlocks || [];
+            setProject(projectData);
         } catch (err) {
             console.error('Error fetching details:', err);
         } finally {
@@ -111,7 +116,14 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                     <Calendar size={16} /> Fecha
                                 </span>
                                 <span className="text-sm font-bold text-gray-800">
-                                    {new Date(project.createdAt).toLocaleDateString()}
+                                    {(() => {
+                                        if (!project.createdAt) return 'N/A';
+                                        if (typeof project.createdAt === 'object' && project.createdAt.seconds) {
+                                            return new Date(project.createdAt.seconds * 1000).toLocaleDateString();
+                                        }
+                                        const date = new Date(project.createdAt);
+                                        return isNaN(date.getTime()) ? 'Pendiente' : date.toLocaleDateString();
+                                    })()}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50">
@@ -159,63 +171,114 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                     {[1, 2, 3].map(i => <div key={i} className="h-14 bg-gray-200 rounded-2xl animate-pulse" />)}
                                 </div>
                             ) : (
-                                (project.members || []).map((member, idx) => (
-                                    <motion.div
-                                        key={member.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.1 }}
-                                        className="neu-flat p-3 rounded-2xl flex items-center justify-between group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full neu-pressed flex items-center justify-center border-2 border-[#F0F0F3] overflow-hidden">
-                                                <span className="text-sm font-bold text-gray-600">{member.nombre.charAt(0)}</span>
+                                (project.members || []).length > 0 ? (
+                                    (project.members || []).map((member, idx) => (
+                                        <motion.div
+                                            key={member.id || idx}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className="neu-flat p-3 rounded-2xl flex items-center justify-between group"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full neu-pressed flex items-center justify-center border-2 border-[#F0F0F3] overflow-hidden bg-white text-gray-700">
+                                                    <span className="text-sm font-bold">{(member.nombre || 'U').charAt(0)}</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-800 line-clamp-1">{member.nombre || 'Usuario'}</p>
+                                                    <p className="text-[10px] uppercase font-bold text-gray-400">{member.rol || 'Miembro'}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-800 line-clamp-1">{member.nombre}</p>
-                                                <p className="text-[10px] uppercase font-bold text-gray-400">{member.rol}</p>
-                                            </div>
-                                        </div>
 
-                                        {member.id === project.liderId ? (
-                                            <span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Líder</span>
-                                        ) : (
-                                            (isLeader || userData?.userId === member.id) && (
-                                                <button
-                                                    onClick={() => handleRemoveMember(member.id)}
-                                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            )
-                                        )}
-                                    </motion.div>
-                                ))
+                                            {member.id === project.liderId ? (
+                                                <span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Líder</span>
+                                            ) : (
+                                                (isLeader || userData?.userId === member.id) && (
+                                                    <button
+                                                        onClick={() => handleRemoveMember(member.id)}
+                                                        className="p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )
+                                            )}
+                                        </motion.div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-gray-400 text-center py-4">No hay miembros aún.</p>
+                                )
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column: Content (Evaluation) */}
+                {/* Right Column: Content */}
                 <div className="lg:col-span-2 flex flex-col gap-6 overflow-hidden">
-                    {/* Action Bar */}
-                    <div className="flex gap-4">
-                        <button
-                            onClick={() => window.open(`/project/${project.id}/editor`, '_blank')}
-                            className="neu-flat flex-1 py-4 rounded-2xl font-bold text-gray-700 hover:text-blue-600 active:neu-pressed transition-all flex items-center justify-center gap-2"
-                        >
-                            <ExternalLink size={20} />
-                            Abrir Editor de Código
-                        </button>
+
+                    {/* Tabs & Action */}
+                    <div className="flex justify-between items-center bg-[#F0F0F3] z-10">
+                        {/* Tabs */}
+                        <div className="bg-gray-200/50 p-1 rounded-2xl inline-flex">
+                            <button
+                                onClick={() => setActiveTab('docs')}
+                                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'docs'
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                Documentación
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('eval')}
+                                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'eval'
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                Evaluación
+                            </button>
+                        </div>
+
+                        {/* Edit Button (only visible in docs tab for members/leader) */}
+                        <div className="flex gap-2">
+                            {(isLeader || (project.members || []).some(m => m.id === userData.userId)) && (
+                                <button
+                                    onClick={() => window.open(`/project/${project.id}/editor`, '_self')}
+                                    className="neu-flat px-4 py-2 rounded-xl font-bold text-sm text-gray-700 hover:text-blue-600 active:neu-pressed transition-all flex items-center justify-center gap-2"
+                                >
+                                    <ExternalLink size={16} />
+                                    Editar
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Evaluation Panel - Wrapped in Neumorphic container */}
-                    <div className="neu-flat rounded-3xl p-6 flex-1 overflow-auto custom-scrollbar">
-                        <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 sticky top-0 bg-[#F0F0F3] z-10 pb-4 border-b border-gray-200/50">
-                            <Activity size={24} className="text-blue-500" />
-                            Evaluación y Rúbrica
-                        </h3>
-                        <EvaluationPanel projectId={project.id} />
+                    {/* Content Panel */}
+                    <div className="neu-flat rounded-3xl p-6 flex-1 overflow-auto custom-scrollbar relative bg-white">
+                        {activeTab === 'docs' ? (
+                            <div className="h-full overflow-y-auto w-full">
+                                {fetchingDetails ? (
+                                    <div className="space-y-4">
+                                        <div className="h-4 bg-gray-100 rounded w-3/4 animate-pulse"></div>
+                                        <div className="h-4 bg-gray-100 rounded w-1/2 animate-pulse"></div>
+                                        <div className="h-4 bg-gray-100 rounded w-full animate-pulse"></div>
+                                    </div>
+                                ) : (
+                                    <CanvasEditor
+                                        project={project}
+                                        readOnly={true}
+                                    />
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 sticky top-0 bg-white z-10 pb-4 border-b border-gray-100">
+                                    <Activity size={24} className="text-blue-500" />
+                                    Evaluación y Rúbrica
+                                </h3>
+                                <EvaluationPanel projectId={project.id} />
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

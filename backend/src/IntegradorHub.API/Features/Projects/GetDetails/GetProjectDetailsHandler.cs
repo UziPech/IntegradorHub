@@ -7,21 +7,6 @@ namespace IntegradorHub.API.Features.Projects.GetDetails;
 // === QUERY ===
 public record GetProjectDetailsQuery(string ProjectId) : IRequest<ProjectDetailsDto>;
 
-public record ProjectDetailsDto(
-    string Id,
-    string Titulo,
-    string Materia,
-    string Ciclo,
-    string Estado,
-    string LiderId,
-    List<string> StackTecnologico,
-    string? RepositorioUrl,
-    List<CanvasBlock> Canvas,
-    List<MemberDto> Members
-);
-
-public record MemberDto(string Id, string Nombre, string Email, string? FotoUrl, string Rol);
-
 // === HANDLER ===
 public class GetProjectDetailsHandler : IRequestHandler<GetProjectDetailsQuery, ProjectDetailsDto>
 {
@@ -40,18 +25,21 @@ public class GetProjectDetailsHandler : IRequestHandler<GetProjectDetailsQuery, 
         if (project == null) throw new KeyNotFoundException("Proyecto no encontrado");
 
         var members = new List<MemberDto>();
-        foreach (var memberId in project.MiembrosIds)
+        if (project.MiembrosIds != null)
         {
-            var user = await _userRepository.GetByIdAsync(memberId);
-            if (user != null)
+            foreach (var memberId in project.MiembrosIds)
             {
-                members.Add(new MemberDto(
-                    user.Id,
-                    user.Nombre,
-                    user.Email,
-                    user.FotoUrl,
-                    memberId == project.LiderId ? "Líder" : "Miembro"
-                ));
+                var user = await _userRepository.GetByIdAsync(memberId);
+                if (user != null)
+                {
+                    members.Add(new MemberDto(
+                        user.Id,
+                        user.Nombre,
+                        user.Email,
+                        user.FotoUrl,
+                        memberId == project.LiderId ? "Líder" : "Miembro"
+                    ));
+                }
             }
         }
 
@@ -59,13 +47,34 @@ public class GetProjectDetailsHandler : IRequestHandler<GetProjectDetailsQuery, 
             project.Id,
             project.Titulo,
             project.Materia,
+            project.MateriaId,
             project.Ciclo,
             project.Estado,
             project.LiderId,
+            project.MiembrosIds ?? new List<string>(),
             project.StackTecnologico,
             project.RepositorioUrl,
             project.CanvasBlocks,
-            members
+            members,
+            project.CreatedAt.ToDateTime()
         );
     }
 }
+
+public record ProjectDetailsDto(
+    string Id,
+    string Titulo,
+    string Materia,
+    string MateriaId,
+    string Ciclo,
+    string Estado,
+    string LiderId,
+    List<string> MiembrosIds,
+    List<string> StackTecnologico,
+    string? RepositorioUrl,
+    List<CanvasBlock> Canvas,
+    List<MemberDto> Members,
+    DateTime CreatedAt
+);
+
+public record MemberDto(string Id, string Nombre, string Email, string? FotoUrl, string Rol);
