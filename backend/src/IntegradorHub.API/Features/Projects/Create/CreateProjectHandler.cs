@@ -80,7 +80,7 @@ public class CreateProjectHandler : IRequestHandler<CreateProjectCommand, Create
 
             // VALIDACIÓN ESTRICTA: El docente debe estar asignado al grupo del líder
             var isAssignedToGroup = teacher.Asignaciones?
-                .Any(a => a.GruposIds.Contains(leader.GrupoId)) ?? false;
+                .Any(a => a.GruposIds.Contains(leader.GrupoId ?? string.Empty)) ?? false;
 
             if (!isAssignedToGroup && teacher.Rol != "Admin")
             {
