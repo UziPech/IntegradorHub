@@ -81,17 +81,32 @@ export function DashboardPage() {
 
     return (
         <div className="h-full">
-            {/* Welcome Banner Removed for Neumorphic Clean Layout */}
             <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header Title */}
+                {/* Header Section */}
+                <div className="mb-10">
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">
+                        Dashboard
+                    </h1>
+                    <p className="text-gray-600 text-base max-w-2xl">
+                        Gestión integral de proyectos integradores.
+                    </p>
+                </div>
+
+                {/* Actions & Filters */}
                 <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Mis Proyectos Activos</h1>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-lg font-semibold text-gray-900">Proyectos Activos</h2>
+                        <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full text-xs font-semibold">
+                            {projects.length}
+                        </span>
+                    </div>
+
                     {userData?.rol === 'Alumno' && (
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="neu-flat px-6 py-3 rounded-xl font-bold text-gray-700 hover:text-blue-600 active:neu-pressed transition-all flex items-center gap-2"
+                            className="bg-gray-900 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-gray-800 active:bg-gray-950 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
                         >
-                            <Plus size={20} />
+                            <Plus size={18} />
                             <span>Nuevo Proyecto</span>
                         </button>
                     )}
@@ -100,7 +115,7 @@ export function DashboardPage() {
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="h-64 neu-flat rounded-3xl animate-pulse" />
+                            <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse" />
                         ))}
                     </div>
                 ) : (
@@ -121,17 +136,17 @@ export function DashboardPage() {
                                 </motion.div>
                             ))
                         ) : (
-                            <div className="col-span-full neu-flat rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
-                                <h3 className="text-2xl font-bold text-gray-600 mb-4">No tienes proyectos activos</h3>
-                                <p className="text-gray-400 max-w-md mx-auto mb-8">
+                            <div className="col-span-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No tienes proyectos activos</h3>
+                                <p className="text-gray-500 max-w-md mx-auto mb-6">
                                     Comienza creando uno nuevo para colaborar con tu equipo o espera a ser asignado por un docente.
                                 </p>
                                 {userData?.rol === 'Alumno' && (
                                     <button
                                         onClick={() => setShowCreateModal(true)}
-                                        className="neu-flat px-8 py-3 rounded-xl font-bold text-blue-600 flex items-center gap-2 hover:scale-105 transition-transform"
+                                        className="text-blue-600 font-medium hover:text-blue-700 flex items-center gap-2"
                                     >
-                                        <Plus size={20} />
+                                        <Plus size={18} />
                                         Crear Primer Proyecto
                                     </button>
                                 )}
@@ -141,14 +156,14 @@ export function DashboardPage() {
                 )}
             </main>
 
-            {/* Modals with AnimatePresence */}
+            {/* Modals */}
             <AnimatePresence>
                 {showCreateModal && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-white/60 backdrop-blur-xl z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
                         onClick={() => setShowCreateModal(false)}
                     >
                         <motion.div
@@ -156,7 +171,7 @@ export function DashboardPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-[#F0F0F3] neu-flat w-full max-w-2xl rounded-[2rem] overflow-hidden max-h-[90vh] flex flex-col"
+                            className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
                         >
                             <CreateProjectForm
                                 onClose={() => setShowCreateModal(false)}
@@ -174,7 +189,7 @@ export function DashboardPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-white/60 backdrop-blur-xl z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
                         onClick={() => setSelectedProject(null)}
                     >
                         <motion.div
@@ -182,7 +197,7 @@ export function DashboardPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-[#F0F0F3] neu-flat w-full max-w-4xl rounded-[2rem] overflow-hidden max-h-[90vh]"
+                            className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh]"
                         >
                             <ProjectDetailsModal
                                 project={selectedProject}

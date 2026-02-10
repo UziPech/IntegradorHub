@@ -3,12 +3,12 @@ import { Sidebar } from './Sidebar';
 
 export function DashboardLayout() {
     return (
-        <div className="min-h-screen font-sans text-gray-900 bg-[#F0F0F3]">
-            {/* Sidebar - Fixed */}
+        <div className="flex h-screen overflow-hidden bg-white">
+            {/* Sidebar - Static/Sticky in Flex container */}
             <Sidebar />
 
-            {/* Main Content Area - Padding Left */}
-            <main className="min-h-screen overflow-y-auto scroll-smooth p-8 relative" style={{ paddingLeft: '16rem' }}>
+            {/* Main Content Area - Flex Grow */}
+            <main className="flex-1 overflow-y-auto scroll-smooth bg-gray-50/30">
                 <Outlet />
             </main>
         </div>

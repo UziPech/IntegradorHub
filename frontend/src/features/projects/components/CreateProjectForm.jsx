@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, UserPlus, Check, ArrowRight, User, Layout, Video, Upload, AlertCircle } from 'lucide-react';
+import { X, Search, Check, ArrowRight, Layout, Video } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import api from '../../../lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,7 +37,6 @@ export function CreateProjectForm({ onClose, onSuccess }) {
         if (userData?.grupoId) {
             fetchResources();
         } else {
-            // If no grupoId, stop loading and show error
             setIsLoadingResources(false);
             setError('Debe estar asignado a un grupo para crear proyectos.');
         }
@@ -85,12 +84,10 @@ export function CreateProjectForm({ onClose, onSuccess }) {
         try {
             let videoUrl = null;
 
-            // 1. Upload Video if selected
             if (videoFile) {
                 const formData = new FormData();
                 formData.append('file', videoFile);
 
-                // Optional: Implement progress tracking if api supports it
                 const uploadRes = await api.post('/api/storage/upload?folder=project-promos', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                     onUploadProgress: (progressEvent) => {
@@ -144,23 +141,26 @@ export function CreateProjectForm({ onClose, onSuccess }) {
     );
 
     return (
-        <div className="flex flex-col h-full bg-[#F0F0F3] p-8">
+        <div className="flex flex-col h-full bg-white rounded-xl overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
-                        {step === 1 ? 'Nuevo Proyecto' : 'Añadir Integrantes'}
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        {step === 1 ? 'Nuevo Proyecto' : 'Selecciona tu Equipo'}
                     </h2>
-                    <p className="text-gray-500 text-sm mt-1">
-                        {step === 1 ? 'Detalles generales y asesor.' : 'Busca y selecciona a tu equipo.'}
+                    <p className="text-sm text-gray-500 mt-2 font-medium">
+                        {step === 1 ? 'Información del proyecto y docente asesor' : 'Busca e invita a tus compañeros'}
                     </p>
                 </div>
-                <button onClick={onClose} className="neu-icon-btn w-10 h-10 bg-[#F0F0F3]">
-                    <X size={20} />
+                <button
+                    onClick={onClose}
+                    className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 transition-colors"
+                >
+                    <X size={22} />
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-1 py-2">
+            <div className="flex-1 overflow-y-auto px-8 py-8">
                 <AnimatePresence mode="wait">
                     {step === 1 ? (
                         <motion.div
@@ -168,102 +168,123 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            className="space-y-8"
+                            className="space-y-8 max-w-2xl"
                         >
-                            {/* Inputs Group - Neumorphic Sunken */}
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-600 mb-3 ml-2">Nombre del Proyecto</label>
-                                    <div className="neu-pressed rounded-2xl px-4 py-3 flex items-center gap-3">
-                                        <Layout size={20} className="text-gray-400" />
-                                        <input
-                                            type="text"
-                                            value={form.titulo}
-                                            onChange={e => setForm({ ...form, titulo: e.target.value })}
-                                            placeholder="Sistema de Gestión Kiosko Integradora"
-                                            className="bg-transparent w-full outline-none text-gray-700 placeholder-gray-400 font-medium"
-                                            autoFocus
-                                        />
+                            {/* Project Name */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-3">Nombre del Proyecto</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Layout size={18} className="text-gray-400" />
                                     </div>
+                                    <input
+                                        type="text"
+                                        value={form.titulo}
+                                        onChange={e => setForm({ ...form, titulo: e.target.value })}
+                                        placeholder="Ej: Sistema de Gestión Empresarial"
+                                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl bg-white placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-all duration-200 text-base"
+                                        autoFocus
+                                    />
                                 </div>
+                            </div>
+
+                            {/* Subject */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-3">Materia</label>
+                                <input
+                                    type="text"
+                                    value={form.materia}
+                                    onChange={e => setForm({ ...form, materia: e.target.value })}
+                                    placeholder="Ej: Ingeniería de Software"
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-all duration-200 text-base"
+                                />
                             </div>
 
                             {/* Video Upload */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-3 ml-2">Video Pitch (Opcional)</label>
-                                <div className="neu-pressed rounded-2xl px-4 py-3 flex items-center gap-3 relative overflow-hidden">
-                                    <Video size={20} className="text-gray-400" />
-                                    <div className="flex-1 min-w-0">
-                                        <input
-                                            type="file"
-                                            accept="video/*"
-                                            onChange={(e) => setVideoFile(e.target.files[0])}
-                                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        />
+                                <label className="block text-sm font-semibold text-gray-900 mb-3">Video Pitch <span className="font-normal text-gray-500">(Opcional)</span></label>
+                                <div className="flex justify-center px-6 pt-8 pb-8 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer relative">
+                                    <div className="space-y-3 text-center">
+                                        <Video className="mx-auto h-12 w-12 text-gray-400" />
+                                        <div className="text-sm">
+                                            <label htmlFor="file-upload" className="relative cursor-pointer font-semibold text-gray-900 hover:text-gray-700">
+                                                <span>Haz clic para subir</span>
+                                                <input
+                                                    id="file-upload"
+                                                    name="file-upload"
+                                                    type="file"
+                                                    className="sr-only"
+                                                    accept="video/*"
+                                                    onChange={(e) => setVideoFile(e.target.files[0])}
+                                                />
+                                            </label>
+                                            <p className="text-gray-500">o arrastra y suelta</p>
+                                        </div>
+                                        <p className="text-xs text-gray-500 font-medium">MP4, WebM hasta 100MB</p>
                                     </div>
-                                    {videoFile && <span className="text-xs text-green-600 font-bold whitespace-nowrap">Seleccionado</span>}
+                                    {videoFile && (
+                                        <div className="absolute inset-0 bg-green-50/95 flex items-center justify-center rounded-xl">
+                                            <p className="text-green-700 font-semibold flex items-center gap-2">
+                                                <Check size={18} />
+                                                {videoFile.name}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 {uploadProgress > 0 && uploadProgress < 100 && (
-                                    <div className="mt-2 text-xs text-blue-600 text-center font-bold">
-                                        Subiendo video: {uploadProgress}%
+                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+                                        <div className="bg-gray-900 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }}></div>
                                     </div>
                                 )}
                             </div>
 
+                            {/* Teacher Selection */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-3 ml-2">Asignar Docente</label>
-
-                                {/* Teacher Search Input */}
-                                <div className="neu-pressed rounded-2xl px-4 py-2 mb-3 flex items-center gap-3">
-                                    <Search size={16} className="text-gray-400" />
+                                <label className="block text-sm font-semibold text-gray-900 mb-3">Docente Asesor</label>
+                                <div className="relative mb-4">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Search size={18} className="text-gray-400" />
+                                    </div>
                                     <input
                                         type="text"
                                         value={teacherSearch}
                                         onChange={e => setTeacherSearch(e.target.value)}
                                         placeholder="Buscar docente..."
-                                        className="bg-transparent w-full outline-none text-gray-700 placeholder-gray-400 text-sm"
+                                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl bg-white placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-all duration-200 text-base"
                                     />
                                 </div>
 
-                                <div className="neu-pressed rounded-2xl p-2 min-h-[120px] max-h-40 overflow-y-auto">
+                                <div className="border-2 border-gray-200 rounded-xl max-h-60 overflow-y-auto divide-y divide-gray-100">
                                     {isLoadingResources ? (
-                                        <div className="flex items-center justify-center h-full py-8">
-                                            <div className="text-gray-400 text-sm">Cargando docentes...</div>
-                                        </div>
+                                        <div className="p-6 text-center text-sm text-gray-500">Cargando docentes...</div>
                                     ) : filteredTeachers.length === 0 ? (
-                                        <div className="flex items-center justify-center h-full py-8">
-                                            <div className="text-gray-400 text-sm">No se encontraron docentes</div>
-                                        </div>
+                                        <div className="p-6 text-center text-sm text-gray-500">No se encontraron docentes</div>
                                     ) : (
                                         filteredTeachers.map(teacher => (
                                             <div
                                                 key={teacher.id}
                                                 onClick={() => setForm({ ...form, docenteId: teacher.id })}
-                                                className={`p-3 rounded-xl cursor-pointer transition-all flex items-center justify-between mb-2 last:mb-0 
-                                                        ${form.docenteId === teacher.id ? 'neu-flat bg-[#F0F0F3] text-blue-600 border border-blue-200' : 'hover:bg-gray-200/50 text-gray-500'}
-                                                        ${teacher.esAltaPrioridad ? 'bg-amber-50/50' : ''}
-                                                    `}
+                                                className={`p-4 cursor-pointer transition-all flex items-center justify-between
+                                                    ${form.docenteId === teacher.id ? 'bg-gray-100 text-gray-900' : 'hover:bg-gray-50 text-gray-700'}
+                                                `}
                                             >
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold text-sm flex items-center gap-2">
+                                                <div>
+                                                    <p className="text-sm font-semibold flex items-center gap-2">
                                                         {teacher.nombreCompleto}
                                                         {teacher.esAltaPrioridad && (
-                                                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold border border-amber-200">
+                                                            <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
                                                                 ★ Asesor
                                                             </span>
                                                         )}
-                                                    </span>
-                                                    <span className="text-xs text-gray-400">{teacher.asignatura}</span>
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-1">{teacher.asignatura}</p>
                                                 </div>
-                                                {form.docenteId === teacher.id && <Check size={16} />}
+                                                {form.docenteId === teacher.id && <Check size={18} className="text-gray-900" />}
                                             </div>
                                         ))
                                     )}
                                 </div>
                             </div>
-
-
-
                         </motion.div>
                     ) : (
                         <motion.div
@@ -271,81 +292,88 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="space-y-6"
+                            className="space-y-8 max-w-2xl"
                         >
-                            {/* Search Sunken */}
-                            <div className="neu-pressed rounded-2xl px-4 py-3 flex items-center gap-3">
-                                <Search size={20} className="text-gray-400" />
+                            {/* Student Search */}
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Search size={18} className="text-gray-400" />
+                                </div>
                                 <input
                                     type="text"
                                     value={studentSearch}
                                     onChange={e => setStudentSearch(e.target.value)}
-                                    placeholder="Buscar: 2406..."
-                                    className="bg-transparent w-full outline-none text-gray-700 placeholder-gray-400 font-medium"
+                                    placeholder="Busca por nombre o matrícula..."
+                                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl bg-white placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-all duration-200 text-base"
                                     autoFocus
                                 />
                             </div>
 
-                            {/* Results List Raised */}
                             <div className="space-y-4">
-                                {/* Leader Row */}
-                                <div className="neu-flat rounded-2xl p-4 flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full neu-pressed flex items-center justify-center text-blue-600 font-bold bg-[#F0F0F3]">
-                                        {userData.nombre?.charAt(0)}
+                                {/* Leader (Me) */}
+                                <div className="p-5 bg-gray-50 rounded-xl border-2 border-gray-200 flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                        {userData?.Nombre?.charAt(0) || 'U'}
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-gray-800">{userData.nombre}</p>
-                                        <p className="text-xs text-gray-500">Líder del Proyecto</p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-gray-900 truncate">{userData?.Nombre || 'Usuario'}</p>
+                                        <p className="text-xs text-gray-500 mt-1 font-medium">Líder del Proyecto</p>
                                     </div>
-                                    <span className="px-3 py-1 bg-blue-100 text-blue-600 text-xs font-bold rounded-full">Líder</span>
+                                    <span className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg flex-shrink-0">Líder</span>
                                 </div>
 
                                 {/* Results */}
                                 {filteredStudents.map(student => {
                                     const isSelected = form.miembrosIds.includes(student.id);
                                     return (
-                                        <div key={student.id} className="neu-flat rounded-2xl p-4 flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
+                                        <div key={student.id} className="p-5 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 flex items-center gap-4 transition-all duration-200">
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
                                                 {student.nombreCompleto.charAt(0)}
                                             </div>
-                                            <div className="flex-1" title={`Matrícula: ${student.matricula}`}>
-                                                <p className="font-bold text-gray-800 flex items-center gap-2">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-gray-900 truncate">
                                                     {student.nombreCompleto}
-                                                    <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 rounded font-mono">
-                                                        {student.matricula}
-                                                    </span>
+                                                </p>
+                                                <p className="text-xs text-gray-500 font-mono mt-1">
+                                                    {student.matricula}
                                                 </p>
                                             </div>
                                             <button
                                                 onClick={() => toggleStudent(student.id)}
-                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${isSelected
-                                                    ? 'bg-red-50 text-red-500 hover:bg-red-100'
-                                                    : 'neu-pressed text-blue-600 hover:text-blue-700'
-                                                    }`}
+                                                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex-shrink-0 ${isSelected
+                                                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-300'
+                                                }`}
                                             >
                                                 {isSelected ? 'Quitar' : 'Añadir'}
                                             </button>
                                         </div>
                                     );
                                 })}
+
+                                {filteredStudents.length === 0 && (
+                                    <div className="text-center py-12 text-gray-500 text-sm font-medium">
+                                        No se encontraron alumnos
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
                 {error && (
-                    <div className="mt-4 p-3 bg-red-100/50 text-red-600 text-sm rounded-xl text-center font-medium">
+                    <div className="mt-6 p-4 bg-red-50 border-2 border-red-200 text-red-700 text-sm rounded-xl font-medium text-center">
                         {error}
                     </div>
                 )}
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-4 mt-6 pt-4 border-t border-gray-200/20">
+            <div className="px-8 py-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3">
                 {step === 2 && (
                     <button
                         onClick={() => setStep(1)}
-                        className="text-gray-500 font-bold hover:text-gray-700 px-4"
+                        className="px-6 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 rounded-lg transition-all duration-200"
                     >
                         Atrás
                     </button>
@@ -354,7 +382,7 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                 {step === 1 ? (
                     <button
                         onClick={nextStep}
-                        className="neu-flat px-8 py-3 rounded-xl font-bold text-blue-600 hover:text-blue-700 active:neu-pressed transition-all flex items-center gap-2"
+                        className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all duration-200 flex items-center gap-2 active:scale-95"
                     >
                         Siguiente
                         <ArrowRight size={18} />
@@ -363,13 +391,13 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="neu-flat px-8 py-3 rounded-xl font-bold text-green-600 hover:text-green-700 active:neu-pressed transition-all flex items-center gap-2 disabled:opacity-50"
+                        className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                     >
                         {loading ? 'Creando...' : 'Crear Proyecto'}
                         <Check size={18} />
                     </button>
                 )}
             </div>
-        </div >
+        </div>
     );
 }
