@@ -1,0 +1,184 @@
+using IntegradorHub.API.Features.Projects.Delete;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using IntegradorHub.API.Features.Projects.Create;
+using IntegradorHub.API.Features.Projects.GetByGroup;
+using IntegradorHub.API.Features.Projects.AddMember;
+using IntegradorHub.API.Features.Projects.RemoveMember;
+using IntegradorHub.API.Features.Projects.GetDetails;
+using IntegradorHub.API.Features.Projects.UpdateCanvas;
+using IntegradorHub.API.Shared.Domain.Entities;
+
+using IntegradorHub.API.Features.Projects.GetPublic;
+
+namespace IntegradorHub.API.Features.Projects;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ProjectsController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public ProjectsController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Obtiene todos los proyectos públicos para la galería.
+    /// </summary>
+    [HttpGet("public")]
+    public async Task<ActionResult<IEnumerable<PublicProjectDto>>> GetPublic()
+    {
+        var query = new GetPublicProjectsQuery();
+        var projects = await _mediator.Send(query);
+        return Ok(projects);
+    }
+
+    /// <summary>
+    /// Crea un nuevo proyecto. Requiere rol de Alumno.
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<CreateProjectResponse>> Create([FromBody] CreateProjectRequest request)
+    {
+        // TODO: Obtener UserId y GroupId del token JWT en el futuro
+        // Por ahora confiamos en el request para desarrollo rápido, 
+        // pero esto DEBE cambiarse a ClaimsPrincipal en producción.
+        
+        var command = new CreateProjectCommand(
+            request.Titulo,
+            request.Materia,
+            request.MateriaId,
+            request.Ciclo,
+            request.StackTecnologico,
+            request.RepositorioUrl,
+            request.UserId,
+            request.UserGroupId,
+            request.DocenteId,
+            request.MiembrosIds ?? new List<string>()
+        );
+
+        try 
+        {
+            var response = await _mediator.Send(command);
+            return CreatedAtAction(nameof(GetById), new { id = response.ProjectId }, response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Obtiene proyectos de un grupo específico.
+    /// </summary>
+    [HttpGet("group/{groupId}")]
+    public async Task<ActionResult<List<ProjectDto>>> GetByGroup(string groupId)
+    {
+        var query = new GetProjectsByGroupQuery(groupId);
+        var response = await _mediator.Send(query);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Obtiene detalles completos del proyecto.
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ProjectDetailsDto>> GetById(string id)
+    {
+        var query = new GetProjectDetailsQuery(id);
+        try
+        {
+            var response = await _mediator.Send(query);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Agrega un miembro al proyecto (Solo Líder).
+    /// </summary>
+    [HttpPost("{id}/members")]
+    public async Task<ActionResult<AddMemberResponse>> AddMember(string id, [FromBody] AddMemberRequest request)
+    {
+        var command = new AddMemberCommand(id, request.EmailOrMatricula, request.LeaderId);
+        try 
+        {
+            var response = await _mediator.Send(command);
+            if (!response.Success) return BadRequest(response);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+    }
+
+    /// <summary>
+    /// Elimina un miembro del proyecto.
+    /// </summary>
+    [HttpDelete("{id}/members/{memberId}")]
+    public async Task<ActionResult<RemoveMemberResponse>> RemoveMember(string id, string memberId, [FromQuery] string requestingUserId)
+    {
+        var command = new RemoveMemberCommand(id, memberId, requestingUserId);
+        try
+        {
+            var response = await _mediator.Send(command);
+            if (!response.Success) return BadRequest(response);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+    }
+
+    /// <summary>
+    /// Actualiza el contenido del canvas del proyecto.
+    /// </summary>
+    [HttpPut("{id}/canvas")]
+    public async Task<ActionResult<UpdateCanvasResponse>> UpdateCanvas(string id, [FromBody] UpdateCanvasRequest request)
+    {
+        var command = new UpdateProjectCanvasCommand(id, request.Blocks, request.UserId);
+        try
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+    }
+    /// <summary>
+    /// Elimina un proyecto completamente y libera a sus miembros. (Solo Líder)
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<ActionResult<DeleteProjectResponse>> Delete(string id, [FromQuery] string requestingUserId)
+    {
+        var command = new DeleteProjectCommand(id, requestingUserId);
+        try
+        {
+            var response = await _mediator.Send(command);
+            if (!response.Success) return BadRequest(response);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+    }
+}
+
+public record UpdateCanvasRequest(List<CanvasBlock> Blocks, string UserId);
+
+public record CreateProjectRequest(
+    string Titulo,
+    string Materia,
+    string MateriaId,
+    string Ciclo,
+    List<string> StackTecnologico,
+    string? RepositorioUrl,
+    string UserId,
+    string UserGroupId,
+    string? DocenteId,
+    List<string>? MiembrosIds 
+);
+
+public record AddMemberRequest(string LeaderId, string EmailOrMatricula);
+
