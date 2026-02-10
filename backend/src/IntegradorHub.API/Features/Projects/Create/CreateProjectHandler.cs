@@ -14,6 +14,7 @@ public record CreateProjectCommand(
     string Ciclo,
     List<string> StackTecnologico,
     string? RepositorioUrl,
+    string? VideoUrl,
     string UserId, // ID del usuario autenticado (Líder)
     string UserGroupId, // Grupo del usuario (para validación)
     string? DocenteId,
@@ -35,6 +36,10 @@ public class CreateProjectValidator : AbstractValidator<CreateProjectCommand>
         RuleFor(x => x.RepositorioUrl).Must(uri => Uri.TryCreate(uri, UriKind.Absolute, out _))
             .When(x => !string.IsNullOrEmpty(x.RepositorioUrl))
             .WithMessage("URL de repositorio inválida");
+
+        RuleFor(x => x.VideoUrl).Must(uri => Uri.TryCreate(uri, UriKind.Absolute, out _))
+            .When(x => !string.IsNullOrEmpty(x.VideoUrl))
+            .WithMessage("URL de video inválida");
         
         // REGLA DE NEGOCIO: Máximo 5 integrantes (Líder + 4 invitados)
         RuleFor(x => x.MiembrosIds).Must(x => x.Count <= 4)
@@ -70,8 +75,17 @@ public class CreateProjectHandler : IRequestHandler<CreateProjectCommand, Create
             if (teacher == null) 
                 throw new KeyNotFoundException("El docente seleccionado no existe.");
             
-            if (teacher.Rol != nameof(UserRole.Docente) && teacher.Rol != "Admin") // Permitir Admin por si acaso
+            if (teacher.Rol != nameof(UserRole.Docente) && teacher.Rol != "Admin") 
                 throw new InvalidOperationException("El usuario seleccionado no tiene rol de Docente.");
+
+            // VALIDACIÓN ESTRICTA: El docente debe estar asignado al grupo del líder
+            var isAssignedToGroup = teacher.Asignaciones?
+                .Any(a => a.GruposIds.Contains(leader.GrupoId)) ?? false;
+
+            if (!isAssignedToGroup && teacher.Rol != "Admin")
+            {
+                throw new InvalidOperationException($"El docente {teacher.Nombre} no imparte clases al grupo {leader.GrupoId}.");
+            }
         }
 
         // REGLA DE NEGOCIO: Exclusividad (Líder no debe tener proyecto)
@@ -119,6 +133,7 @@ public class CreateProjectHandler : IRequestHandler<CreateProjectCommand, Create
             Estado = nameof(ProjectState.Borrador),
             StackTecnologico = request.StackTecnologico,
             RepositorioUrl = request.RepositorioUrl,
+            VideoUrl = request.VideoUrl,
             CreatedAt = Google.Cloud.Firestore.Timestamp.GetCurrentTimestamp(),
             UpdatedAt = Google.Cloud.Firestore.Timestamp.GetCurrentTimestamp()
         };

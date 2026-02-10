@@ -42,6 +42,9 @@ public class Project
     [FirestoreProperty("repositorio_url")]
     public string? RepositorioUrl { get; set; }
     
+    [FirestoreProperty("video_url")]
+    public string? VideoUrl { get; set; }
+    
     [FirestoreProperty("demo_url")]
     public string? DemoUrl { get; set; }
     

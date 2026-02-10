@@ -23,6 +23,9 @@ public class Materia
     [FirestoreProperty("is_active")]
     public bool IsActive { get; set; } = true;
     
+    [FirestoreProperty("es_alta_prioridad")]
+    public bool EsAltaPrioridad { get; set; } = false;
+    
     [FirestoreProperty("created_at")]
     public Timestamp CreatedAt { get; set; }
 }
