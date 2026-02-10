@@ -59,6 +59,16 @@ public class Project
     
     [FirestoreProperty("updated_at")]
     public Timestamp UpdatedAt { get; set; }
+
+    // --- Nuevos Campos Requeridos ---
+    [FirestoreProperty("calificacion")]
+    public double? Calificacion { get; set; } // 0.0 - 100.0
+
+    [FirestoreProperty("comentarios_docente")]
+    public string? ComentariosDocente { get; set; }
+
+    [FirestoreProperty("es_publico")]
+    public bool EsPublico { get; set; } = false; // Privado por defecto
 }
 
 [FirestoreData]

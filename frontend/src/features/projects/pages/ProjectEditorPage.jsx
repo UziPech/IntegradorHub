@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Loader } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { CanvasEditor } from '../components/CanvasEditor';
 import api from '../../../lib/axios';
@@ -11,6 +11,10 @@ export function ProjectEditorPage() {
     const { userData } = useAuth();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Reference to the CanvasEditor to trigger manual save
+    const editorRef = useRef(null);
 
     useEffect(() => {
         fetchProject();
@@ -28,6 +32,12 @@ export function ProjectEditorPage() {
             // Handle 404 or auth error
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleManualSave = () => {
+        if (editorRef.current) {
+            editorRef.current.save();
         }
     };
 
@@ -70,16 +80,37 @@ export function ProjectEditorPage() {
                         )}
                     </div>
                     <button
-                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                        onClick={() => { /* Manual save trigger if needed, though autosave handles it */ }}
+                        className={`
+                            px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2
+                            ${isSaving
+                                ? 'bg-gray-100 text-gray-500'
+                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-blue-500/30'
+                            }
+                        `}
+                        onClick={handleManualSave}
+                        disabled={isSaving}
                     >
-                        Guardado
+                        {isSaving ? (
+                            <>
+                                <Loader size={16} className="animate-spin" />
+                                Guardando...
+                            </>
+                        ) : (
+                            <>
+                                <Save size={16} />
+                                Guardar
+                            </>
+                        )}
                     </button>
                 </div>
             </nav>
 
             {/* Editor Area */}
-            <CanvasEditor project={project} />
+            <CanvasEditor
+                ref={editorRef}
+                project={project}
+                onSaveStatusChange={setIsSaving}
+            />
         </div>
     );
 }

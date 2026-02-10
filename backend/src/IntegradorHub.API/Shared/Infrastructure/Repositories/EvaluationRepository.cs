@@ -22,8 +22,8 @@ public class EvaluationRepository : IEvaluationRepository
     public async Task<IEnumerable<Evaluation>> GetByProjectIdAsync(string projectId)
     {
         var query = _collection
-            .WhereEqualTo("project_id", projectId)
-            .OrderByDescending("created_at");
+            .WhereEqualTo("project_id", projectId);
+            //.OrderByDescending("created_at"); // Temporarily removed to bypass index requirement
         
         var snapshot = await query.GetSnapshotAsync();
         return snapshot.Documents.Select(d => d.ConvertTo<Evaluation>());
@@ -32,8 +32,8 @@ public class EvaluationRepository : IEvaluationRepository
     public async Task<IEnumerable<Evaluation>> GetByDocenteIdAsync(string docenteId)
     {
         var query = _collection
-            .WhereEqualTo("docente_id", docenteId)
-            .OrderByDescending("created_at");
+            .WhereEqualTo("docente_id", docenteId);
+            //.OrderByDescending("created_at");
         
         var snapshot = await query.GetSnapshotAsync();
         return snapshot.Documents.Select(d => d.ConvertTo<Evaluation>());
