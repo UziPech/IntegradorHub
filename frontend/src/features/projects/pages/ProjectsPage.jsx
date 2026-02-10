@@ -42,12 +42,12 @@ export function ProjectsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Mis Proyectos</h1>
-                    <p className="text-gray-500">Administra y colabora en tus proyectos integradores.</p>
+                    <p className="text-gray-600">Administra y colabora en tus proyectos.</p>
                 </div>
                 {userData?.rol === 'Alumno' && (
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm hover:bg-gray-800 transition-colors"
+                        className="bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm hover:bg-gray-800 active:bg-gray-950 transition-all"
                     >
                         <Plus size={16} />
                         Nuevo Proyecto
@@ -56,15 +56,15 @@ export function ProjectsPage() {
             </div>
 
             {/* Search and Filters */}
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Buscar proyectos por nombre o líder..."
+                        placeholder="Buscar proyectos..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-400"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-gray-200 focus:bg-white outline-none transition-all placeholder:text-gray-400"
                     />
                 </div>
             </div>

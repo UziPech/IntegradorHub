@@ -4,7 +4,7 @@ import {
     signOut,
     onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../../../lib/firebase';
 import api from '../../../lib/axios';
 
@@ -20,45 +20,36 @@ export function AuthProvider({ children }) {
             if (firebaseUser) {
                 setUser(firebaseUser);
 
-                // 1. Intentar leer datos directamente de Firestore (Robustez)
                 try {
-                    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-                    if (userDoc.exists()) {
-                        console.log('User data loaded from Firestore');
-                        setUserData(userDoc.data());
+                    // Siempre obtener datos del backend (source of truth)
+                    const response = await api.post('/api/auth/login', {
+                        firebaseUid: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        displayName: firebaseUser.displayName || 'Usuario',
+                        photoUrl: firebaseUser.photoURL || ''
+                    });
 
-                        // Sincronización silenciosa con backend por si acaso
-                        api.post('/api/auth/login', {
-                            firebaseUid: firebaseUser.uid,
-                            email: firebaseUser.email,
-                            displayName: firebaseUser.displayName || 'Usuario',
-                            photoUrl: firebaseUser.photoURL || ''
-                        }).catch(e => console.warn('Backend sync warning:', e.message));
+                    console.log('Backend user data:', response.data);
+                    setUserData(response.data);
 
-                    } else {
-                        // 2. Si no existe, usar backend para crearlo
-                        const response = await api.post('/api/auth/login', {
-                            firebaseUid: firebaseUser.uid,
-                            email: firebaseUser.email,
-                            displayName: firebaseUser.displayName || 'Usuario',
-                            photoUrl: firebaseUser.photoURL || ''
-                        });
-                        setUserData(response.data);
-                    }
+                    // Guardar en Firestore para sincronización
+                    await setDoc(doc(db, 'users', firebaseUser.uid), {
+                        ...response.data,
+                        email: firebaseUser.email,
+                        photoURL: firebaseUser.photoURL || '',
+                        updatedAt: new Date().toISOString()
+                    }, { merge: true });
+
                 } catch (error) {
-                    console.error('Error accessing user data:', error);
-                    // Fallback último recurso
-                    try {
-                        const response = await api.post('/api/auth/login', {
-                            firebaseUid: firebaseUser.uid,
-                            email: firebaseUser.email,
-                            displayName: firebaseUser.displayName || 'Usuario',
-                            photoUrl: firebaseUser.photoURL || ''
-                        });
-                        setUserData(response.data);
-                    } catch (e) {
-                        console.error('FATAL: Could not load user data', e);
-                    }
+                    console.error('Error loading user data:', error);
+                    // Fallback: usar datos de Firebase
+                    setUserData({
+                        UserId: firebaseUser.uid,
+                        Email: firebaseUser.email,
+                        Nombre: firebaseUser.displayName || 'Usuario',
+                        Rol: 'Invitado',
+                        IsFirstLogin: true
+                    });
                 }
             } else {
                 setUser(null);
@@ -98,8 +89,8 @@ export function AuthProvider({ children }) {
         loginWithGoogle,
         logout,
         isAuthenticated: !!user,
-        isFirstLogin: userData?.isFirstLogin ?? false,
-        rol: userData?.rol ?? 'Invitado'
+        isFirstLogin: userData?.IsFirstLogin ?? false,
+        rol: userData?.Rol ?? 'Invitado'
     };
 
     return (
