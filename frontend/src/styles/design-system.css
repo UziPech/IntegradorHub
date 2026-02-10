@@ -1,0 +1,235 @@
+/* ============================================
+   IntegradorHub Design System - Premium Social
+   ============================================ */
+
+/* Note: Core design tokens are defined in index.css
+   This file contains component-specific utilities and patterns */
+
+/* === COMPONENT UTILITIES === */
+
+/* Loading Skeleton */
+.skeleton {
+  background: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-gray-200) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Avatar Stack */
+.avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-stack > * {
+  margin-left: calc(var(--space-2) * -1);
+  border: 2px solid var(--color-white);
+  border-radius: var(--radius-full);
+}
+
+.avatar-stack > *:first-child {
+  margin-left: 0;
+}
+
+/* Status Indicators */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.status-dot-success {
+  background-color: var(--color-success);
+}
+
+.status-dot-warning {
+  background-color: var(--color-warning);
+}
+
+.status-dot-error {
+  background-color: var(--color-error);
+}
+
+.status-dot-info {
+  background-color: var(--color-info);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  min-height: 400px;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-blue-50);
+  color: var(--color-blue-600);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-4);
+}
+
+.empty-state-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.empty-state-description {
+  font-size: var(--text-base);
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-6);
+  max-width: 400px;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: var(--space-8);
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background-color: var(--color-gray-100);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: var(--space-6);
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: calc(var(--space-8) * -1 + 6px);
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-blue-600);
+  border: 2px solid var(--color-white);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background-color: var(--color-gray-100);
+  margin: var(--space-6) 0;
+}
+
+.divider-vertical {
+  width: 1px;
+  height: 100%;
+  background-color: var(--color-gray-100);
+  margin: 0 var(--space-4);
+}
+
+/* Hover Lift Effect */
+.hover-lift {
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Hover Scale Effect */
+.hover-scale {
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Tap Scale Effect */
+.tap-scale:active {
+  transform: scale(0.98);
+}
+
+/* Backdrop Blur */
+.backdrop-blur {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Grid Layouts */
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-6);
+}
+
+.grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-6);
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .page-content {
+    padding: var(--space-6) var(--space-4);
+  }
+  
+  .grid-auto-fit,
+  .grid-auto-fill {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  
+  .empty-state {
+    padding: var(--space-8) var(--space-4);
+    min-height: 300px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
