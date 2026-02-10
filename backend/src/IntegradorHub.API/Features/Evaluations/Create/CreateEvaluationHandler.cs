@@ -53,6 +53,9 @@ public class CreateEvaluationHandler : IRequestHandler<CreateEvaluationCommand, 
         // Validar calificación si es oficial
         if (request.Tipo == "oficial")
         {
+            if (project.DocenteId != request.DocenteId)
+                throw new UnauthorizedAccessException("Solo el docente titular del proyecto puede realizar evaluaciones oficiales.");
+
             if (!request.Calificacion.HasValue || request.Calificacion < 0 || request.Calificacion > 100)
                 throw new ArgumentException("Las evaluaciones oficiales requieren una calificación entre 0 y 100");
         }

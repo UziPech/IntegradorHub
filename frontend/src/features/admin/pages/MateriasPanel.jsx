@@ -18,7 +18,8 @@ export default function MateriasPanel() {
         nombre: '',
         clave: '',
         carreraId: '',
-        cuatrimestre: 1
+        cuatrimestre: 1,
+        esAltaPrioridad: false
     });
 
     useEffect(() => {
@@ -65,7 +66,8 @@ export default function MateriasPanel() {
             nombre: materia.nombre,
             clave: materia.clave,
             carreraId: materia.carreraId,
-            cuatrimestre: materia.cuatrimestre
+            cuatrimestre: materia.cuatrimestre,
+            esAltaPrioridad: materia.esAltaPrioridad || false
         });
         setShowModal(true);
     };
@@ -82,7 +84,7 @@ export default function MateriasPanel() {
     };
 
     const resetForm = () => {
-        setFormData({ nombre: '', clave: '', carreraId: '', cuatrimestre: 1 });
+        setFormData({ nombre: '', clave: '', carreraId: '', cuatrimestre: 1, esAltaPrioridad: false });
         setEditingMateria(null);
     };
 
@@ -151,7 +153,12 @@ export default function MateriasPanel() {
                         ) : (
                             materias.map(materia => (
                                 <tr key={materia.id} style={styles.tr}>
-                                    <td style={styles.td}>{materia.nombre}</td>
+                                    <td style={styles.td}>
+                                        {materia.nombre}
+                                        {materia.esAltaPrioridad && (
+                                            <span style={styles.priorityBadge}>⭐ Prioritaria</span>
+                                        )}
+                                    </td>
                                     <td style={styles.td}>{materia.clave}</td>
                                     <td style={styles.td}>{getCarreraNombre(materia.carreraId)}</td>
                                     <td style={styles.td}>{materia.cuatrimestre}</td>
@@ -249,6 +256,18 @@ export default function MateriasPanel() {
                                     style={styles.input}
                                     required
                                 />
+                            </div>
+
+                            <div style={styles.formGroup}>
+                                <label style={styles.checkboxLabel}>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.esAltaPrioridad}
+                                        onChange={(e) => setFormData({ ...formData, esAltaPrioridad: e.target.checked })}
+                                        style={styles.checkbox}
+                                    />
+                                    Alta Prioridad (Materia Integradora)
+                                </label>
                             </div>
 
                             <div style={styles.modalActions}>
@@ -499,5 +518,27 @@ const styles = {
         cursor: 'pointer',
         fontSize: '1rem',
         fontWeight: '500'
+    },
+    priorityBadge: {
+        marginLeft: '0.5rem',
+        padding: '0.2rem 0.5rem',
+        backgroundColor: '#fffbeb',
+        color: '#d97706',
+        fontSize: '0.75rem',
+        borderRadius: '4px',
+        border: '1px solid #fcd34d'
+    },
+    checkboxLabel: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        cursor: 'pointer',
+        fontSize: '0.9rem',
+        color: '#374151'
+    },
+    checkbox: {
+        width: '16px',
+        height: '16px',
+        cursor: 'pointer'
     }
 };

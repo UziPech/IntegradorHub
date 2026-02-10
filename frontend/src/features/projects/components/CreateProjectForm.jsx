@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, UserPlus, Check, ArrowRight, User, Layout } from 'lucide-react';
+import { X, Search, UserPlus, Check, ArrowRight, User, Layout, Video, Upload, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import api from '../../../lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +25,9 @@ export function CreateProjectForm({ onClose, onSuccess }) {
         stackTecnologico: '',
         miembrosIds: []
     });
+
+    const [videoFile, setVideoFile] = useState(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const [studentSearch, setStudentSearch] = useState('');
     const [teacherSearch, setTeacherSearch] = useState('');
@@ -80,6 +83,24 @@ export function CreateProjectForm({ onClose, onSuccess }) {
         }
 
         try {
+            let videoUrl = null;
+
+            // 1. Upload Video if selected
+            if (videoFile) {
+                const formData = new FormData();
+                formData.append('file', videoFile);
+
+                // Optional: Implement progress tracking if api supports it
+                const uploadRes = await api.post('/api/storage/upload?folder=project-promos', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    onUploadProgress: (progressEvent) => {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setUploadProgress(percentCompleted);
+                    }
+                });
+                videoUrl = uploadRes.data.url;
+            }
+
             const selectedTeacher = availableTeachers.find(t => t.id === form.docenteId);
             await api.post('/api/projects', {
                 titulo: form.titulo,
@@ -92,14 +113,15 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                 grupoId: userData.grupoId,
                 stackTecnologico: form.stackTecnologico.split(',').map(s => s.trim()).filter(Boolean),
                 miembrosIds: form.miembrosIds,
-                // videoUrl: form.videoUrl // API doesn't support yet, but UI does.
+                videoUrl: videoUrl
             });
             onSuccess();
         } catch (err) {
             console.error('Error creating project:', err);
-            setError(err.response?.data?.message || 'Error al crear proyecto');
+            setError(err.response?.data?.message || err.response?.data?.error || 'Error al crear proyecto');
         } finally {
             setLoading(false);
+            setUploadProgress(0);
         }
     };
 
@@ -164,49 +186,84 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                                         />
                                     </div>
                                 </div>
+                            </div>
 
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-600 mb-3 ml-2">Asignar Docente</label>
-
-                                    {/* Teacher Search Input */}
-                                    <div className="neu-pressed rounded-2xl px-4 py-2 mb-3 flex items-center gap-3">
-                                        <Search size={16} className="text-gray-400" />
+                            {/* Video Upload */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-3 ml-2">Video Pitch (Opcional)</label>
+                                <div className="neu-pressed rounded-2xl px-4 py-3 flex items-center gap-3 relative overflow-hidden">
+                                    <Video size={20} className="text-gray-400" />
+                                    <div className="flex-1 min-w-0">
                                         <input
-                                            type="text"
-                                            value={teacherSearch}
-                                            onChange={e => setTeacherSearch(e.target.value)}
-                                            placeholder="Buscar docente..."
-                                            className="bg-transparent w-full outline-none text-gray-700 placeholder-gray-400 text-sm"
+                                            type="file"
+                                            accept="video/*"
+                                            onChange={(e) => setVideoFile(e.target.files[0])}
+                                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         />
                                     </div>
-
-                                    <div className="neu-pressed rounded-2xl p-2 min-h-[120px] max-h-40 overflow-y-auto">
-                                        {isLoadingResources ? (
-                                            <div className="flex items-center justify-center h-full py-8">
-                                                <div className="text-gray-400 text-sm">Cargando docentes...</div>
-                                            </div>
-                                        ) : filteredTeachers.length === 0 ? (
-                                            <div className="flex items-center justify-center h-full py-8">
-                                                <div className="text-gray-400 text-sm">No se encontraron docentes</div>
-                                            </div>
-                                        ) : (
-                                            filteredTeachers.map(teacher => (
-                                                <div
-                                                    key={teacher.id}
-                                                    onClick={() => setForm({ ...form, docenteId: teacher.id })}
-                                                    className={`p-3 rounded-xl cursor-pointer transition-all flex items-center justify-between mb-2 last:mb-0 ${form.docenteId === teacher.id ? 'neu-flat bg-[#F0F0F3] text-blue-600' : 'hover:bg-gray-200/50 text-gray-500'
-                                                        }`}
-                                                >
-                                                    <span className="font-semibold text-sm">{teacher.nombreCompleto}</span>
-                                                    {form.docenteId === teacher.id && <Check size={16} />}
-                                                </div>
-                                            ))
-                                        )}
+                                    {videoFile && <span className="text-xs text-green-600 font-bold whitespace-nowrap">Seleccionado</span>}
+                                </div>
+                                {uploadProgress > 0 && uploadProgress < 100 && (
+                                    <div className="mt-2 text-xs text-blue-600 text-center font-bold">
+                                        Subiendo video: {uploadProgress}%
                                     </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-3 ml-2">Asignar Docente</label>
+
+                                {/* Teacher Search Input */}
+                                <div className="neu-pressed rounded-2xl px-4 py-2 mb-3 flex items-center gap-3">
+                                    <Search size={16} className="text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={teacherSearch}
+                                        onChange={e => setTeacherSearch(e.target.value)}
+                                        placeholder="Buscar docente..."
+                                        className="bg-transparent w-full outline-none text-gray-700 placeholder-gray-400 text-sm"
+                                    />
                                 </div>
 
-
+                                <div className="neu-pressed rounded-2xl p-2 min-h-[120px] max-h-40 overflow-y-auto">
+                                    {isLoadingResources ? (
+                                        <div className="flex items-center justify-center h-full py-8">
+                                            <div className="text-gray-400 text-sm">Cargando docentes...</div>
+                                        </div>
+                                    ) : filteredTeachers.length === 0 ? (
+                                        <div className="flex items-center justify-center h-full py-8">
+                                            <div className="text-gray-400 text-sm">No se encontraron docentes</div>
+                                        </div>
+                                    ) : (
+                                        filteredTeachers.map(teacher => (
+                                            <div
+                                                key={teacher.id}
+                                                onClick={() => setForm({ ...form, docenteId: teacher.id })}
+                                                className={`p-3 rounded-xl cursor-pointer transition-all flex items-center justify-between mb-2 last:mb-0 
+                                                        ${form.docenteId === teacher.id ? 'neu-flat bg-[#F0F0F3] text-blue-600 border border-blue-200' : 'hover:bg-gray-200/50 text-gray-500'}
+                                                        ${teacher.esAltaPrioridad ? 'bg-amber-50/50' : ''}
+                                                    `}
+                                            >
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-sm flex items-center gap-2">
+                                                        {teacher.nombreCompleto}
+                                                        {teacher.esAltaPrioridad && (
+                                                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold border border-amber-200">
+                                                                ★ Asesor
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">{teacher.asignatura}</span>
+                                                </div>
+                                                {form.docenteId === teacher.id && <Check size={16} />}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
+
+
+
                         </motion.div>
                     ) : (
                         <motion.div
@@ -251,9 +308,13 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                                             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
                                                 {student.nombreCompleto.charAt(0)}
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="font-bold text-gray-800">{student.nombreCompleto}</p>
-                                                <p className="text-xs text-gray-500">{student.matricula}</p>
+                                            <div className="flex-1" title={`Matrícula: ${student.matricula}`}>
+                                                <p className="font-bold text-gray-800 flex items-center gap-2">
+                                                    {student.nombreCompleto}
+                                                    <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 rounded font-mono">
+                                                        {student.matricula}
+                                                    </span>
+                                                </p>
                                             </div>
                                             <button
                                                 onClick={() => toggleStudent(student.id)}
@@ -309,6 +370,6 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                     </button>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

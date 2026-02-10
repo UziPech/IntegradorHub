@@ -27,17 +27,20 @@ public class StorageController : ControllerBase
             return BadRequest(new { error = "No file provided" });
         }
 
-        // Validar tamaño (máximo 10MB)
-        if (file.Length > 10 * 1024 * 1024)
+        // Validar tamaño (máximo 100MB)
+        if (file.Length > 100 * 1024 * 1024)
         {
-            return BadRequest(new { error = "File size exceeds 10MB limit" });
+            return BadRequest(new { error = "File size exceeds 100MB limit" });
         }
 
         // Validar tipo de archivo
-        var allowedTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf" };
+        var allowedTypes = new[] { 
+            "image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf",
+            "video/mp4", "video/webm", "video/quicktime"
+        };
         if (!allowedTypes.Contains(file.ContentType))
         {
-            return BadRequest(new { error = "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, PDF" });
+            return BadRequest(new { error = "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, PDF, MP4, WebM, MOV" });
         }
 
         try
