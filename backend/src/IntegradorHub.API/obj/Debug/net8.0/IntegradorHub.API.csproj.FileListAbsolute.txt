@@ -65,3 +65,4 @@
 /Users/uzielcastillo/Development/IntegradorHub/backend/src/IntegradorHub.API/obj/Debug/net8.0/IntegradorHub.API.pdb
 /Users/uzielcastillo/Development/IntegradorHub/backend/src/IntegradorHub.API/obj/Debug/net8.0/IntegradorHub.API.genruntimeconfig.cache
 /Users/uzielcastillo/Development/IntegradorHub/backend/src/IntegradorHub.API/obj/Debug/net8.0/ref/IntegradorHub.API.dll
+/Users/uzielcastillo/Development/IntegradorHub/backend/src/IntegradorHub.API/obj/Debug/net8.0/IntegradorHub.API.sourcelink.json

@@ -46,7 +46,9 @@ public class MateriasController : ControllerBase
             Clave = request.Clave ?? string.Empty,
             CarreraId = request.CarreraId,
             Cuatrimestre = request.Cuatrimestre,
+
             IsActive = true,
+            EsAltaPrioridad = request.EsAltaPrioridad,
             CreatedAt = Timestamp.GetCurrentTimestamp()
         };
         
@@ -66,7 +68,9 @@ public class MateriasController : ControllerBase
         materia.Nombre = request.Nombre;
         materia.Clave = request.Clave ?? string.Empty;
         materia.CarreraId = request.CarreraId;
+        materia.CarreraId = request.CarreraId;
         materia.Cuatrimestre = request.Cuatrimestre;
+        materia.EsAltaPrioridad = request.EsAltaPrioridad;
 
         await _repository.UpdateAsync(materia);
         return NoContent();
@@ -87,5 +91,5 @@ public class MateriasController : ControllerBase
     }
 }
 
-public record CreateMateriaRequest(string Nombre, string? Clave, string CarreraId, int Cuatrimestre);
-public record UpdateMateriaRequest(string Nombre, string? Clave, string CarreraId, int Cuatrimestre);
+public record CreateMateriaRequest(string Nombre, string? Clave, string CarreraId, int Cuatrimestre, bool EsAltaPrioridad = false);
+public record UpdateMateriaRequest(string Nombre, string? Clave, string CarreraId, int Cuatrimestre, bool EsAltaPrioridad = false);
