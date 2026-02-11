@@ -16,8 +16,13 @@ public record PublicProjectDto(
     string? ThumbnailUrl,
     string? RepositorioUrl,
     string? DemoUrl,
+    string? VideoUrl,
     string LiderNombre,
-    int MembersCount,
+    List<string> MiembrosIds,
+    string? DocenteNombre,
+    string Estado,
+    string Descripcion, // Extract from canvas first text block if needed
+    List<CanvasBlock> Canvas,
     DateTime CreatedAt
 );
 
@@ -41,7 +46,11 @@ public class GetPublicProjectsHandler : IRequestHandler<GetPublicProjectsQuery, 
         foreach (var project in projects)
         {
             var leader = await _userRepository.GetByIdAsync(project.LiderId);
+            var teacher = !string.IsNullOrEmpty(project.DocenteId) ? await _userRepository.GetByIdAsync(project.DocenteId) : null;
             
+            // Extract description from first text block if available
+            var description = project.CanvasBlocks?.FirstOrDefault(b => b.Type == "text")?.Content ?? "";
+
             result.Add(new PublicProjectDto(
                 project.Id,
                 project.Titulo,
@@ -51,8 +60,13 @@ public class GetPublicProjectsHandler : IRequestHandler<GetPublicProjectsQuery, 
                 project.ThumbnailUrl,
                 project.RepositorioUrl,
                 project.DemoUrl,
+                project.VideoUrl,
                 leader?.Nombre ?? "Desconocido",
-                project.MiembrosIds.Count + 1, // +1 for leader
+                project.MiembrosIds ?? new List<string>(),
+                teacher?.Nombre,
+                project.Estado,
+                description,
+                project.CanvasBlocks ?? new List<CanvasBlock>(),
                 project.CreatedAt.ToDateTime()
             ));
         }

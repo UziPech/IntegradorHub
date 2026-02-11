@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FolderOpen, Users, Calendar, LogOut, LayoutDashboard } from 'lucide-react';
+import { FolderOpen, Users, Calendar, LogOut, LayoutDashboard, Rocket } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 export function Sidebar() {
@@ -10,6 +10,7 @@ export function Sidebar() {
       title: 'PRINCIPAL',
       items: [
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { label: 'Galería', path: '/showcase', icon: Rocket },
       ]
     },
     {
@@ -19,7 +20,13 @@ export function Sidebar() {
         { label: 'Mi Equipo', path: '/team', icon: Users },
         { label: 'Agenda', path: '/calendar', icon: Calendar },
       ]
-    }
+    },
+    ...(userData?.rol === 'admin' || userData?.rol === 'SuperAdmin' ? [{
+      title: 'ADMINISTRACIÓN',
+      items: [
+        { label: 'Panel Admin', path: '/admin', icon: Users } // Using Users as generic admin icon or LayoutDashboard
+      ]
+    }] : [])
   ];
 
   return (
@@ -72,14 +79,14 @@ export function Sidebar() {
       <div className="p-4 m-4 bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold text-sm">
-            {userData?.Nombre?.charAt(0).toUpperCase() || 'U'}
+            {userData?.nombre?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">
-              {userData?.Nombre?.split(' ')[0] || 'Usuario'}
+              {userData?.nombre?.split(' ')[0] || 'Usuario'}
             </p>
             <p className="text-xs text-gray-500 font-medium truncate uppercase">
-              {userData?.Rol || 'Estudiante'}
+              {userData?.rol || 'Estudiante'}
             </p>
           </div>
         </div>

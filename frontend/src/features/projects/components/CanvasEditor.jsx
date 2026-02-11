@@ -1,16 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
-    Plus, GripVertical, Trash2, Image as ImageIcon,
-    Type, Heading1, Heading2, List, CaseSensitive, CheckSquare, Quote, Minus, Loader
+    Plus, Image as ImageIcon, Type, Heading1, Heading2, Heading3,
+    List, CheckSquare, Code, Quote, MoreVertical, X,
+    GripVertical, Maximize2, Minimize2, Video, MonitorPlay,
+    ChevronLeft, ChevronRight, Play, Trash2
 } from 'lucide-react';
-import { useAuth } from '../../auth/hooks/useAuth';
+import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import api from '../../../lib/axios';
 
-// Firebase Storage
-import { storage } from '../../../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
-// Tipos de bloques soportados
+// Block Types
 const BLOCK_TYPES = {
     TEXT: 'text',
     H1: 'h1',
@@ -19,497 +17,817 @@ const BLOCK_TYPES = {
     BULLET: 'bullet',
     TODO: 'todo',
     IMAGE: 'image',
+    VIDEO: 'video',
     CODE: 'code',
     QUOTE: 'quote',
     DIVIDER: 'divider'
 };
 
 const BLOCK_MENU = [
-    { type: BLOCK_TYPES.TEXT, icon: Type, label: 'Texto' },
-    { type: BLOCK_TYPES.H1, icon: Heading1, label: 'Título 1' },
-    { type: BLOCK_TYPES.H2, icon: Heading2, label: 'Título 2' },
-    { type: BLOCK_TYPES.H3, icon: CaseSensitive, label: 'Encabezado' },
+    { type: BLOCK_TYPES.TEXT, icon: Type, label: 'Texto Normal' },
+    { type: BLOCK_TYPES.H1, icon: Heading1, label: 'Título Principal' },
+    { type: BLOCK_TYPES.H2, icon: Heading2, label: 'Subtítulo' },
+    { type: BLOCK_TYPES.H3, icon: Heading3, label: 'Encabezado' },
     { type: BLOCK_TYPES.BULLET, icon: List, label: 'Lista' },
-    { type: BLOCK_TYPES.TODO, icon: CheckSquare, label: 'Tarea' },
+    { type: BLOCK_TYPES.TODO, icon: CheckSquare, label: 'Lista de Tareas' },
     { type: BLOCK_TYPES.QUOTE, icon: Quote, label: 'Cita' },
-    { type: BLOCK_TYPES.DIVIDER, icon: Minus, label: 'Separador' },
-    { type: BLOCK_TYPES.IMAGE, icon: ImageIcon, label: 'Imagen' }
+    { type: BLOCK_TYPES.DIVIDER, icon: MoreVertical, label: 'Separador' },
+    { type: BLOCK_TYPES.IMAGE, icon: ImageIcon, label: 'Imagen' },
+    { type: BLOCK_TYPES.VIDEO, icon: Video, label: 'Video' }
 ];
 
-export function CanvasEditor({ project, readOnly = false }) {
-    const { userData } = useAuth();
-    const [blocks, setBlocks] = useState(project.canvas || project.canvasBlocks || []);
+export function CanvasEditor({ project, readOnly = false, onSaveStatusChange, ref }) { // Changed: ref is forwarded via props or use forwardRef in parent
+    // Project Metadata State
+    const [title, setTitle] = useState(project?.titulo || '');
+    const [videoUrl, setVideoUrl] = useState(project?.videoUrl || null);
+    const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+
+    // Canvas Blocks State
+    const [blocks, setBlocks] = useState(project?.canvas || [{
+        id: crypto.randomUUID(),
+        type: BLOCK_TYPES.TEXT,
+        content: '',
+        metadata: {}
+    }]);
+
+    const [activeBlock, setActiveBlock] = useState(null);
+    const [showMenu, setShowMenu] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [showBlockMenu, setShowBlockMenu] = useState(null);
-    const saveTimeoutRef = useRef(null);
 
-    // Drag & Drop State
-    const [draggedBlockIndex, setDraggedBlockIndex] = useState(null);
+    // Lightbox State
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [lightboxItems, setLightboxItems] = useState([]);
 
+    // Debounced Save
     useEffect(() => {
-        if (blocks.length === 0 && !readOnly) {
-            // Default empty block
-            setBlocks([{ id: crypto.randomUUID(), type: BLOCK_TYPES.TEXT, content: '', metadata: {} }]);
+        if (readOnly) return;
+        const timeout = setTimeout(() => {
+            saveContent();
+        }, 2000);
+        return () => clearTimeout(timeout);
+    }, [blocks, title, videoUrl]);
+
+    // Expose save method to parent
+    // Note: ref logic needs forwardRef to work properly, but usually manual save just calls this function
+    // For now we assume the parent handles ref if passed, but simpler is to use the effect above for auto-save.
+    // If parent uses ref to call save(), we need to attach it.
+    useEffect(() => {
+        if (ref && typeof ref === 'object') {
+            ref.current = {
+                save: saveContent
+            };
         }
-    }, []);
+    }, [blocks, title, videoUrl, ref]);
 
-    // Auto-save con debounce
-    useEffect(() => {
+    const saveContent = async () => {
         if (readOnly) return;
-
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-        saveTimeoutRef.current = setTimeout(async () => {
-            // Validate basic content before saving
-            if (blocks.length === 0) return;
-
-            setSaving(true);
-            try {
-                await api.put(`/api/projects/${project.id}/canvas`, {
-                    blocks,
-                    userId: userData.userId // Ensure using correct userId property
-                });
-            } catch (err) {
-                console.error('Error saving canvas:', err);
-            } finally {
-                setSaving(false);
-            }
-        }, 1500);
-
-        return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        };
-    }, [blocks, project.id, userData.userId, readOnly]);
-
-    const handleBlockChange = (id, newContent) => {
-        if (readOnly) return;
-        setBlocks(prev => prev.map(b => b.id === id ? { ...b, content: newContent } : b));
+        setSaving(true);
+        onSaveStatusChange?.(true);
+        try {
+            await api.put(`/api/projects/${project.id}`, {
+                titulo: title,
+                videoUrl: videoUrl,
+                canvasBlocks: blocks // Backend expects this or 'canvas' - check project model. Usually 'canvasBlocks' updates key 'canvas'
+            });
+        } catch (error) {
+            console.error('Error saving project:', error);
+        } finally {
+            setSaving(false);
+            onSaveStatusChange?.(false);
+        }
     };
 
-    const handleBlockMetadataChange = (id, metadata) => {
-        if (readOnly) return;
-        setBlocks(prev => prev.map(b => b.id === id ? { ...b, metadata: { ...b.metadata, ...metadata } } : b));
-    };
-
-    const addBlock = (type, afterIndex) => {
+    // --- Block Management ---
+    const addBlock = (type, index) => {
         const newBlock = {
             id: crypto.randomUUID(),
             type,
             content: '',
             metadata: {}
         };
+        setBlocks(prev => {
+            const newBlocks = [...prev];
+            newBlocks.splice(index + 1, 0, newBlock);
+            return newBlocks;
+        });
+        setActiveBlock(newBlock.id);
+        setShowMenu(null);
+    };
 
-        const newBlocks = [...blocks];
-        newBlocks.splice(afterIndex + 1, 0, newBlock);
-        setBlocks(newBlocks);
-        setShowBlockMenu(null);
+    const updateBlock = (id, content) => {
+        setBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b));
     };
 
     const removeBlock = (id) => {
-        setBlocks(prev => prev.filter(b => b.id !== id));
+        setBlocks(prev => {
+            if (prev.length > 1) {
+                return prev.filter(b => b.id !== id);
+            }
+            return prev;
+        });
     };
 
-    // Drag & Drop Handlers
-    const handleDragStart = (e, index) => {
-        setDraggedBlockIndex(index);
-        e.dataTransfer.effectAllowed = 'move';
-        // Make the drag image transparent or custom if needed
+    const handleBlockMetadataChange = (id, metadata) => {
+        setBlocks(prev => prev.map(b => b.id === id ? { ...b, metadata: { ...b.metadata, ...metadata } } : b));
     };
 
-    const handleDragOver = (e, index) => {
-        e.preventDefault();
-        if (draggedBlockIndex === null || draggedBlockIndex === index) return;
+    // --- File Uploads (Supabase via Backend) ---
+    const uploadFile = async (file, folder = 'project-assets', onProgress) => {
+        // Validation handled in caller
+        const formData = new FormData();
+        formData.append('file', file);
 
-        const newBlocks = [...blocks];
-        const draggedBlock = newBlocks[draggedBlockIndex];
-
-        // Remove from old position
-        newBlocks.splice(draggedBlockIndex, 1);
-        // Insert at new position
-        newBlocks.splice(index, 0, draggedBlock);
-
-        setBlocks(newBlocks);
-        setDraggedBlockIndex(index);
+        const response = await api.post(`/api/storage/upload?folder=${folder}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: (progressEvent) => {
+                const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                onProgress?.(percent);
+            }
+        });
+        return response.data.url;
     };
 
-    const handleDragEnd = () => {
-        setDraggedBlockIndex(null);
-    };
-
-    const handleImageUpload = async (file, blockId) => {
+    const handleVideoPitchUpload = async (file) => {
         if (!file) return;
 
-        // Optimistic update: Show loading state in metadata
-        handleBlockMetadataChange(blockId, { uploading: true });
+        // Strict check to prevent images in video slot
+        if (file.type.startsWith('image/')) {
+            return alert('Este espacio es solo para el Video Pitch. Para subir imágenes, usa los bloques de contenido más abajo.');
+        }
+
+        // General video check (allowing webm, mp4, quicktime, etc)
+        // If type is empty strings (some OS/browsers), let backend validate.
+        if (file.type && !file.type.startsWith('video/') && file.type !== '') {
+            return alert('Por favor sube un archivo de video válido (MP4, WebM, MOV).');
+        }
+
+        if (file.size > 100 * 1024 * 1024) return alert('El video no puede pesar más de 100MB');
+
+        console.log('Uploading video pitch:', file.name, file.type, file.size);
 
         try {
-            const storageRef = ref(storage, `project-assets/${project.id}/${Date.now()}-${file.name}`);
-            await uploadBytes(storageRef, file);
-            const downloadUrl = await getDownloadURL(storageRef);
+            setVideoUploadProgress(1);
+            const url = await uploadFile(file, 'project-promos', setVideoUploadProgress);
+            console.log('Video pitch uploaded successfully:', url);
+            if (!url) throw new Error("Backend returned empty URL for video");
 
-            handleBlockChange(blockId, downloadUrl);
+            setVideoUrl(url);
+            setVideoUploadProgress(0);
         } catch (error) {
-            console.error('Error uploading image:', error);
-            alert('Error al subir la imagen');
+            console.error('Error uploading video pitch:', error);
+            const msg = error.response?.data?.error || error.message || 'Error al subir el video';
+            alert(`Error: ${msg}`);
+            setVideoUploadProgress(0);
+        }
+    };
+
+    const handleBlockFileUpload = async (file, blockId, type) => {
+        if (!file) return;
+
+        // Validations specific to block type
+        if (type === 'image') {
+            if (file.type.startsWith('video/')) {
+                return alert('Este bloque es para IMÁGENES. Si quieres subir un video, añade un bloque de video.');
+            }
+        }
+        if (type === 'video') {
+            if (file.type.startsWith('image/')) {
+                return alert('Este bloque es para VIDEOS. Si quieres subir una imagen, añade un bloque de imagen.');
+            }
+        }
+
+        if (file.size > 100 * 1024 * 1024) return alert('El archivo no puede superar los 100MB');
+
+        handleBlockMetadataChange(blockId, { uploading: true, progress: 0, error: null });
+
+        try {
+            const folder = type === 'video' ? 'videos' : 'images';
+            console.log(`Starting upload for block ${blockId} to folder ${folder}`);
+
+            const url = await uploadFile(file, folder, (percent) => {
+                handleBlockMetadataChange(blockId, { progress: percent });
+            });
+
+            console.log(`Upload successful for block ${blockId}. URL:`, url);
+
+            if (!url) throw new Error("Backend returned empty URL");
+
+            updateBlock(blockId, url);
+        } catch (error) {
+            console.error(`Error uploading ${type}:`, error);
+            const msg = error.response?.data?.error || error.message || 'Error al subir archivo';
+            handleBlockMetadataChange(blockId, { error: msg });
+            // alert(`Error al subir archivo: ${msg}`);
         } finally {
             handleBlockMetadataChange(blockId, { uploading: false });
         }
     };
 
+    // --- Media Gallery Logic ---
+    const handleOpenLightbox = (items, index) => {
+        setLightboxItems(items);
+        setLightboxIndex(index);
+        setLightboxOpen(true);
+    };
+
+    // Grouping blocks for read-only view
+    const renderBlocks = () => {
+        if (!readOnly) return blocks.map(block => (
+            <Block
+                key={block.id}
+                block={block}
+                active={activeBlock === block.id}
+                onFocus={() => setActiveBlock(block.id)}
+                onChange={(content) => updateBlock(block.id, content)}
+                onRemove={() => removeBlock(block.id)}
+                onAddBlock={(type) => addBlock(type, blocks.indexOf(block))}
+                showMenu={showMenu === block.id}
+                onToggleMenu={() => setShowMenu(showMenu === block.id ? null : block.id)}
+                onFileUpload={(file, type) => handleBlockFileUpload(file, block.id, type)}
+                readOnly={readOnly}
+            />
+        ));
+
+        // Group consecutive media blocks for Read-Only mode
+        // Only grouping images for the "Facebook style" grid. 
+        // Videos might be tricky in a grid if auto-playing, but we'll include them as previews.
+        const groupedGroups = [];
+        let currentMediaGroup = [];
+
+        blocks.forEach((block) => {
+            if (block.type === BLOCK_TYPES.IMAGE || block.type === BLOCK_TYPES.VIDEO) {
+                currentMediaGroup.push(block);
+            } else {
+                if (currentMediaGroup.length > 0) {
+                    groupedGroups.push({
+                        id: `group-${currentMediaGroup[0].id}`,
+                        type: 'media_gallery',
+                        items: [...currentMediaGroup]
+                    });
+                    currentMediaGroup = [];
+                }
+                groupedGroups.push(block);
+            }
+        });
+
+        if (currentMediaGroup.length > 0) {
+            groupedGroups.push({
+                id: `group-${currentMediaGroup[0].id}`,
+                type: 'media_gallery',
+                items: [...currentMediaGroup]
+            });
+        }
+
+        return groupedGroups.map(item => {
+            if (item.type === 'media_gallery') {
+                return (
+                    <MediaGallery
+                        key={item.id}
+                        items={item.items}
+                        onOpenLightbox={(index) => handleOpenLightbox(item.items, index)}
+                    />
+                );
+            }
+            return <Block key={item.id} block={item} readOnly={true} />;
+        });
+    };
+
     return (
-        <div className="min-h-screen bg-white pb-32">
-            {/* Status Bar */}
-            <div className="fixed bottom-6 right-6 z-50">
-                <div className={`
-                    px-4 py-2 rounded-full shadow-lg border flex items-center gap-2
-                    transition-all duration-300
-                    ${saving
-                        ? 'bg-gray-900 text-white border-gray-900'
-                        : 'bg-white text-gray-500 border-gray-200'
-                    }
-                `}>
-                    {saving && <Loader size={12} className="animate-spin" />}
-                    <span className="text-sm font-medium">
-                        {saving ? 'Guardando...' : 'Guardado'}
-                    </span>
-                </div>
-            </div>
-
-            {/* Canvas Area */}
-            <div className="max-w-3xl mx-auto px-6 py-12">
-                {/* Title Section */}
-                {!readOnly && (
-                    <div className="mb-12 group">
-                        <input
-                            value={project.titulo} // Titles are usually handled by project settings, but we display it here
-                            readOnly
-                            className="text-5xl font-bold text-gray-900 mb-2 w-full outline-none bg-transparent placeholder-gray-300"
-                        />
-                        <p className="text-lg text-gray-500">{project.materia} • {project.ciclo}</p>
-                    </div>
+        <div className="max-w-4xl mx-auto py-8 px-4 lg:px-0">
+            {/* Header: Video Pitch & Title (Editable) */}
+            <div className="mb-12 border-b border-gray-100 pb-8">
+                {/* Title Input */}
+                {readOnly ? null : (
+                    <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Título del Proyecto"
+                        className="text-4xl font-bold text-gray-900 placeholder-gray-300 w-full outline-none bg-transparent mb-8"
+                    />
                 )}
 
-                {/* Blocks */}
-                <div className="space-y-2">
-                    {blocks.map((block, index) => (
-                        <Block
-                            key={block.id}
-                            block={block}
-                            index={index}
-                            onChange={(content) => handleBlockChange(block.id, content)}
-                            onMetadataChange={(metadata) => handleBlockMetadataChange(block.id, metadata)}
-                            onRemove={() => removeBlock(block.id)}
-                            onShowMenu={() => setShowBlockMenu(index)}
-                            onAddBlock={(type) => addBlock(type, index)}
-                            showMenu={showBlockMenu === index}
-                            onCloseMenu={() => setShowBlockMenu(null)}
-                            readOnly={readOnly}
-                            onDragStart={(e) => handleDragStart(e, index)}
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDragEnd={handleDragEnd}
-                            onImageUpload={(file) => handleImageUpload(file, block.id)}
-                        />
-                    ))}
-                </div>
+                {/* Video Pitch Section - VISIBLE IN BOTH MODES (Optional) */}
+                {/* User might not want to see it in ReadOnly if empty, handled below */}
+                {(videoUrl || !readOnly) && (
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <Video size={20} className="text-blue-600" />
+                            Video Pitch
+                        </h3>
 
-                {/* Empty State / Start Prompt */}
-                {blocks.length === 0 && !readOnly && (
+                        {!videoUrl ? (
+                            readOnly ? (
+                                <div className="p-8 bg-gray-50 rounded-2xl border border-gray-100 text-center text-gray-400">
+                                    No se ha subido un video pitch.
+                                </div>
+                            ) : (
+                                <div className="relative border-2 border-dashed border-gray-200 rounded-2xl p-8 hover:bg-gray-50 transition-colors group cursor-pointer text-center">
+                                    <input
+                                        type="file"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        onChange={(e) => handleVideoPitchUpload(e.target.files[0])}
+                                    />
+                                    <div className="space-y-3">
+                                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                                            <MonitorPlay size={24} />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-gray-900">Haz clic para subir tu Video Pitch</p>
+                                            <p className="text-sm text-gray-500">MP4, WebM hasta 100MB</p>
+                                        </div>
+                                    </div>
+                                    {videoUploadProgress > 0 && (
+                                        <div className="absolute inset-x-8 bottom-4">
+                                            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-blue-600 transition-all duration-300"
+                                                    style={{ width: `${videoUploadProgress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        ) : (
+                            <div className="relative rounded-2xl overflow-hidden bg-black aspect-video group">
+                                <video
+                                    src={videoUrl}
+                                    className="w-full h-full object-contain"
+                                    controls
+                                />
+                                {!readOnly && (
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('¿Eliminar video pitch?')) setVideoUrl(null);
+                                        }}
+                                        className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-lg hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Canvas Blocks */}
+            <div className="space-y-4">
+                {readOnly ? (
+                    renderBlocks()
+                ) : (
+                    <Reorder.Group axis="y" values={blocks} onReorder={setBlocks}>
+                        {blocks.map((block, index) => (
+                            <Block
+                                key={block.id}
+                                block={block}
+                                active={activeBlock === block.id}
+                                onFocus={() => setActiveBlock(block.id)}
+                                onChange={(content) => updateBlock(block.id, content)}
+                                onRemove={() => removeBlock(block.id)}
+                                onAddBlock={(type) => addBlock(type, index)}
+                                showMenu={showMenu === block.id}
+                                onToggleMenu={() => setShowMenu(showMenu === block.id ? null : block.id)}
+                                onFileUpload={(file, type) => handleBlockFileUpload(file, block.id, type)}
+                            />
+                        ))}
+                    </Reorder.Group>
+                )}
+            </div>
+
+            {/* Add Block Button (Bottom) */}
+            {!readOnly && (
+                <div className="mt-8 pt-8 border-t border-gray-100 flex justify-center gap-3">
                     <button
-                        onClick={() => addBlock(BLOCK_TYPES.TEXT, -1)}
-                        className="w-full py-16 border-2 border-dashed border-gray-200 rounded-2xl hover:border-gray-300 hover:bg-gray-50 transition-all group"
+                        onClick={() => addBlock(BLOCK_TYPES.TEXT, blocks.length - 1)}
+                        className="px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl font-medium transition-colors flex items-center gap-2"
                     >
-                        <div className="flex flex-col items-center gap-3 text-gray-400 group-hover:text-gray-600">
-                            <Plus size={32} />
-                            <span className="text-lg font-medium">Comienza escribiendo tu documentacion...</span>
-                        </div>
+                        <Type size={18} />
+                        Texto
                     </button>
-                )}
+                    <button
+                        onClick={() => addBlock(BLOCK_TYPES.IMAGE, blocks.length - 1)}
+                        className="px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-medium transition-colors flex items-center gap-2"
+                    >
+                        <ImageIcon size={18} />
+                        Imagen
+                    </button>
+                    <button
+                        onClick={() => addBlock(BLOCK_TYPES.VIDEO, blocks.length - 1)}
+                        className="px-4 py-3 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl font-medium transition-colors flex items-center gap-2"
+                    >
+                        <Video size={18} />
+                        Video
+                    </button>
+                    <button
+                        onClick={() => addBlock(BLOCK_TYPES.H2, blocks.length - 1)}
+                        className="px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl font-medium transition-colors flex items-center gap-2"
+                    >
+                        <Heading2 size={18} />
+                        Título
+                    </button>
+                </div>
+            )}
 
-                {/* Add Block Button (at the end) */}
-                {!readOnly && blocks.length > 0 && (
-                    <div className="mt-8 flex justify-center opacity-0 hover:opacity-100 transition-opacity">
-                        <button
-                            onClick={() => addBlock(BLOCK_TYPES.TEXT, blocks.length - 1)}
-                            className="flex items-center gap-2 text-gray-400 hover:text-blue-600 px-4 py-2 hover:bg-blue-50 rounded-full transition-all"
-                        >
-                            <Plus size={18} />
-                            <span className="text-sm font-medium">Agregar bloque al final</span>
-                        </button>
-                    </div>
+            {/* Lightbox for Gallery */}
+            <AnimatePresence>
+                {lightboxOpen && (
+                    <Lightbox
+                        items={lightboxItems}
+                        currentIndex={lightboxIndex}
+                        onClose={() => setLightboxOpen(false)}
+                        onChangeIndex={setLightboxIndex}
+                    />
                 )}
-            </div>
+            </AnimatePresence>
         </div>
     );
 }
 
-function Block({
-    block,
-    index,
-    onChange,
-    onMetadataChange,
-    onRemove,
-    onShowMenu,
-    onAddBlock,
-    showMenu,
-    readOnly,
-    onDragStart,
-    onDragOver,
-    onDragEnd,
-    onImageUpload
-}) {
-    const textAreaRef = useRef(null);
+function Block({ block, active, onFocus, onChange, onRemove, onAddBlock, showMenu, onToggleMenu, onFileUpload, readOnly }) {
+    const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
 
-    // Auto-resize textarea
     useEffect(() => {
-        if (textAreaRef.current) {
-            textAreaRef.current.style.height = 'auto';
-            textAreaRef.current.style.height = textAreaRef.current.scrollHeight + 'px';
+        if (active && textareaRef.current) {
+            textareaRef.current.focus();
+            // Adjust height
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
         }
-    }, [block.content]);
+    }, [active]);
 
-    const renderInput = () => {
-        const baseClasses = "w-full bg-transparent outline-none resize-none overflow-hidden block transition-colors";
-        const placeholderClasses = "placeholder:text-gray-300";
-
-        switch (block.type) {
-            case BLOCK_TYPES.H1:
-                return (
-                    <textarea
-                        ref={textAreaRef}
-                        value={block.content}
-                        onChange={e => onChange(e.target.value)}
-                        className={`${baseClasses} ${placeholderClasses} text-4xl font-bold text-gray-900 leading-tight mt-6 mb-4`}
-                        placeholder="Título principal"
-                        readOnly={readOnly}
-                        rows={1}
-                    />
-                );
-
-            case BLOCK_TYPES.H2:
-                return (
-                    <textarea
-                        ref={textAreaRef}
-                        value={block.content}
-                        onChange={e => onChange(e.target.value)}
-                        className={`${baseClasses} ${placeholderClasses} text-2xl font-bold text-gray-800 leading-tight mt-6 mb-3`}
-                        placeholder="Subtítulo"
-                        readOnly={readOnly}
-                        rows={1}
-                    />
-                );
-            case BLOCK_TYPES.H3:
-                return (
-                    <textarea
-                        ref={textAreaRef}
-                        value={block.content}
-                        onChange={e => onChange(e.target.value)}
-                        className={`${baseClasses} ${placeholderClasses} text-xl font-semibold text-gray-700 leading-tight mt-4 mb-2`}
-                        placeholder="Encabezado"
-                        readOnly={readOnly}
-                        rows={1}
-                    />
-                );
-
-            case BLOCK_TYPES.BULLET:
-                return (
-                    <div className="flex gap-3 items-start my-1">
-                        <span className="text-xl leading-7 text-gray-400 select-none">•</span>
-                        <textarea
-                            ref={textAreaRef}
-                            value={block.content}
-                            onChange={e => onChange(e.target.value)}
-                            className={`${baseClasses} ${placeholderClasses} text-lg text-gray-700 leading-relaxed`}
-                            placeholder="Elemento de lista"
-                            readOnly={readOnly}
-                            rows={1}
-                        />
-                    </div>
-                );
-
-            case BLOCK_TYPES.TODO:
-                return (
-                    <div className="flex gap-3 items-start my-1">
-                        <input
-                            type="checkbox"
-                            checked={block.metadata?.checked || false}
-                            onChange={e => onMetadataChange({ checked: e.target.checked })}
-                            className="mt-1.5 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                            disabled={readOnly}
-                        />
-                        <textarea
-                            ref={textAreaRef}
-                            value={block.content}
-                            onChange={e => onChange(e.target.value)}
-                            className={`${baseClasses} ${placeholderClasses} text-lg text-gray-700 leading-relaxed ${block.metadata?.checked ? 'line-through text-gray-400' : ''}`}
-                            placeholder="Tarea por hacer"
-                            readOnly={readOnly}
-                            rows={1}
-                        />
-                    </div>
-                );
-
-            case BLOCK_TYPES.QUOTE:
-                return (
-                    <div className="border-l-4 border-gray-900 pl-6 py-2 my-4 bg-gray-50/50 rounded-r-xl">
-                        <textarea
-                            ref={textAreaRef}
-                            value={block.content}
-                            onChange={e => onChange(e.target.value)}
-                            className={`${baseClasses} ${placeholderClasses} text-xl text-gray-700 italic leading-relaxed`}
-                            placeholder="Escribe una cita..."
-                            readOnly={readOnly}
-                            rows={1}
-                        />
-                    </div>
-                );
-
-            case BLOCK_TYPES.DIVIDER:
-                return (
-                    <div className="py-8 flex items-center justify-center">
-                        <div className="w-24 h-1 bg-gray-200 rounded-full" />
-                    </div>
-                );
-
-            case BLOCK_TYPES.IMAGE:
-                return (
-                    <div className="py-4">
-                        {block.content ? (
-                            <div className="relative group/image rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
-                                <img
-                                    src={block.content}
-                                    alt="Block"
-                                    className="w-full h-auto max-h-[600px] object-contain"
-                                />
-                                {!readOnly && (
-                                    <button
-                                        onClick={() => onChange('')}
-                                        className="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-red-500 opacity-0 group-hover/image:opacity-100 transition-opacity shadow-sm hover:bg-white"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                )}
-                            </div>
-                        ) : (
-                            <div
-                                onClick={() => !readOnly && fileInputRef.current?.click()}
-                                className={`
-                                    border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center 
-                                    transition-all bg-gray-50/30
-                                    ${!readOnly ? 'cursor-pointer hover:border-blue-400 hover:bg-blue-50/30' : ''}
-                                `}
-                            >
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => onImageUpload(e.target.files[0])}
-                                    disabled={readOnly}
-                                />
-                                {block.metadata?.uploading ? (
-                                    <div className="flex flex-col items-center text-blue-500">
-                                        <Loader className="animate-spin mb-2" size={32} />
-                                        <span className="text-sm font-medium">Subiendo imagen...</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center text-gray-400">
-                                        <ImageIcon className="mx-auto mb-3" size={32} />
-                                        <span className="text-sm font-medium">Click para subir una imagen</span>
-                                        <span className="text-xs mt-1 text-gray-300">PNG, JPG, GIF up to 5MB</span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        <div className="mt-2 text-center">
-                            <input
-                                type="text"
-                                value={block.metadata?.caption || ''}
-                                onChange={e => onMetadataChange({ caption: e.target.value })}
-                                placeholder="Escribe una leyenda (opcional)..."
-                                className="text-center text-sm text-gray-500 bg-transparent outline-none placeholder:text-gray-300 w-full"
-                                readOnly={readOnly}
-                            />
-                        </div>
-                    </div>
-                );
-
-            default: // TEXT
-                return (
-                    <textarea
-                        ref={textAreaRef}
-                        value={block.content}
-                        onChange={e => onChange(e.target.value)}
-                        className={`${baseClasses} ${placeholderClasses} text-lg text-gray-700 leading-relaxed`}
-                        placeholder="Escribe algo..."
-                        readOnly={readOnly}
-                        rows={1}
-                    />
-                );
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            onAddBlock(BLOCK_TYPES.TEXT);
+        }
+        if (e.key === 'Backspace' && !block.content) {
+            e.preventDefault();
+            onRemove();
+        }
+        if (e.key === '/') {
+            // Trigger menu manually if needed
         }
     };
 
-    return (
-        <div
-            className="group relative flex items-start -ml-12 pl-12 py-1 rounded-lg transition-colors"
-            draggable={!readOnly}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDragEnd={onDragEnd}
+    const renderMenu = () => (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="absolute left-0 top-10 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-64 overflow-hidden"
         >
-            {/* Left Controls */}
-            {!readOnly && (
-                <div className="absolute left-0 top-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="p-2 grid grid-cols-1 gap-1">
+                {BLOCK_MENU.map(item => (
                     <button
-                        onClick={onShowMenu}
-                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-all"
-                        title="Agregar bloque abajo"
+                        key={item.type}
+                        onClick={() => onAddBlock(item.type)}
+                        className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg text-gray-700 text-sm transition-colors text-left"
                     >
-                        <Plus size={18} />
+                        <span className="p-1.5 bg-gray-100 rounded-md text-gray-600">{<item.icon size={16} />}</span>
+                        <span>{item.label}</span>
                     </button>
+                ))}
+            </div>
+        </motion.div>
+    );
+
+    const renderInput = () => {
+        if (block.type === BLOCK_TYPES.DIVIDER) {
+            return <div className="h-px bg-gray-200 my-8" />;
+        }
+
+        if (block.type === BLOCK_TYPES.IMAGE || block.type === BLOCK_TYPES.VIDEO) {
+            const isVideo = block.type === BLOCK_TYPES.VIDEO;
+            return (
+                <div className="py-2">
+                    {block.content ? (
+                        <div className="relative group/media rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+                            {isVideo ? (
+                                <video src={block.content} controls className="w-full h-auto max-h-[600px] object-contain bg-black" />
+                            ) : (
+                                <img src={block.content} alt="Content" className="w-full h-auto max-h-[600px] object-contain" />
+                            )}
+                            {!readOnly && (
+                                <button
+                                    onClick={onRemove}
+                                    className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-lg opacity-0 group-hover/media:opacity-100 transition-opacity hover:bg-red-500"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <div className={`
+                                relative border-2 border-dashed border-gray-200 rounded-xl p-8 
+                                transition-colors group text-center
+                                ${readOnly ? 'bg-gray-50 cursor-default' : 'hover:bg-gray-50 hover:border-blue-200 cursor-pointer'}
+                            `}
+                        >
+                            <input
+                                type="file"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                onChange={(e) => onFileUpload(e.target.files[0], block.type)}
+                                disabled={readOnly}
+                            />
+                            {block.metadata?.uploading ? (
+                                <div className="space-y-3">
+                                    <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
+                                    <p className="text-sm text-gray-500">Subiendo...</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                                        {isVideo ? <Video size={20} /> : <ImageIcon size={20} />}
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-600">
+                                        {readOnly ? 'Sin contenido' : `Haz clic para subir ${isVideo ? 'video' : 'imagen'}`}
+                                    </p>
+                                    {block.metadata?.error && (
+                                        <p className="text-xs text-red-500 font-medium mt-1 bg-red-50 px-2 py-1 rounded">
+                                            {block.metadata.error}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <input
+                        type="text"
+                        value={block.metadata?.caption || ''}
+                        onChange={(e) => !readOnly && handleBlockMetadataChange(block.id, { caption: e.target.value })}
+                        placeholder="Escribe una leyenda..."
+                        className="w-full text-center text-sm text-gray-500 mt-2 bg-transparent outline-none placeholder-transparent hover:placeholder-gray-300 focus:placeholder-gray-300 transition-all"
+                        disabled={readOnly}
+                    />
+                </div>
+            );
+        }
+
+        const styles = {
+            [BLOCK_TYPES.H1]: 'text-4xl font-bold text-gray-900 leading-tight',
+            [BLOCK_TYPES.H2]: 'text-2xl font-semibold text-gray-800 mt-6 mb-2',
+            [BLOCK_TYPES.H3]: 'text-xl font-semibold text-gray-800 mt-4 mb-2',
+            [BLOCK_TYPES.QUOTE]: 'border-l-4 border-gray-900 pl-4 italic text-gray-600 my-4 text-lg',
+            [BLOCK_TYPES.CODE]: 'font-mono text-sm bg-gray-900 text-gray-100 p-4 rounded-xl my-2 block w-full',
+            [BLOCK_TYPES.TEXT]: 'text-base text-gray-600 leading-relaxed',
+            [BLOCK_TYPES.BULLET]: 'text-base text-gray-600 leading-relaxed',
+            [BLOCK_TYPES.TODO]: 'text-base text-gray-600 leading-relaxed',
+        };
+
+        if (readOnly) {
+            return (
+                <div
+                    className={`w-full bg-transparent whitespace-pre-wrap ${styles[block.type] || styles[BLOCK_TYPES.TEXT]}`}
+                >
+                    {block.content || <span className="opacity-0">Empty</span>}
+                </div>
+            );
+        }
+
+        return (
+            <textarea
+                ref={textareaRef}
+                value={block.content}
+                onChange={(e) => {
+                    onChange(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder={active ? "Escribe '/' para comandos..." : ""}
+                className={`w-full bg-transparent outline-none resize-none overflow-hidden ${styles[block.type] || styles[BLOCK_TYPES.TEXT]}`}
+                rows={1}
+            />
+        );
+    };
+
+    const Wrapper = readOnly ? 'div' : Reorder.Item;
+    const wrapperProps = readOnly ? {} : { value: block, id: block.id, dragListener: false };
+
+    return (
+        <Wrapper
+            {...wrapperProps}
+            className={`group relative flex items-start gap-2 ${active ? 'z-10' : ''}`}
+            onClick={onFocus}
+        >
+            {/* Drag Handle & Menu */}
+            {!readOnly && (
+                <div className="absolute -left-12 top-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                        className="p-1 text-gray-300 hover:text-gray-600 cursor-grab active:cursor-grabbing hover:bg-gray-100 rounded"
-                        title="Arrastrar para mover"
+                        className="p-1 hover:bg-gray-100 rounded text-gray-400 cursor-grab active:cursor-grabbing"
                     >
                         <GripVertical size={18} />
                     </button>
-                    <button
-                        onClick={onRemove}
-                        className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-all"
-                        title="Eliminar bloque"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onToggleMenu(); }}
+                            className="p-1 hover:bg-gray-100 rounded text-gray-400"
+                        >
+                            <MoreVertical size={18} />
+                        </button>
+                        <AnimatePresence>
+                            {showMenu && renderMenu()}
+                        </AnimatePresence>
+                    </div>
                 </div>
             )}
 
             {/* Block Content */}
-            <div className="flex-1 min-w-0 px-2 border border-transparent rounded-lg hover:border-gray-100 transition-colors">
-                {renderInput()}
-            </div>
-
-            {/* Block Type Menu */}
-            {showMenu && (
-                <>
-                    <div className="fixed inset-0 z-[60]" onClick={onCloseMenu} />
-                    <div className="absolute left-10 top-10 z-[70] bg-white rounded-xl shadow-xl border border-gray-100 p-1.5 min-w-[180px] animate-in fade-in zoom-in-95 duration-200">
-                        <div className="text-xs font-semibold text-gray-400 px-3 py-2 uppercase tracking-wider">Transformar en</div>
-                        {BLOCK_MENU.map(({ type, icon: Icon, label }) => (
-                            <button
-                                key={type}
-                                onClick={() => {
-                                    onAddBlock(type);
-                                    onCloseMenu();
-                                }}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-colors text-left"
-                            >
-                                <Icon size={16} className="text-gray-400" />
-                                <span className="font-medium">{label}</span>
-                            </button>
-                        ))}
+            <div className="flex-1 min-w-0">
+                {block.type === BLOCK_TYPES.BULLET && (
+                    <div className="flex gap-2">
+                        <span className="text-2xl leading-none text-gray-400">•</span>
+                        {renderInput()}
                     </div>
-                </>
-            )}
+                )}
+                {block.type === BLOCK_TYPES.TODO && (
+                    <div className="flex gap-3 items-start">
+                        <button
+                            onClick={() => !readOnly && handleBlockMetadataChange(block.id, { checked: !block.metadata?.checked })}
+                            className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${block.metadata?.checked
+                                ? 'bg-blue-500 border-blue-500 text-white'
+                                : 'border-gray-300 text-transparent hover:border-blue-400'
+                                }`}
+                        >
+                            <CheckSquare size={14} />
+                        </button>
+                        <div className={block.metadata?.checked ? 'line-through opacity-50' : ''}>
+                            {renderInput()}
+                        </div>
+                    </div>
+                )}
+                {!['bullet', 'todo'].includes(block.type) && renderInput()}
+            </div>
+        </Wrapper>
+    );
+}
+
+function MediaGallery({ items, onOpenLightbox }) {
+    if (!items || items.length === 0) return null;
+
+    // Grid layouts
+    if (items.length === 1) {
+        return (
+            <div className="py-4" onClick={() => onOpenLightbox(0)}>
+                <MediaItem item={items[0]} className="w-full rounded-2xl cursor-pointer hover:opacity-95 transition-opacity max-h-[600px] object-contain bg-black" />
+            </div>
+        );
+    }
+
+    if (items.length === 2) {
+        return (
+            <div className="grid grid-cols-2 gap-2 h-[300px] py-4">
+                {items.map((item, index) => (
+                    <div key={item.id} className="relative h-full cursor-pointer overflow-hidden rounded-xl" onClick={() => onOpenLightbox(index)}>
+                        <MediaItem item={item} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    if (items.length === 3) {
+        return (
+            <div className="grid grid-cols-2 gap-2 h-[400px] py-4">
+                <div onClick={() => onOpenLightbox(0)} className="active:scale-[0.98] transition-transform cursor-pointer rounded-xl overflow-hidden">
+                    <MediaItem item={items[0]} className="w-full h-full object-cover" />
+                </div>
+                <div className="grid grid-rows-2 gap-2">
+                    {items.slice(1).map((item, i) => (
+                        <div key={item.id} onClick={() => onOpenLightbox(i + 1)} className="active:scale-[0.98] transition-transform cursor-pointer rounded-xl overflow-hidden">
+                            <MediaItem item={item} className="w-full h-full object-cover" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // 4+ items
+    const remaining = items.length - 3;
+    return (
+        <div className="grid grid-cols-2 gap-2 h-[400px] py-4">
+            <div onClick={() => onOpenLightbox(0)} className="active:scale-[0.98] transition-transform cursor-pointer rounded-xl overflow-hidden">
+                <MediaItem item={items[0]} className="w-full h-full object-cover" />
+            </div>
+            <div className="grid grid-rows-2 gap-2">
+                <div onClick={() => onOpenLightbox(1)} className="active:scale-[0.98] transition-transform cursor-pointer rounded-xl overflow-hidden">
+                    <MediaItem item={items[1]} className="w-full h-full object-cover" />
+                </div>
+                <div onClick={() => onOpenLightbox(2)} className="relative active:scale-[0.98] transition-transform cursor-pointer rounded-xl overflow-hidden group">
+                    <MediaItem item={items[2]} className="w-full h-full object-cover" />
+                    {remaining > 0 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center group-hover:bg-black/70 transition-colors">
+                            <span className="text-3xl font-bold text-white">+{remaining}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
+
+const MediaItem = ({ item, className }) => {
+    const isVideo = item.type === BLOCK_TYPES.VIDEO;
+    if (isVideo) {
+        return (
+            <div className={`relative ${className} bg-black flex items-center justify-center group`}>
+                <video src={item.content} className="w-full h-full object-contain pointer-events-none" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white">
+                        <Play fill="white" size={20} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    return <img src={item.content} alt="" className={className} />;
+};
+
+function Lightbox({ items, currentIndex, onClose, onChangeIndex }) {
+    const currentItem = items[currentIndex];
+    const isVideo = currentItem.type === BLOCK_TYPES.VIDEO;
+
+    // Keyboard controls
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose();
+            if (e.key === 'ArrowLeft') onChangeIndex(prev => Math.max(0, prev - 1));
+            if (e.key === 'ArrowRight') onChangeIndex(prev => Math.min(items.length - 1, prev + 1));
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [items.length, onChangeIndex, onClose]);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <button
+                onClick={onClose}
+                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-50"
+            >
+                <X size={24} />
+            </button>
+
+            {/* Navigation Buttons */}
+            {currentIndex > 0 && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); onChangeIndex(currentIndex - 1); }}
+                    className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-50"
+                >
+                    <ChevronLeft size={32} />
+                </button>
+            )}
+
+            {currentIndex < items.length - 1 && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); onChangeIndex(currentIndex + 1); }}
+                    className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-50"
+                >
+                    <ChevronRight size={32} />
+                </button>
+            )}
+
+            {/* Content */}
+            <div
+                className="w-full h-full flex items-center justify-center p-8 md:p-16"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {isVideo ? (
+                    <video
+                        src={currentItem.content}
+                        controls
+                        autoPlay
+                        className="max-w-full max-h-full rounded-lg shadow-2xl"
+                    />
+                ) : (
+                    <img
+                        src={currentItem.content}
+                        alt=""
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                    />
+                )}
+            </div>
+
+            {/* Footer / Caption */}
+            <div className="absolute bottom-6 left-0 right-0 text-center text-white/50">
+                <p>{currentIndex + 1} / {items.length}</p>
+                {currentItem.metadata?.caption && (
+                    <p className="text-white font-medium mt-2">{currentItem.metadata.caption}</p>
+                )}
+            </div>
+        </motion.div>
+    );
+}
+
+// Helper: Trash icon removed to use imported Trash2
+

@@ -205,37 +205,71 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                             {/* Video Upload */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-900 mb-3">Video Pitch <span className="font-normal text-gray-500">(Opcional)</span></label>
-                                <div className="flex justify-center px-6 pt-8 pb-8 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer relative">
+                                <div className="flex justify-center px-6 pt-8 pb-8 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer relative group">
                                     <div className="space-y-3 text-center">
-                                        <Video className="mx-auto h-12 w-12 text-gray-400" />
+                                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors text-gray-400">
+                                            <Video size={24} />
+                                        </div>
                                         <div className="text-sm">
-                                            <label htmlFor="file-upload" className="relative cursor-pointer font-semibold text-gray-900 hover:text-gray-700">
-                                                <span>Haz clic para subir</span>
+                                            <label htmlFor="file-upload" className="relative cursor-pointer font-semibold text-gray-900 hover:text-gray-700 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                                <span>Haz clic para subir un video</span>
                                                 <input
                                                     id="file-upload"
                                                     name="file-upload"
                                                     type="file"
                                                     className="sr-only"
                                                     accept="video/*"
-                                                    onChange={(e) => setVideoFile(e.target.files[0])}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files[0];
+                                                        if (!file) return;
+                                                        if (!file.type.startsWith('video/')) {
+                                                            alert('Por favor sube un archivo de video válido');
+                                                            return;
+                                                        }
+                                                        if (file.size > 100 * 1024 * 1024) { // 100MB
+                                                            alert('El video no puede superar los 100MB');
+                                                            return;
+                                                        }
+                                                        setVideoFile(file);
+                                                    }}
                                                 />
                                             </label>
-                                            <p className="text-gray-500">o arrastra y suelta</p>
+                                            <p className="text-gray-500 mt-1">o arrastra y suelta</p>
                                         </div>
-                                        <p className="text-xs text-gray-500 font-medium">MP4, WebM hasta 100MB</p>
+                                        <p className="text-xs text-gray-500 font-medium">MP4, WebM, MOV hasta 100MB</p>
                                     </div>
                                     {videoFile && (
-                                        <div className="absolute inset-0 bg-green-50/95 flex items-center justify-center rounded-xl">
-                                            <p className="text-green-700 font-semibold flex items-center gap-2">
-                                                <Check size={18} />
+                                        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center rounded-xl border-2 border-green-500">
+                                            <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
+                                                <Check size={20} />
+                                            </div>
+                                            <p className="text-green-700 font-semibold text-sm max-w-[80%] truncate">
                                                 {videoFile.name}
                                             </p>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setVideoFile(null);
+                                                }}
+                                                className="mt-2 text-xs text-red-500 hover:text-red-700 font-medium hover:underline"
+                                            >
+                                                Cambiar archivo
+                                            </button>
                                         </div>
                                     )}
                                 </div>
                                 {uploadProgress > 0 && uploadProgress < 100 && (
-                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                        <div className="bg-gray-900 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }}></div>
+                                    <div className="mt-3 space-y-1">
+                                        <div className="flex justify-between text-xs font-medium text-gray-500">
+                                            <span>Subiendo...</span>
+                                            <span>{uploadProgress}%</span>
+                                        </div>
+                                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                            <div
+                                                className="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out"
+                                                style={{ width: `${uploadProgress}%` }}
+                                            ></div>
+                                        </div>
                                     </div>
                                 )}
                             </div>

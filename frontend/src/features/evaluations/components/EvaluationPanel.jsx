@@ -14,7 +14,13 @@ export function EvaluationPanel({ projectId }) {
     const [contenido, setContenido] = useState('');
     const [calificacion, setCalificacion] = useState(80);
 
+    // NORMALIZATION NOTE: We now use normalized camelCase properties (rol, userId, nombre) 
+    // from useAuth.jsx to avoid case-sensitivity issues between Backend (PascalCase) and Firebase.
+    // If this causes issues, check useAuth.jsx fallback logic.
     const isDocente = userData?.rol === 'Docente';
+    const userId = userData?.userId;
+    const userName = userData?.nombre;
+
 
     useEffect(() => {
         fetchEvaluations();
@@ -39,8 +45,8 @@ export function EvaluationPanel({ projectId }) {
         try {
             await api.post('/api/evaluations', {
                 projectId,
-                docenteId: userData.id,
-                docenteNombre: userData.nombre,
+                docenteId: userId,
+                docenteNombre: userName,
                 tipo,
                 contenido,
                 calificacion: tipo === 'oficial' ? calificacion : null
@@ -88,16 +94,16 @@ export function EvaluationPanel({ projectId }) {
                         <div
                             key={evaluation.id}
                             className={`p-4 rounded-xl border ${evaluation.tipo === 'oficial'
-                                    ? 'bg-blue-50 border-blue-100'
-                                    : 'bg-gray-50 border-gray-100'
+                                ? 'bg-blue-50 border-blue-100'
+                                : 'bg-gray-50 border-gray-100'
                                 }`}
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <span className="font-medium text-gray-800">{evaluation.docenteNombre}</span>
                                     <span className={`text-xs px-2 py-0.5 rounded-full ${evaluation.tipo === 'oficial'
-                                            ? 'bg-blue-200 text-blue-800'
-                                            : 'bg-gray-200 text-gray-600'
+                                        ? 'bg-blue-200 text-blue-800'
+                                        : 'bg-gray-200 text-gray-600'
                                         }`}>
                                         {evaluation.tipo === 'oficial' ? 'Oficial' : 'Sugerencia'}
                                     </span>

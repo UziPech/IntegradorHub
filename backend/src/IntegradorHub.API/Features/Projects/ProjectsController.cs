@@ -7,6 +7,7 @@ using IntegradorHub.API.Features.Projects.AddMember;
 using IntegradorHub.API.Features.Projects.RemoveMember;
 using IntegradorHub.API.Features.Projects.GetDetails;
 using IntegradorHub.API.Features.Projects.UpdateCanvas;
+using IntegradorHub.API.Features.Projects.Update;
 using IntegradorHub.API.Shared.Domain.Entities;
 
 using IntegradorHub.API.Features.Projects.GetPublic;
@@ -164,7 +165,39 @@ public class ProjectsController : ControllerBase
         catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
     }
+    /// <summary>
+    /// Actualiza un proyecto (Título, Video, Canvas).
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<ActionResult<UpdateProjectResponse>> Update(string id, [FromBody] UpdateProjectRequest request)
+    {
+        // TODO: Obtener UserId real del token
+        var command = new UpdateProjectCommand(
+            id,
+            request.Titulo,
+            request.VideoUrl,
+            request.CanvasBlocks ?? new List<CanvasBlock>(), // Manejo de nulos seguro
+            request.EsPublico,
+            "temp-user-id" // Placeholder hasta tener Auth real
+        );
+
+        try
+        {
+            var response = await _mediator.Send(command);
+            if (!response.Success) return BadRequest(response);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+    }
 }
+
+public record UpdateProjectRequest(
+    string Titulo,
+    string? VideoUrl,
+    List<CanvasBlock>? CanvasBlocks,
+    bool? EsPublico
+);
 
 public record UpdateCanvasRequest(List<CanvasBlock> Blocks, string UserId);
 

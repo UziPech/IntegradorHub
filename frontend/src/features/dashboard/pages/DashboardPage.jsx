@@ -41,7 +41,7 @@ export function DashboardPage() {
     const [suggestedStudents, setSuggestedStudents] = useState([]);
 
     useEffect(() => {
-        if (userData?.rol === 'admin') window.location.href = '/admin';
+        if (userData?.rol === 'admin' || userData?.rol === 'SuperAdmin') window.location.href = '/admin';
         if (userData?.grupoId) {
             Promise.all([fetchProjects(), fetchGroupDetails(), fetchSuggestions()]);
         } else {

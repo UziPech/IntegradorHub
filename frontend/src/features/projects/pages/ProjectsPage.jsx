@@ -156,7 +156,7 @@ export function ProjectsPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[85vh]"
+                            className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden h-[85vh] flex flex-col"
                         >
                             <ProjectDetailsModal
                                 project={selectedProject}
