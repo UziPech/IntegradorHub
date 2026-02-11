@@ -41,9 +41,6 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Galería pública */}
-          <Route path="/showcase" element={<ShowcasePage />} />
-
           {/* Layout Principal con Sidebar */}
           <Route element={
             <ProtectedRoute>
@@ -52,6 +49,7 @@ function App() {
           }>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/showcase" element={<ShowcasePage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/profile" element={<ProfilePage />} />

@@ -3,11 +3,14 @@ import { Search, Filter, Rocket } from 'lucide-react';
 import api from '../../../lib/axios';
 
 // Import Shared Component
-import { ProjectCard } from '../../projects/components/ProjectCard';
+// Import Shared Component
+import { ShowcaseCard } from '../components/ShowcaseCard';
+import { ProjectDetailsModal } from '../../projects/components/ProjectDetailsModal';
 
 export function ShowcasePage() {
     const [projects, setProjects] = useState([]);
     const [filteredProjects, setFilteredProjects] = useState([]);
+    const [selectedProject, setSelectedProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStack, setSelectedStack] = useState(null);
@@ -101,8 +104,8 @@ export function ShowcasePage() {
                         <button
                             onClick={() => setSelectedStack(null)}
                             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap border ${selectedStack === null
-                                    ? 'bg-gray-900 text-white border-gray-900'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                                 }`}
                         >
                             Todas
@@ -112,8 +115,8 @@ export function ShowcasePage() {
                                 key={stack}
                                 onClick={() => setSelectedStack(stack)}
                                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap border ${selectedStack === stack
-                                        ? 'bg-gray-900 text-white border-gray-900'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                                    ? 'bg-gray-900 text-white border-gray-900'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                                     }`}
                             >
                                 {stack}
@@ -124,18 +127,18 @@ export function ShowcasePage() {
 
                 {/* Grid */}
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="bg-gray-100 rounded-xl h-64"></div>
+                    <div className="space-y-8 animate-pulse">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-gray-100 rounded-3xl h-[400px]"></div>
                         ))}
                     </div>
                 ) : filteredProjects.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="space-y-12">
                         {filteredProjects.map(project => (
-                            <ProjectCard
+                            <ShowcaseCard
                                 key={project.id}
                                 project={project}
-                                onClick={() => {/* Navigate or Open Modal */ }}
+                                onClick={() => setSelectedProject(project)}
                             />
                         ))}
                     </div>
@@ -146,6 +149,19 @@ export function ShowcasePage() {
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-1">Sin resultados</h3>
                         <p className="text-gray-500">No encontramos proyectos con esos filtros.</p>
+                    </div>
+                )}
+
+                {/* Details Modal */}
+                {selectedProject && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden h-[85vh] flex flex-col">
+                            <ProjectDetailsModal
+                                project={selectedProject}
+                                onClose={() => setSelectedProject(null)}
+                                onUpdate={fetchPublicProjects}
+                            />
+                        </div>
                     </div>
                 )}
             </main>

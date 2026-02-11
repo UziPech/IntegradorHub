@@ -30,25 +30,43 @@ export function AuthProvider({ children }) {
                     });
 
                     console.log('Backend user data:', response.data);
-                    setUserData(response.data);
+
+                    // NORMALIZATION: Map backend PascalCase to camelCase to match app standards
+                    const normalizedUser = {
+                        userId: response.data.userId || response.data.UserId,
+                        email: response.data.email || response.data.Email,
+                        nombre: response.data.nombre || response.data.Nombre,
+                        rol: response.data.rol || response.data.Rol,
+                        isFirstLogin: response.data.isFirstLogin ?? response.data.IsFirstLogin,
+                        grupoId: response.data.grupoId || response.data.GrupoId,
+                        matricula: response.data.matricula || response.data.Matricula
+                    };
+
+                    setUserData(normalizedUser);
 
                     // Guardar en Firestore para sincronización
-                    await setDoc(doc(db, 'users', firebaseUser.uid), {
-                        ...response.data,
-                        email: firebaseUser.email,
+                    // FIREBASE FIX: Firestore crashes with 'undefined'. convert undefined to null.
+                    const firestoreData = {
+                        ...normalizedUser,
+                        grupoId: normalizedUser.grupoId || null,
+                        matricula: normalizedUser.matricula || null,
                         photoURL: firebaseUser.photoURL || '',
                         updatedAt: new Date().toISOString()
-                    }, { merge: true });
+                    };
+
+                    await setDoc(doc(db, 'users', firebaseUser.uid), firestoreData, { merge: true });
 
                 } catch (error) {
                     console.error('Error loading user data:', error);
                     // Fallback: usar datos de Firebase
+                    // NORMALIZATION: Always use camelCase for userData keys to match backend response
+                    // This prevents issues with case sensitivity in other components (e.g., Sidebar, EvaluationPanel)
                     setUserData({
-                        UserId: firebaseUser.uid,
-                        Email: firebaseUser.email,
-                        Nombre: firebaseUser.displayName || 'Usuario',
-                        Rol: 'Invitado',
-                        IsFirstLogin: true
+                        userId: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        nombre: firebaseUser.displayName || 'Usuario',
+                        rol: 'Invitado',
+                        isFirstLogin: true
                     });
                 }
             } else {
@@ -89,8 +107,8 @@ export function AuthProvider({ children }) {
         loginWithGoogle,
         logout,
         isAuthenticated: !!user,
-        isFirstLogin: userData?.IsFirstLogin ?? false,
-        rol: userData?.Rol ?? 'Invitado'
+        isFirstLogin: userData?.isFirstLogin ?? false,
+        rol: userData?.rol ?? 'Invitado'
     };
 
     return (

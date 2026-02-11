@@ -43,6 +43,40 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
             
             if (existingUser != null)
             {
+                // --- ROLE CORRECTION LOGIC ---
+                // 1. Force SuperAdmin for personal account (Specific Exception)
+                if (existingUser.Email.Equals("uzielisaac28@gmail.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (existingUser.Rol != "SuperAdmin")
+                    {
+                        existingUser.Rol = "SuperAdmin";
+                        await _userRepository.UpdateAsync(existingUser);
+                        Console.WriteLine($"[FIX] Set SuperAdmin role for {existingUser.Email}");
+                    }
+                }
+                // 2. Specific Exception for YOUR Teacher Account
+                else if (existingUser.Email.Equals("Uziel.Pech@utmetropolitana.edu.mx", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (existingUser.Rol != "Docente")
+                    {
+                        existingUser.Rol = "Docente";
+                        await _userRepository.UpdateAsync(existingUser);
+                        Console.WriteLine($"[FIX-URGENT] Forced Docente role for {existingUser.Email}");
+                    }
+                }
+                // 3. GENERAL FIX: Auto-correct any OTHER Docente
+                else
+                {
+                    var reEvaluatedEmail = Email.From(existingUser.Email);
+                    if (reEvaluatedEmail.DetectedRole == UserRole.Docente && existingUser.Rol != "Docente")
+                    {
+                        existingUser.Rol = "Docente";
+                        await _userRepository.UpdateAsync(existingUser);
+                        Console.WriteLine($"[AUTO-FIX] Corrected {existingUser.Email} to Docente role.");
+                    }
+                }
+                // -----------------------------
+
                 // Usuario ya registrado, devolver datos
                 return new LoginResponse(
                     existingUser.Id,

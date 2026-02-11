@@ -15,6 +15,9 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     const [fetchingDetails, setFetchingDetails] = useState(true);
     const [error, setError] = useState('');
 
+    // Debugging visibility toggle
+    console.log('Auth User:', userData?.userId, 'Project Leader:', project.liderId);
+
     const isLeader = userData?.userId === project.liderId;
 
     useEffect(() => {
@@ -25,8 +28,17 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
         try {
             const response = await api.get(`/api/projects/${initialProject.id}`);
             const projectData = response.data;
+
             // Normalize canvas/canvasBlocks if needed
             if (!projectData.canvas) projectData.canvas = projectData.canvasBlocks || [];
+
+            // Normalize EsPublico (PascalCase from backend) to esPublico (camelCase for frontend)
+            // Backend sends 'EsPublico', frontend uses 'esPublico'
+            if (projectData.EsPublico !== undefined) {
+                projectData.esPublico = projectData.EsPublico;
+            }
+
+            console.log('Project Details Fetched:', projectData); // Debug log
             setProject(projectData);
         } catch (err) {
             console.error('Error fetching details:', err);
@@ -74,6 +86,27 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
         }
     };
 
+    const handleVisibilityToggle = async () => {
+        const newStatus = !project.esPublico;
+        // Optimistic UI update
+        setProject(prev => ({ ...prev, esPublico: newStatus }));
+
+        try {
+            await api.put(`/api/projects/${project.id}`, {
+                titulo: project.titulo,
+                videoUrl: project.videoUrl,
+                canvasBlocks: project.canvasBlocks || project.canvas, // Send current blocks to avoid data loss
+                esPublico: newStatus
+            });
+            await onUpdate?.(); // Refresh list to reflect changes
+        } catch (err) {
+            console.error('Error updating visibility:', err);
+            // Revert on error
+            setProject(prev => ({ ...prev, esPublico: !newStatus }));
+            alert('Error al cambiar la visibilidad del proyecto');
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-[#F0F0F3] p-6 lg:p-8">
             {/* Header */}
@@ -89,6 +122,20 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                             <BookOpen size={12} />
                             {project.materia}
                         </span>
+
+                        {/* Public/Private Toggle */}
+                        {isLeader && (
+                            <button
+                                onClick={handleVisibilityToggle}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${project.esPublico
+                                    ? 'bg-green-100 text-green-700 border border-green-200'
+                                    : 'bg-gray-100 text-gray-500 border border-gray-200'
+                                    }`}
+                                title={project.esPublico ? 'Público: Visible en la galería' : 'Privado: Solo visible para el equipo'}
+                            >
+                                {project.esPublico ? '🌍 Público' : '🔒 Privado'}
+                            </button>
+                        )}
                     </div>
                     <h2 className="text-3xl font-bold text-gray-800 tracking-tight">{project.titulo}</h2>
                 </div>
@@ -222,8 +269,8 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                             <button
                                 onClick={() => setActiveTab('docs')}
                                 className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'docs'
-                                        ? 'bg-white text-blue-600 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 Documentación
@@ -231,8 +278,8 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                             <button
                                 onClick={() => setActiveTab('eval')}
                                 className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'eval'
-                                        ? 'bg-white text-blue-600 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 Evaluación

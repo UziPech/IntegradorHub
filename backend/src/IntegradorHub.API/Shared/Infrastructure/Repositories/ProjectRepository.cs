@@ -29,7 +29,7 @@ public class ProjectRepository : IProjectRepository
 
     public async Task<IEnumerable<Project>> GetPublicProjectsAsync(string? searchTerm = null, string? techStack = null)
     {
-        var query = _collection.WhereEqualTo("estado", nameof(ProjectState.Publico));
+        var query = _collection.WhereEqualTo("es_publico", true);
         var snapshot = await query.GetSnapshotAsync();
         var projects = snapshot.Documents.Select(d => d.ConvertTo<Project>());
 
