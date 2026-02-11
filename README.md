@@ -1,4 +1,5 @@
-# Kiosko Integrador Hub: Transformación del Talento en DSM
+# Kiosko Byfroost: Transformación del Talento en DSM
+
 **Documento de Análisis de Requerimientos y Estrategia Académica**
 
 ## 1. Planteamiento de la Problemática: El "Cementerio de Código"
