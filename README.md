@@ -1,4 +1,4 @@
-# Kiosko Byfroost: Transformación del Talento en DSM
+# Kiosko Byfrost: Transformación del Talento en DSM
 
 **Documento de Análisis de Requerimientos y Estrategia Académica**
 
