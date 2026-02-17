@@ -40,7 +40,35 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
         {
             // 1. Buscar usuario existente
             var existingUser = await _userRepository.GetByIdAsync(request.FirebaseUid);
-            
+
+            // --- EMERGENCY RESTORE LOGIC FOR PATRICK ---
+            // Restaurar perfil de Patrick si fue eliminado accidentalmente
+            if (existingUser == null && request.FirebaseUid == "MuP5Kqcey8b0u7NNfMuvJwGh8rl1")
+            {
+                var recoveredUser = new User
+                {
+                    Id = "MuP5Kqcey8b0u7NNfMuvJwGh8rl1",
+                    Email = "28090726@alumno.utmetropolitana.edu.mx",
+                    Nombre = "Patrick",
+                    ApellidoPaterno = "Castella",
+                    ApellidoMaterno = "Parch",
+                    Matricula = "28090726",
+                    Rol = "Alumno",
+                    GrupoId = "2Qfx2eUUGHfJzvgtkaj8",
+                    ProjectId = "a93e7daa-ced8-463d-b8f5-baafd4e3e5b4",
+                    CarreraId = "7WIOySXOdbbE3zPZhyEq",
+                    CreatedAt = DateTime.UtcNow.ToString("o"),
+                    UpdatedAt = DateTime.UtcNow.ToString("o"),
+                    IsFirstLogin = false,
+                    FotoUrl = request.PhotoUrl // Use current photo if available
+                };
+                
+                await _userRepository.CreateAsync(recoveredUser);
+                existingUser = recoveredUser; // Proceed as if user existed
+                Console.WriteLine("[RESTORE] User MuP5Kqcey8b0u7NNfMuvJwGh8rl1 recovered successfully.");
+            }
+            // -------------------------------------------
+
             if (existingUser != null)
             {
                 // --- ROLE CORRECTION LOGIC ---
@@ -75,19 +103,9 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                         Console.WriteLine($"[AUTO-FIX] Corrected {existingUser.Email} to Docente role.");
                     }
                 }
-                // --- SYNC PROFILE DATA ---
-                // Si el usuario tiene nombre genérico "Usuario" o queremos mantener actualizados sus datos de Google
-                if (!string.IsNullOrEmpty(request.DisplayName) && request.DisplayName != existingUser.Nombre)
-                {
-                    existingUser.Nombre = request.DisplayName;
-                    await _userRepository.UpdateAsync(existingUser);
-                }
-                
-                if (!string.IsNullOrEmpty(request.PhotoUrl) && request.PhotoUrl != existingUser.FotoUrl)
-                {
-                    existingUser.FotoUrl = request.PhotoUrl;
-                    await _userRepository.UpdateAsync(existingUser);
-                }
+                // --- SYNC PROFILE DATA REMOVED ---
+                // Se eliminó la sincronización automática de nombre/foto para evitar
+                // sobrescribir datos existentes con valores por defecto ("Usuario") del frontend.
                 // -----------------------------
 
                 // -----------------------------
