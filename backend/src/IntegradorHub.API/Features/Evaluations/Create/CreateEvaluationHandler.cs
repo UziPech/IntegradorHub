@@ -23,15 +23,18 @@ public class CreateEvaluationHandler : IRequestHandler<CreateEvaluationCommand, 
     private readonly IEvaluationRepository _evaluationRepository;
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IMateriaRepository _materiaRepository;
 
     public CreateEvaluationHandler(
         IEvaluationRepository evaluationRepository,
         IProjectRepository projectRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IMateriaRepository materiaRepository)
     {
         _evaluationRepository = evaluationRepository;
         _projectRepository = projectRepository;
         _userRepository = userRepository;
+        _materiaRepository = materiaRepository;
     }
 
     public async Task<CreateEvaluationResponse> Handle(CreateEvaluationCommand request, CancellationToken cancellationToken)
@@ -53,8 +56,31 @@ public class CreateEvaluationHandler : IRequestHandler<CreateEvaluationCommand, 
         // Validar calificación si es oficial
         if (request.Tipo == "oficial")
         {
-            if (project.DocenteId != request.DocenteId)
-                throw new UnauthorizedAccessException("Solo el docente titular del proyecto puede realizar evaluaciones oficiales.");
+            bool isTitular = project.DocenteId == request.DocenteId;
+            bool isHighPriority = false;
+
+            if (!isTitular)
+            {
+                // Verificar si el docente tiene alguna materia de Alta Prioridad
+                if (docente.Asignaciones != null)
+                {
+                    foreach (var asignacion in docente.Asignaciones)
+                    {
+                        if (!string.IsNullOrEmpty(asignacion.MateriaId))
+                        {
+                            var materia = await _materiaRepository.GetByIdAsync(asignacion.MateriaId);
+                            if (materia != null && materia.EsAltaPrioridad)
+                            {
+                                isHighPriority = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!isTitular && !isHighPriority)
+                throw new UnauthorizedAccessException("Solo el docente titular o asesores con materias prioritarias pueden realizar evaluaciones oficiales.");
 
             if (!request.Calificacion.HasValue || request.Calificacion < 0 || request.Calificacion > 100)
                 throw new ArgumentException("Las evaluaciones oficiales requieren una calificación entre 0 y 100");

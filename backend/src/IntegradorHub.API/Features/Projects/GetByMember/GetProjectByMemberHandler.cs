@@ -1,29 +1,33 @@
 using MediatR;
 using IntegradorHub.API.Shared.Domain.Entities;
 using IntegradorHub.API.Shared.Domain.Interfaces;
+using IntegradorHub.API.Features.Projects.GetDetails; // Resusing DTOs
 
-namespace IntegradorHub.API.Features.Projects.GetDetails;
+namespace IntegradorHub.API.Features.Projects.GetByMember;
 
 // === QUERY ===
-public record GetProjectDetailsQuery(string ProjectId) : IRequest<ProjectDetailsDto>;
+public record GetProjectByMemberQuery(string UserId) : IRequest<ProjectDetailsDto?>;
 
 // === HANDLER ===
-public class GetProjectDetailsHandler : IRequestHandler<GetProjectDetailsQuery, ProjectDetailsDto>
+public class GetProjectByMemberHandler : IRequestHandler<GetProjectByMemberQuery, ProjectDetailsDto?>
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
 
-    public GetProjectDetailsHandler(IProjectRepository projectRepository, IUserRepository userRepository)
+    public GetProjectByMemberHandler(IProjectRepository projectRepository, IUserRepository userRepository)
     {
         _projectRepository = projectRepository;
         _userRepository = userRepository;
     }
 
-    public async Task<ProjectDetailsDto> Handle(GetProjectDetailsQuery request, CancellationToken cancellationToken)
+    public async Task<ProjectDetailsDto?> Handle(GetProjectByMemberQuery request, CancellationToken cancellationToken)
     {
-        var project = await _projectRepository.GetByIdAsync(request.ProjectId);
-        if (project == null) throw new KeyNotFoundException("Proyecto no encontrado");
+        var projects = await _projectRepository.GetByMemberIdAsync(request.UserId);
+        var project = projects.FirstOrDefault();
 
+        if (project == null) return null;
+
+        // Populate members logic
         var members = new List<MemberDto>();
         if (project.MiembrosIds != null)
         {
@@ -43,6 +47,9 @@ public class GetProjectDetailsHandler : IRequestHandler<GetProjectDetailsQuery, 
             }
         }
 
+        // Handle potentially null EsPublico in DB (though default is false in entity)
+        // Project entity has it.
+
         return new ProjectDetailsDto(
             project.Id,
             project.Titulo,
@@ -61,22 +68,3 @@ public class GetProjectDetailsHandler : IRequestHandler<GetProjectDetailsQuery, 
         );
     }
 }
-
-public record ProjectDetailsDto(
-    string Id,
-    string Titulo,
-    string Materia,
-    string MateriaId,
-    string Ciclo,
-    string Estado,
-    string LiderId,
-    List<string> MiembrosIds,
-    List<string> StackTecnologico,
-    string? RepositorioUrl,
-    List<CanvasBlock> Canvas,
-    List<MemberDto> Members,
-    DateTime CreatedAt,
-    bool EsPublico
-);
-
-public record MemberDto(string Id, string Nombre, string Email, string? FotoUrl, string Rol);
