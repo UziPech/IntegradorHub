@@ -75,8 +75,8 @@ export function DashboardPage() {
     };
 
     const filteredProjects = projects.filter(p =>
-        p.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.liderNombre.toLowerCase().includes(searchQuery.toLowerCase())
+        (p.titulo?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (p.liderNombre?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     );
 
     return (

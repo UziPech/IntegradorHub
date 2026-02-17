@@ -141,11 +141,13 @@ export function TeamPage() {
                                             {member.fotoUrl ? (
                                                 <img src={member.fotoUrl} alt={member.nombre} className="w-full h-full object-cover" />
                                             ) : (
-                                                member.nombre?.charAt(0) || '?'
+                                                (member.nombre && member.nombre !== 'Usuario') ? member.nombre.charAt(0) : (member.email?.charAt(0) || '?')
                                             )}
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="font-bold text-gray-900 truncate">{member.nombre}</p>
+                                            <p className="font-bold text-gray-900 truncate">
+                                                {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}
+                                            </p>
                                             <p className="text-xs text-gray-500 uppercase font-bold truncate">{member.rol}</p>
                                         </div>
                                     </div>
@@ -167,9 +169,9 @@ export function TeamPage() {
                         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-blue-500">
                             <Plus size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No tienes equipo aún</h3>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No tienes proyecto activo</h3>
                         <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-                            Puedes crear un nuevo proyecto e invitar a tus compañeros, o esperar a ser invitado.
+                            Ve al apartado de "Mis Proyectos" para crear uno nuevo e invitar a tus compañeros.
                         </p>
                         <button
                             onClick={() => navigate('/projects')} // Navigate where Create Project Modal can be opened

@@ -52,7 +52,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/showcase" element={<ShowcasePage />} />
-            <Route element={<RoleGuard allowedRoles={['Estudiante', 'Docente']} />}>
+            <Route element={<RoleGuard allowedRoles={['Alumno', 'Docente']} />}>
               <Route path="/team" element={<TeamPage />} />
               <Route path="/evaluations" element={<EvaluationsPage />} />
             </Route>
