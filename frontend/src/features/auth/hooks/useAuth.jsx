@@ -39,7 +39,8 @@ export function AuthProvider({ children }) {
                         rol: response.data.rol || response.data.Rol,
                         isFirstLogin: response.data.isFirstLogin ?? response.data.IsFirstLogin,
                         grupoId: response.data.grupoId || response.data.GrupoId,
-                        matricula: response.data.matricula || response.data.Matricula
+                        matricula: response.data.matricula || response.data.Matricula,
+                        carreraId: response.data.carreraId || response.data.CarreraId
                     };
 
                     setUserData(normalizedUser);
@@ -50,6 +51,7 @@ export function AuthProvider({ children }) {
                         ...normalizedUser,
                         grupoId: normalizedUser.grupoId || null,
                         matricula: normalizedUser.matricula || null,
+                        carreraId: normalizedUser.carreraId || null,
                         photoURL: firebaseUser.photoURL || '',
                         updatedAt: new Date().toISOString()
                     };

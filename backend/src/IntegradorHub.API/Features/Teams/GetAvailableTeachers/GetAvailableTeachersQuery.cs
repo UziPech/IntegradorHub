@@ -4,7 +4,7 @@ using IntegradorHub.API.Shared.Domain.Interfaces;
 
 namespace IntegradorHub.API.Features.Teams.GetAvailableTeachers;
 
-public record GetAvailableTeachersQuery(string GroupId) : IRequest<List<TeacherDto>>;
+public record GetAvailableTeachersQuery(string GroupId, string? CarreraId = null) : IRequest<List<TeacherDto>>;
 
     public record TeacherDto(string Id, string NombreCompleto, string Profesion, string Carrera, string Asignatura, string? MateriaId, bool EsAltaPrioridad);
     
@@ -21,7 +21,7 @@ public record GetAvailableTeachersQuery(string GroupId) : IRequest<List<TeacherD
     
         public async Task<List<TeacherDto>> Handle(GetAvailableTeachersQuery request, CancellationToken cancellationToken)
         {
-            var teachersInGroup = await _userRepository.GetTeachersByGroupAsync(request.GroupId);
+            var teachersInGroup = await _userRepository.GetTeachersByGroupAsync(request.GroupId, request.CarreraId);
             var materias = await _materiaRepository.GetAllActiveAsync();
             var materiasMap = materias.ToDictionary(m => m.Id, m => m); // Store full Materia object
     

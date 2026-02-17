@@ -45,8 +45,15 @@ export function CreateProjectForm({ onClose, onSuccess }) {
     const fetchResources = async () => {
         try {
             setIsLoadingResources(true);
+
+            // Construir query params para filtrar docentes por carrera si está disponible
+            const teacherParams = new URLSearchParams({ groupId: userData.grupoId });
+            if (userData.carreraId) {
+                teacherParams.append('carreraId', userData.carreraId);
+            }
+
             const [teachersRes, studentsRes] = await Promise.all([
-                api.get(`/api/teams/available-teachers?groupId=${userData.grupoId}`),
+                api.get(`/api/teams/available-teachers?${teacherParams.toString()}`),
                 api.get(`/api/teams/available-students?groupId=${userData.grupoId}`)
             ]);
             setAvailableTeachers(teachersRes.data);
