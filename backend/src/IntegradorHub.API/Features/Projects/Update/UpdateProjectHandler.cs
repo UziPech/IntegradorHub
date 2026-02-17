@@ -22,7 +22,7 @@ public class UpdateProjectHandler : IRequestHandler<UpdateProjectCommand, Update
 
         // Validar permisos: Solo el líder o miembros pueden editar (simplificado por ahora, idealmente solo líder)
         // Por ahora permitimos a cualquier miembro del equipo editar para colaboración en tiempo real
-        if (project.LiderId != request.RequestingUserId && !project.MiembrosIds.Contains(request.RequestingUserId))
+        if (project.LiderId != request.RequestingUserId && (project.MiembrosIds == null || !project.MiembrosIds.Contains(request.RequestingUserId)))
         {
              // Opcional: Permitir edición si es admin o docente (fuera del alcance actual)
              // throw new UnauthorizedAccessException("No tienes permisos para editar este proyecto");

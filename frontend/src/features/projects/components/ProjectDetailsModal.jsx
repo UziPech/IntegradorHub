@@ -8,17 +8,33 @@ import { CanvasEditor } from './CanvasEditor';
 
 export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate }) {
     const { userData } = useAuth();
-    const [project, setProject] = useState(initialProject);
-    const [activeTab, setActiveTab] = useState('docs'); // 'docs' | 'eval'
+    // Helper to normalize keys of an object to camelCase
+    const normalizeProjectData = (data) => {
+        if (!data) return null;
+        const normalized = {};
+        Object.keys(data).forEach(key => {
+            const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+            normalized[camelKey] = data[key];
+        });
+
+        // Specific field mapping if needed (e.g. if backend sends weird names)
+        // Ensure arrays are initialized
+        if (!normalized.members) normalized.members = [];
+        if (!normalized.miembrosIds) normalized.miembrosIds = [];
+
+        return normalized;
+    };
+
+    const [project, setProject] = useState(() => normalizeProjectData(initialProject));
+    const [activeTab, setActiveTab] = useState('docs'); // 'docs' | 'eval' | 'settings'
     const [newMemberEmail, setNewMemberEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [fetchingDetails, setFetchingDetails] = useState(true);
     const [error, setError] = useState('');
+    const [editTitle, setEditTitle] = useState(initialProject.titulo || '');
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // Debugging visibility toggle
-    console.log('Auth User:', userData?.userId, 'Project Leader:', project.liderId);
-
-    const isLeader = userData?.userId === project.liderId;
+    const isLeader = userData?.userId === project?.liderId;
 
     useEffect(() => {
         fetchDetails();
@@ -27,19 +43,13 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     const fetchDetails = async () => {
         try {
             const response = await api.get(`/api/projects/${initialProject.id}`);
-            const projectData = response.data;
+            let projectData = response.data;
 
             // Normalize canvas/canvasBlocks if needed
             if (!projectData.canvas) projectData.canvas = projectData.canvasBlocks || [];
 
-            // Normalize EsPublico (PascalCase from backend) to esPublico (camelCase for frontend)
-            // Backend sends 'EsPublico', frontend uses 'esPublico'
-            if (projectData.EsPublico !== undefined) {
-                projectData.esPublico = projectData.EsPublico;
-            }
-
-            console.log('Project Details Fetched:', projectData); // Debug log
-            setProject(projectData);
+            setProject(normalizeProjectData(projectData));
+            setEditTitle(projectData.titulo);
         } catch (err) {
             console.error('Error fetching details:', err);
         } finally {
@@ -107,10 +117,48 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
         }
     };
 
+    const handleUpdateTitle = async () => {
+        if (!editTitle || editTitle === project.titulo) return;
+
+        try {
+            await api.put(`/api/projects/${project.id}`, {
+                titulo: editTitle,
+                videoUrl: project.videoUrl,
+                canvasBlocks: project.canvasBlocks || project.canvas,
+                esPublico: project.esPublico
+            });
+            setProject(prev => ({ ...prev, titulo: editTitle }));
+            await onUpdate?.();
+            alert('Título actualizado correctamente');
+        } catch (err) {
+            console.error('Error updating title:', err);
+            alert('Error al actualizar el título');
+        }
+    };
+
+    const handleDeleteProject = async () => {
+        if (!confirm('PELIGRO: ¿Estás seguro de eliminar este proyecto permanentemente? Esta acción es irreversible y liberará a todos los miembros.')) return;
+        if (!confirm('CONFIRMACIÓN FINAL: Escribe "ELIMINAR" para confirmar.')) return; // Simplified double confirm for now
+
+        setIsDeleting(true);
+        try {
+            await api.delete(`/api/projects/${project.id}?requestingUserId=${userData.userId}`);
+            onUpdate?.();
+            onClose(); // Close modal on success
+        } catch (err) {
+            console.error('Error deleting project:', err);
+            alert('Error al eliminar el proyecto: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    if (!project) return <div>Cargando...</div>;
+
     return (
         <div className="flex flex-col h-full bg-[#F0F0F3] p-6 lg:p-8">
             {/* Header */}
-            <div className="flex items-start justify-between mb-8">
+            <div className="flex items-start justify-between mb-8 shrink-0">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider neu-pressed flex items-center gap-1 ${project.estado === 'Activo' ? 'text-blue-600' : 'text-gray-500'
@@ -148,10 +196,10 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
             </div>
 
             {/* Master-Detail Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 overflow-y-auto lg:overflow-hidden">
 
                 {/* Left Column: Metadata & Team (Scrollable) */}
-                <div className="lg:col-span-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="lg:col-span-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar lg:h-full">
                     {/* Info Card */}
                     <div className="neu-flat rounded-3xl p-6">
                         <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
@@ -232,7 +280,9 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                     <span className="text-sm font-bold">{(member.nombre || 'U').charAt(0)}</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-gray-800 line-clamp-1">{member.nombre || 'Usuario'}</p>
+                                                    <p className="text-sm font-bold text-gray-800 line-clamp-1">
+                                                        {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}
+                                                    </p>
                                                     <p className="text-[10px] uppercase font-bold text-gray-400">{member.rol || 'Miembro'}</p>
                                                 </div>
                                             </div>
@@ -260,12 +310,12 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                 </div>
 
                 {/* Right Column: Content */}
-                <div className="lg:col-span-2 flex flex-col gap-6 overflow-hidden">
+                <div className="lg:col-span-2 flex flex-col gap-6 lg:overflow-hidden">
 
                     {/* Tabs & Action */}
                     <div className="flex justify-between items-center bg-[#F0F0F3] z-10">
                         {/* Tabs */}
-                        <div className="bg-gray-200/50 p-1 rounded-2xl inline-flex">
+                        <div className="bg-gray-200/50 p-1 rounded-2xl inline-flex overflow-x-auto">
                             <button
                                 onClick={() => setActiveTab('docs')}
                                 className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'docs'
@@ -284,11 +334,22 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                             >
                                 Evaluación
                             </button>
+                            {isLeader && (
+                                <button
+                                    onClick={() => setActiveTab('settings')}
+                                    className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'settings'
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    Ajustes
+                                </button>
+                            )}
                         </div>
 
                         {/* Edit Button (only visible in docs tab for members/leader) */}
                         <div className="flex gap-2">
-                            {(isLeader || (project.members || []).some(m => m.id === userData.userId)) && (
+                            {(isLeader || (project.members || []).some(m => m.id === userData.userId)) && activeTab === 'docs' && (
                                 <button
                                     onClick={() => window.open(`/project/${project.id}/editor`, '_self')}
                                     className="neu-flat px-4 py-2 rounded-xl font-bold text-sm text-gray-700 hover:text-blue-600 active:neu-pressed transition-all flex items-center justify-center gap-2"
@@ -301,8 +362,8 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                     </div>
 
                     {/* Content Panel */}
-                    <div className="neu-flat rounded-3xl p-6 flex-1 overflow-auto custom-scrollbar relative bg-white">
-                        {activeTab === 'docs' ? (
+                    <div className="neu-flat rounded-3xl p-6 flex-1 lg:overflow-auto custom-scrollbar relative bg-white">
+                        {activeTab === 'docs' && (
                             <div className="h-full overflow-y-auto w-full">
                                 {fetchingDetails ? (
                                     <div className="space-y-4">
@@ -317,7 +378,9 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                     />
                                 )}
                             </div>
-                        ) : (
+                        )}
+
+                        {activeTab === 'eval' && (
                             <>
                                 <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 sticky top-0 bg-white z-10 pb-4 border-b border-gray-100">
                                     <Activity size={24} className="text-blue-500" />
@@ -325,6 +388,81 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                 </h3>
                                 <EvaluationPanel projectId={project.id} />
                             </>
+                        )}
+
+                        {activeTab === 'settings' && isLeader && (
+                            <div className="space-y-8 animate-fadeIn">
+                                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 sticky top-0 bg-white z-10 pb-4 border-b border-gray-100">
+                                    <Hash size={24} className="text-blue-500" />
+                                    Ajustes del Proyecto
+                                </h3>
+
+                                {/* Edit Title */}
+                                <div className="space-y-3">
+                                    <label className="text-sm font-bold text-gray-600">Título del Proyecto</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={editTitle}
+                                            onChange={(e) => setEditTitle(e.target.value)}
+                                            className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all"
+                                        />
+                                        <button
+                                            onClick={handleUpdateTitle}
+                                            disabled={!editTitle || editTitle === project.titulo}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Visibility Toggle */}
+                                <div className="space-y-3">
+                                    <label className="text-sm font-bold text-gray-600">Visibilidad</label>
+                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <div>
+                                            <p className="font-bold text-gray-800">{project.esPublico ? 'Público' : 'Privado'}</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {project.esPublico
+                                                    ? 'Visible para todos en la galería de proyectos.'
+                                                    : 'Solo visible para los miembros del equipo y profesores.'}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={handleVisibilityToggle}
+                                            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${project.esPublico
+                                                ? 'bg-green-100 text-green-700 border border-green-200'
+                                                : 'bg-gray-200 text-gray-600 border border-gray-300'
+                                                }`}
+                                        >
+                                            {project.esPublico ? 'Hacer Privado' : 'Hacer Público'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Danger Zone */}
+                                <div className="pt-8 mt-8 border-t border-red-100">
+                                    <h4 className="text-red-600 font-bold mb-4 flex items-center gap-2">
+                                        <Trash2 size={18} /> Zona de Peligro
+                                    </h4>
+                                    <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between">
+                                        <div>
+                                            <p className="font-bold text-red-700">Eliminar Proyecto</p>
+                                            <p className="text-xs text-red-500/80 mt-1 max-w-sm">
+                                                Esta acción es irreversible. Eliminará todo el contenido, historial y liberará a todos los miembros del equipo.
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={handleDeleteProject}
+                                            disabled={isDeleting}
+                                            className="px-4 py-2 bg-white border-2 border-red-100 text-red-600 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
+                                        >
+                                            {isDeleting ? 'Eliminando...' : 'Eliminar Definitivamente'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

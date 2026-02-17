@@ -1,162 +1,255 @@
 import { useState, useEffect } from 'react';
-import { Search, Mail, User } from 'lucide-react';
+import { Search, Mail, User, Plus, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/hooks/useAuth';
 import api from '../../../lib/axios';
+import { useNavigate } from 'react-router-dom';
 
 export function TeamPage() {
     const { userData } = useAuth();
+    const navigate = useNavigate();
     const [students, setStudents] = useState([]);
+    const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         if (userData?.grupoId) {
-            fetchStudents();
+            fetchData();
         }
     }, [userData]);
 
-    const fetchStudents = async () => {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            const response = await api.get(`/api/teams/available-students?groupId=${userData.grupoId}`);
-            setStudents(response.data);
+            // 1. Fetch Classmates
+            const studentsPromise = api.get(`/api/teams/available-students?groupId=${userData.grupoId}`);
+
+            // 2. Fetch My Project (gracefully handle 404)
+            const projectPromise = api.get(`/api/projects/my-project?userId=${userData.userId}`)
+                .then(res => res.data)
+                .catch(() => null);
+
+            const [studentsRes, projectData] = await Promise.all([studentsPromise, projectPromise]);
+
+            setStudents(studentsRes.data);
+
+            // Normalize project data keys to lowercase to avoid case sensitivity issues
+            if (projectData) {
+                // Helper to normalize keys of an object
+                const normalize = (obj) => {
+                    if (!obj) return null;
+                    const newObj = {};
+                    Object.keys(obj).forEach(key => {
+                        newObj[key.charAt(0).toLowerCase() + key.slice(1)] = obj[key];
+                    });
+                    return newObj;
+                };
+
+                const normalizedProject = normalize(projectData);
+                // Also normalize members array if it exists as 'Members' or 'members'
+                const rawMembers = projectData.Members || projectData.members || [];
+                normalizedProject.members = rawMembers.map(normalize);
+
+                setProject(normalizedProject);
+            } else {
+                setProject(null);
+            }
+
         } catch (error) {
-            console.error('Error fetching students:', error);
+            console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredStudents = students.filter(s =>
-        s.nombreCompleto.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.matricula.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Filter classmates: Remove current project members if project exists
+    const availableStudents = students.filter(s => {
+        // Remove if in my project
+        if (project && project.miembrosIds?.includes(s.id)) return false;
+
+        // Search filter
+        return (
+            s.nombreCompleto.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.matricula.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    });
 
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: {
-                staggerChildren: 0.05
-            }
+            transition: { staggerChildren: 0.05 }
         }
     };
 
     const itemVariants = {
         hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: { type: "spring", stiffness: 300, damping: 24 }
-        }
+        visible: { opacity: 1, y: 0 }
     };
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="space-y-8 p-4 md:p-8 pb-24">
+
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mi Equipo</h1>
-                <p className="text-gray-600">Conecta con tus compañeros de clase.</p>
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Mi Equipo</h1>
+                <p className="text-gray-600">Gestiona tu equipo y encuentra compañeros.</p>
             </div>
 
-            {/* Search */}
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre o matrícula..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-gray-200 focus:bg-white outline-none transition-all placeholder:text-gray-400"
-                    />
-                </div>
-            </div>
+            {/* MY TEAM SECTION */}
+            <section className="shrink-0">
+                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Users className="text-blue-600" size={20} />
+                    Mi Proyecto
+                </h2>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto min-h-0">
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                            <div key={i} className="h-64 bg-gray-100 rounded-2xl animate-shimmer" />
-                        ))}
+                    <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
+                ) : project ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm"
+                    >
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-900 break-words">{project.titulo}</h3>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                                        {project.materia}
+                                    </span>
+                                    <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold uppercase tracking-wider">
+                                        {project.estado}
+                                    </span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => navigate(`/project/${project.id}/editor`)}
+                                className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition"
+                            >
+                                Ir al Proyecto
+                            </button>
+                        </div>
+
+                        {/* Members Grid - Ensure it renders and has content */}
+                        {project.members && project.members.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {project.members.map(member => (
+                                    <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                        <div className="shrink-0 w-12 h-12 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center font-bold text-gray-600 text-lg overflow-hidden">
+                                            {member.fotoUrl ? (
+                                                <img src={member.fotoUrl} alt={member.nombre} className="w-full h-full object-cover" />
+                                            ) : (
+                                                member.nombre?.charAt(0) || '?'
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-gray-900 truncate">{member.nombre}</p>
+                                            <p className="text-xs text-gray-500 uppercase font-bold truncate">{member.rol}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-gray-500 italic p-4 bg-gray-50 rounded-xl">
+                                No se encontraron miembros en este proyecto.
+                            </div>
+                        )}
+                    </motion.div>
+                ) : (
+                    // EMPTY STATE
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-dashed border-blue-200 rounded-3xl p-8 text-center"
+                    >
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-blue-500">
+                            <Plus size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No tienes equipo aún</h3>
+                        <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                            Puedes crear un nuevo proyecto e invitar a tus compañeros, o esperar a ser invitado.
+                        </p>
+                        <button
+                            onClick={() => navigate('/projects')} // Navigate where Create Project Modal can be opened
+                            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+                        >
+                            Crear Proyecto
+                        </button>
+                    </motion.div>
+                )}
+            </section>
+
+            <hr className="border-gray-200" />
+
+            {/* CLASSMATES SECTION */}
+            <section className="flex-1 min-h-0 flex flex-col">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <User className="text-gray-400" size={20} />
+                        Compañeros de Clase ({availableStudents.length})
+                    </h2>
+
+                    {/* Search */}
+                    <div className="bg-white p-2 rounded-xl border border-gray-200 shadow-sm w-full max-w-sm flex items-center">
+                        <Search className="ml-2 text-gray-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Buscar compañero..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full px-3 bg-transparent outline-none text-sm"
+                        />
                     </div>
-                ) : filteredStudents.length > 0 ? (
-                    <motion.div 
+                </div>
+
+                {/* Students Grid */}
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[1, 2, 3].map(i => <div key={i} className="h-40 bg-gray-100 rounded-2xl animate-pulse" />)}
+                    </div>
+                ) : availableStudents.length > 0 ? (
+                    <motion.div
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-10"
                     >
-                        {filteredStudents.map((student) => (
+                        {availableStudents.map((student) => (
                             <motion.div
                                 key={student.id}
                                 variants={itemVariants}
-                                whileHover={{ y: -4, scale: 1.02 }}
-                                transition={{ duration: 0.2 }}
-                                className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-gray-200 flex flex-col items-center text-center transition-all group"
+                                whileHover={{ y: -4 }}
+                                className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group"
                             >
-                                {/* Avatar */}
-                                <div className="relative mb-4">
-                                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden border-4 border-white shadow-md group-hover:shadow-lg transition-shadow">
-                                        {student.fotoUrl ? (
-                                            <img 
-                                                src={student.fotoUrl} 
-                                                alt={student.nombreCompleto} 
-                                                className="w-full h-full object-cover" 
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-gray-500 bg-gradient-to-br from-blue-50 to-indigo-50">
-                                                {student.nombreCompleto.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-lg group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                                        {student.nombreCompleto.charAt(0)}
                                     </div>
-                                    {/* Status Indicator */}
-                                    <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-white shadow-sm ${
-                                        student.hasProject ? 'bg-green-500' : 'bg-yellow-500'
-                                    }`} />
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-gray-900 truncate">{student.nombreCompleto}</h3>
+                                        <p className="text-xs text-gray-500">{student.matricula}</p>
+                                    </div>
                                 </div>
-
-                                {/* Info */}
-                                <h3 className="font-semibold text-gray-900 text-base mb-1">
-                                    {student.nombreCompleto}
-                                </h3>
-                                <p className="text-sm text-gray-500 mb-3 flex items-center gap-1">
-                                    <User size={14} className="text-gray-400" />
-                                    {student.matricula}
-                                </p>
-                                
-                                {/* Status Badge */}
-                                <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
-                                    student.hasProject 
-                                        ? 'bg-green-50 text-green-700' 
-                                        : 'bg-yellow-50 text-yellow-700'
-                                }`}>
-                                    {student.hasProject ? 'En Proyecto' : 'Disponible'}
-                                </span>
-
-                                {/* Action Button */}
-                                <motion.button 
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="mt-6 w-full py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                >
-                                    <Mail size={16} />
-                                    Contactar
-                                </motion.button>
+                                <div className="flex justify-between items-center">
+                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${student.hasProject ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
+                                        }`}>
+                                        {student.hasProject ? 'En Proyecto' : 'Disponible'}
+                                    </span>
+                                    <button className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors">
+                                        Contactar
+                                    </button>
+                                </div>
                             </motion.div>
                         ))}
                     </motion.div>
                 ) : (
-                    <div className="h-64 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-gray-100">
-                        <div className="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-4">
-                            <Search size={24} />
-                        </div>
-                        <p className="text-gray-900 font-medium">No se encontraron compañeros</p>
-                        <p className="text-gray-500 text-sm mt-1">Intenta con otro término de búsqueda</p>
+                    <div className="text-center py-10 text-gray-400">
+                        No se encontraron compañeros con ese nombre.
                     </div>
                 )}
-            </div>
+            </section>
         </div>
     );
 }

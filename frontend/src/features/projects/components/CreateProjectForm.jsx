@@ -349,10 +349,10 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                                 {/* Leader (Me) */}
                                 <div className="p-5 bg-gray-50 rounded-xl border-2 border-gray-200 flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                                        {userData?.Nombre?.charAt(0) || 'U'}
+                                        {userData?.nombre?.charAt(0) || 'U'}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-gray-900 truncate">{userData?.Nombre || 'Usuario'}</p>
+                                        <p className="text-sm font-bold text-gray-900 truncate">{userData?.nombre || 'Usuario'}</p>
                                         <p className="text-xs text-gray-500 mt-1 font-medium">Líder del Proyecto</p>
                                     </div>
                                     <span className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg flex-shrink-0">Líder</span>

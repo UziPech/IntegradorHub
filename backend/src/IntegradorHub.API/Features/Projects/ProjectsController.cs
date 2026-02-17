@@ -12,6 +12,8 @@ using IntegradorHub.API.Shared.Domain.Entities;
 
 using IntegradorHub.API.Features.Projects.GetPublic;
 
+using IntegradorHub.API.Features.Projects.GetByMember;
+
 namespace IntegradorHub.API.Features.Projects;
 
 [ApiController]
@@ -189,6 +191,20 @@ public class ProjectsController : ControllerBase
         }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
         catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+    }
+    /// <summary>
+    /// Obtiene el proyecto del usuario actual (si tiene).
+    /// </summary>
+    [HttpGet("my-project")]
+    public async Task<ActionResult<ProjectDetailsDto>> GetMyProject([FromQuery] string userId)
+    {
+        var query = new GetProjectByMemberQuery(userId);
+        var response = await _mediator.Send(query);
+        
+        if (response == null) 
+            return NotFound("No tienes un proyecto asignado.");
+            
+        return Ok(response);
     }
 }
 

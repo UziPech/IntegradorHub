@@ -75,6 +75,21 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                         Console.WriteLine($"[AUTO-FIX] Corrected {existingUser.Email} to Docente role.");
                     }
                 }
+                // --- SYNC PROFILE DATA ---
+                // Si el usuario tiene nombre genérico "Usuario" o queremos mantener actualizados sus datos de Google
+                if (!string.IsNullOrEmpty(request.DisplayName) && request.DisplayName != existingUser.Nombre)
+                {
+                    existingUser.Nombre = request.DisplayName;
+                    await _userRepository.UpdateAsync(existingUser);
+                }
+                
+                if (!string.IsNullOrEmpty(request.PhotoUrl) && request.PhotoUrl != existingUser.FotoUrl)
+                {
+                    existingUser.FotoUrl = request.PhotoUrl;
+                    await _userRepository.UpdateAsync(existingUser);
+                }
+                // -----------------------------
+
                 // -----------------------------
 
                 // Usuario ya registrado, devolver datos
