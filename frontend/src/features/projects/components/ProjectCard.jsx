@@ -15,8 +15,8 @@ export function ProjectCard({ project, onClick }) {
         </div>
         {project.estado && (
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${project.estado === 'Activo' ? 'bg-green-50 text-green-700 border-green-200' :
-              project.estado === 'Completado' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                'bg-gray-50 text-gray-700 border-gray-200'
+            project.estado === 'Completado' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+              'bg-gray-50 text-gray-700 border-gray-200'
             }`}>
             {project.estado}
           </span>
@@ -38,7 +38,7 @@ export function ProjectCard({ project, onClick }) {
 
         {/* Tech Stack Tags */}
         <div className="flex flex-wrap gap-2 mt-auto">
-          {project.stackTecnologico?.slice(0, 3).map((tech, index) => (
+          {(project.stackTecnologico || []).slice(0, 3).map((tech, index) => (
             <span
               key={index}
               className="inline-flex items-center px-2 py-1 rounded-md bg-gray-50 text-xs font-medium text-gray-600 border border-gray-100"
@@ -46,9 +46,9 @@ export function ProjectCard({ project, onClick }) {
               {tech}
             </span>
           ))}
-          {(project.stackTecnologico?.length || 0) > 3 && (
+          {((project.stackTecnologico || []).length > 3) && (
             <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-50 text-xs font-medium text-gray-500 border border-gray-100">
-              +{project.stackTecnologico.length - 3}
+              +{(project.stackTecnologico || []).length - 3}
             </span>
           )}
         </div>
@@ -57,7 +57,18 @@ export function ProjectCard({ project, onClick }) {
       {/* Footer / Date */}
       <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
         <span>{project.materia || 'Materia desconocida'}</span>
-        <span>{project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ''}</span>
+        <span>
+          {(() => {
+            if (!project.createdAt) return '';
+            // Handle Firestore Timestamp (seconds)
+            if (typeof project.createdAt === 'object' && project.createdAt.seconds) {
+              return new Date(project.createdAt.seconds * 1000).toLocaleDateString();
+            }
+            // Handle ISO String / Date object
+            const date = new Date(project.createdAt);
+            return isNaN(date.getTime()) ? 'Fecha desconocida' : date.toLocaleDateString();
+          })()}
+        </span>
       </div>
     </div>
   );
