@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IntegradorHub.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fc0608cec8e12014daaf04ddc87234536ff61012")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cd4277ba39fb008bd34eea6f8c314c7452948af6")]
 [assembly: System.Reflection.AssemblyProductAttribute("IntegradorHub.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IntegradorHub.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

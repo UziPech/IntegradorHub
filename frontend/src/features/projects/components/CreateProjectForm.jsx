@@ -146,7 +146,8 @@ export function CreateProjectForm({ onClose, onSuccess }) {
             s.matricula.toLowerCase().includes(studentSearch.toLowerCase()));
 
     const filteredTeachers = availableTeachers.filter(t =>
-        t.nombreCompleto.toLowerCase().includes(teacherSearch.toLowerCase())
+        t.nombreCompleto.toLowerCase().includes(teacherSearch.toLowerCase()) &&
+        (!form.materia || t.asignatura === form.materia)
     );
 
     return (
@@ -197,17 +198,40 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                                 </div>
                             </div>
 
-                            {/* Subject */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-900 mb-3">Materia</label>
-                                <input
-                                    type="text"
-                                    value={form.materia}
-                                    onChange={e => setForm({ ...form, materia: e.target.value })}
-                                    placeholder="Ej: Ingeniería de Software"
-                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-all duration-200 text-base"
-                                />
-                            </div>
+                            {/* Subject & Teacher Mapping */}
+                            {/* Logic: Get unique subjects from available teachers to filter the list */}
+                            {(() => {
+                                const uniqueSubjects = [...new Set(availableTeachers.map(t => t.asignatura))].sort();
+
+                                return (
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-900 mb-3">Materia</label>
+                                        <div className="relative">
+                                            <select
+                                                value={form.materia}
+                                                onChange={e => {
+                                                    setForm({
+                                                        ...form,
+                                                        materia: e.target.value,
+                                                        docenteId: '' // Reset teacher when subject changes
+                                                    });
+                                                }}
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-all duration-200 text-base appearance-none"
+                                            >
+                                                <option value="">Selecciona una materia...</option>
+                                                {uniqueSubjects.map(subject => (
+                                                    <option key={subject} value={subject}>{subject}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                                                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Video Upload */}
                             <div>
@@ -306,7 +330,11 @@ export function CreateProjectForm({ onClose, onSuccess }) {
                                         filteredTeachers.map(teacher => (
                                             <div
                                                 key={teacher.id}
-                                                onClick={() => setForm({ ...form, docenteId: teacher.id })}
+                                                onClick={() => setForm({
+                                                    ...form,
+                                                    docenteId: teacher.id,
+                                                    materia: teacher.asignatura // Auto-select subject
+                                                })}
                                                 className={`p-4 cursor-pointer transition-all flex items-center justify-between
                                                     ${form.docenteId === teacher.id ? 'bg-gray-100 text-gray-900' : 'hover:bg-gray-50 text-gray-700'}
                                                 `}

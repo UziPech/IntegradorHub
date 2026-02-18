@@ -61,6 +61,7 @@ public class GetProjectByMemberHandler : IRequestHandler<GetProjectByMemberQuery
             project.MiembrosIds ?? new List<string>(),
             project.StackTecnologico,
             project.RepositorioUrl,
+            project.VideoUrl,
             project.CanvasBlocks,
             members,
             project.CreatedAt.ToDateTime(),

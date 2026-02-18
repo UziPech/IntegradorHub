@@ -84,11 +84,22 @@ export function CanvasEditor({ project, readOnly = false, onSaveStatusChange, re
         if (readOnly) return;
         setSaving(true);
         onSaveStatusChange?.(true);
+
+        // Sanitize blocks to remove transient UI state from metadata
+        const sanitizedBlocks = blocks.map(block => {
+            if (!block.metadata) return block;
+            const { uploading, progress, error, ...persistentMetadata } = block.metadata;
+            return {
+                ...block,
+                metadata: persistentMetadata
+            };
+        });
+
         try {
             await api.put(`/api/projects/${project.id}`, {
                 titulo: title,
                 videoUrl: videoUrl,
-                canvasBlocks: blocks // Backend expects this or 'canvas' - check project model. Usually 'canvasBlocks' updates key 'canvas'
+                canvasBlocks: sanitizedBlocks
             });
         } catch (error) {
             console.error('Error saving project:', error);

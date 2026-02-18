@@ -87,5 +87,5 @@ public class CanvasBlock
     public int Order { get; set; }
     
     [FirestoreProperty("metadata")]
-    public Dictionary<string, string>? Metadata { get; set; }
+    public Dictionary<string, object>? Metadata { get; set; }
 }
