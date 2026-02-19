@@ -5,7 +5,7 @@ import {
     createUserWithEmailAndPassword,
     signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../../../lib/firebase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -13,12 +13,16 @@ import { useAuth } from '../hooks/useAuth';
 const checkAdminSetup = async (user) => {
     if (user.email === 'uzielisaac28@gmail.com') {
         try {
-            await setDoc(doc(db, 'users', user.uid), {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            const existingData = userDocSnap.exists() ? userDocSnap.data() : {};
+
+            await setDoc(userDocRef, {
                 email: user.email,
-                nombre: 'Admin',
+                nombre: existingData.nombre || 'Admin',
                 rol: 'admin',
                 is_first_login: false,
-                created_at: new Date().toISOString()
+                created_at: existingData.created_at || new Date().toISOString()
             }, { merge: true });
             console.log('🚀 Admin privileges granted automatically for:', user.email);
         } catch (e) {
@@ -48,7 +52,7 @@ const extraerMatricula = (email) => {
 };
 
 export function LoginPage() {
-    const { isAuthenticated, loading, rol } = useAuth();
+    const { isAuthenticated, loading, rol, refreshUserData } = useAuth();
     const [mode, setMode] = useState('login'); // login, register, register-info
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -109,8 +113,9 @@ export function LoginPage() {
     if (loading) return <div style={styles.loadingContainer}><div style={styles.spinner}></div></div>;
 
     // Redirect based on role
-    if (isAuthenticated) {
-        if (rol === 'admin') {
+    // Only redirect if authenticated AND NOT currently in the middle of filling profile info
+    if (isAuthenticated && mode !== 'register-info') {
+        if (rol === 'admin' || rol === 'SuperAdmin') {
             return <Navigate to="/admin" replace />;
         }
         return <Navigate to="/dashboard" replace />;
@@ -277,6 +282,14 @@ export function LoginPage() {
 
             await api.post('/api/auth/register', payload);
 
+            // 3. RECUPERAR DATOS FINALES
+            // Forzamos actualización del estado global con los datos recién guardados
+            await refreshUserData();
+
+            // Regresamos el modo a login para que el efecto superior detecte la autenticación
+            // y haga la redirección basada en el rol de forma automática sin recargar
+            setMode('login');
+
         } catch (err) {
             console.error('Registro error:', err);
             if (err.code === 'auth/email-already-in-use') {
@@ -316,9 +329,9 @@ export function LoginPage() {
                     {/* Logo */}
                     <div style={styles.logoSection}>
                         <div style={styles.logoIcon}>
-                            <span style={styles.logoText}>IH</span>
+                            <span style={styles.logoText}>B</span>
                         </div>
-                        <h1 style={styles.title}>IntegradorHub</h1>
+                        <h1 style={styles.title}>Byfrost®</h1>
                         <p style={styles.subtitle}>DSM Edition</p>
                     </div>
 
@@ -426,9 +439,9 @@ export function LoginPage() {
                     {/* Logo */}
                     <div style={styles.logoSection}>
                         <div style={styles.logoIcon}>
-                            <span style={styles.logoText}>IH</span>
+                            <span style={styles.logoText}>B</span>
                         </div>
-                        <h1 style={styles.title}>IntegradorHub</h1>
+                        <h1 style={styles.title}>Byfrost®</h1>
                         <p style={styles.subtitle}>DSM Edition</p>
                     </div>
 
