@@ -34,29 +34,11 @@ export function EvaluationsPage() {
 
     const fetchTeacherProjects = async () => {
         try {
-            // Fetch groups teacher is assigned to (assuming we have this info or endpoint)
-            // For now, let's try to fetch all projects and filter? No, inefficient.
-            // Let's deduce groups from assignments in userData if available
-            // Or use an endpoint /api/projects/by-teacher-groups?
+            // New endpoint: Fetch projects directly assigned to this teacher
+            const { data } = await api.get(`/api/projects/teacher/${userData.userId}`);
 
-            // PROVISIONAL: Fetch all active projects and filter for now (not ideal for scale but works for MVP)
-            // Ideally: api.get('/api/projects/teacher/' + userData.userId)
-            // Since we didn't create that endpoint, let's try to use existing ones.
-            // We can fetch all projects by group if we know the groups. 
-            // If userData.asignaciones exists:
-
-            let projects = [];
-            if (userData.asignaciones && userData.asignaciones.length > 0) {
-                const promises = userData.asignaciones.flatMap(a =>
-                    a.gruposIds.map(gid => api.get(`/api/projects/group/${gid}`))
-                );
-                const results = await Promise.all(promises);
-                projects = results.flatMap(r => r.data);
-            } else {
-                // Fallback or empty if no assignments
-            }
-            // Remove duplicates
-            const uniqueProjects = [...new Map(projects.map(p => [p.id, p])).values()];
+            // Remove duplicates (though backend shouldn't return dupes, safe to keep)
+            const uniqueProjects = [...new Map(data.map(p => [p.id, p])).values()];
             setTeacherProjects(uniqueProjects);
 
         } catch (error) {

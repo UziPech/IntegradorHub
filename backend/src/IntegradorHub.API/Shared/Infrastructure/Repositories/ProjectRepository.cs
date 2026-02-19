@@ -66,6 +66,17 @@ public class ProjectRepository : IProjectRepository
         return snapshot.Documents.Select(d => d.ConvertTo<Project>());
     }
 
+    public async Task<IEnumerable<Project>> GetByTeacherIdAsync(string teacherId)
+    {
+        var query = _collection.WhereEqualTo("docente_id", teacherId);
+        var snapshot = await query.GetSnapshotAsync();
+        return snapshot.Documents.Select(d => {
+            var p = d.ConvertTo<Project>();
+            p.Id = d.Id;
+            return p;
+        });
+    }
+
     public async Task CreateAsync(Project project)
     {
         project.Id = string.IsNullOrEmpty(project.Id) 
