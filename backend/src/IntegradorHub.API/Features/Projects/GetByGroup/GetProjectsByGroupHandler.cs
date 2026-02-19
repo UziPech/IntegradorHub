@@ -7,16 +7,7 @@ namespace IntegradorHub.API.Features.Projects.GetByGroup;
 // === QUERY ===
 public record GetProjectsByGroupQuery(string GroupId) : IRequest<List<ProjectDto>>;
 
-public record ProjectDto(
-    string Id,
-    string Titulo,
-    string Materia,
-    string Estado,
-    List<string> StackTecnologico,
-    string LiderId,
-    int MembersCount,
-    string? ThumbnailUrl
-);
+
 
 // === HANDLER ===
 public class GetProjectsByGroupHandler : IRequestHandler<GetProjectsByGroupQuery, List<ProjectDto>>
@@ -40,7 +31,20 @@ public class GetProjectsByGroupHandler : IRequestHandler<GetProjectsByGroupQuery
             p.StackTecnologico,
             p.LiderId,
             p.MiembrosIds.Count,
-            p.ThumbnailUrl
+            p.ThumbnailUrl,
+            p.DocenteId
         )).ToList();
     }
 }
+
+public record ProjectDto(
+    string Id,
+    string Titulo,
+    string Materia,
+    string Estado,
+    List<string> StackTecnologico,
+    string LiderId,
+    int MembersCount,
+    string? ThumbnailUrl,
+    string? DocenteId
+);

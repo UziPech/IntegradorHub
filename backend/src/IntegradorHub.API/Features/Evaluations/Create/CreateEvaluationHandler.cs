@@ -57,30 +57,12 @@ public class CreateEvaluationHandler : IRequestHandler<CreateEvaluationCommand, 
         if (request.Tipo == "oficial")
         {
             bool isTitular = project.DocenteId == request.DocenteId;
-            bool isHighPriority = false;
+            bool isAdmin = docente.Rol == "admin" || docente.Rol == "SuperAdmin";
 
-            if (!isTitular)
-            {
-                // Verificar si el docente tiene alguna materia de Alta Prioridad
-                if (docente.Asignaciones != null)
-                {
-                    foreach (var asignacion in docente.Asignaciones)
-                    {
-                        if (!string.IsNullOrEmpty(asignacion.MateriaId))
-                        {
-                            var materia = await _materiaRepository.GetByIdAsync(asignacion.MateriaId);
-                            if (materia != null && materia.EsAltaPrioridad)
-                            {
-                                isHighPriority = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!isTitular && !isHighPriority)
-                throw new UnauthorizedAccessException("Solo el docente titular o asesores con materias prioritarias pueden realizar evaluaciones oficiales.");
+            // STRICT CHECK: Only Titular Project Leader or Admin can give Official Grades (0-100).
+            // Other teachers/advisors can only give "Sugerencia" (or use the Star Rating system).
+            if (!isTitular && !isAdmin)
+                throw new UnauthorizedAccessException("Solo el docente titular asignado al proyecto puede realizar evaluaciones oficiales (calificación 0-100). Otros docentes pueden dejar sugerencias.");
 
             if (!request.Calificacion.HasValue || request.Calificacion < 0 || request.Calificacion > 100)
                 throw new ArgumentException("Las evaluaciones oficiales requieren una calificación entre 0 y 100");
