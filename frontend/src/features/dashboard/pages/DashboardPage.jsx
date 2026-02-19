@@ -58,9 +58,39 @@ export function DashboardPage() {
 
     const fetchProjects = async () => {
         try {
-            const response = await api.get(`/api/projects/group/${userData.grupoId}`);
-            setProjects(response.data);
-        } catch (error) { console.error('Error fetching projects:', error); }
+            let projectsData = [];
+
+            if (userData?.rol === 'Alumno') {
+                try {
+                    const response = await api.get(`/api/projects/my-project?userId=${userData.userId}`);
+                    if (response.data) {
+                        const p = response.data;
+                        const normalized = {
+                            id: p.id || p.Id,
+                            titulo: p.titulo || p.Titulo,
+                            materia: p.materia || p.Materia,
+                            estado: p.estado || p.Estado,
+                            stackTecnologico: p.stackTecnologico || p.StackTecnologico || [],
+                            liderId: p.liderId || p.LiderId,
+                            createdAt: p.createdAt || p.CreatedAt,
+                            docenteId: p.docenteId || p.DocenteId
+                        };
+                        projectsData = [normalized];
+                    }
+                } catch (e) {
+                    if (e.response?.status !== 404) console.error('Error fetching my project:', e);
+                    projectsData = [];
+                }
+            } else {
+                const response = await api.get(`/api/projects/group/${userData.grupoId}`);
+                projectsData = response.data;
+            }
+
+            setProjects(projectsData || []);
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+            setProjects([]);
+        }
         finally { setLoading(false); }
     };
 

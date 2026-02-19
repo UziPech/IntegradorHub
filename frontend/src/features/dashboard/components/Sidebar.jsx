@@ -18,7 +18,7 @@ export function Sidebar() {
       title: 'GESTIÓN',
       items: [
         // Items exclusivos para Estudiantes (y Admins para debug)
-        ...(['Estudiante', 'Alumno', 'Admin', 'admin', 'SuperAdmin'].includes(userData?.rol) ? [
+        ...(['Alumno', 'Admin', 'admin', 'SuperAdmin'].includes(userData?.rol) ? [
           { label: 'Mis Proyectos', path: '/projects', icon: FolderOpen },
           { label: 'Mi Equipo', path: '/team', icon: Users },
         ] : []),
@@ -44,7 +44,7 @@ export function Sidebar() {
       {/* Logo Brand */}
       <div className="p-6 border-b border-gray-100">
         <h1 className="text-xl font-bold text-gray-900 leading-tight">
-          IntegradorHub
+          Byfrost®
         </h1>
         <p className="text-xs text-gray-500 font-medium mt-1.5">Gestión de Proyectos</p>
       </div>
@@ -96,11 +96,11 @@ export function Sidebar() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-black text-white truncate tracking-tight">
             {(userData?.nombre && userData?.nombre !== 'Usuario')
-              ? userData.nombre.split(' ')[0]
+              ? userData.nombre.replace(/^\d+\s+/, '').split(' ')[0]
               : (userData?.email ? userData.email.split('@')[0] : 'Usuario')}
           </p>
           <p className="text-[10px] text-slate-400 font-extrabold truncate uppercase tracking-widest mt-0.5">
-            {userData?.rol || 'Estudiante'}
+            {userData?.rol || 'Alumno'}
           </p>
         </div>
       </NavLink>

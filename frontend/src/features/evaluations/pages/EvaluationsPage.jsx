@@ -14,7 +14,7 @@ export function EvaluationsPage() {
     useEffect(() => {
         if (!userData) return;
 
-        if (userData.rol === 'Estudiante') {
+        if (userData.rol === 'Alumno') {
             fetchStudentProject();
         } else if (userData.rol === 'Docente') {
             fetchTeacherProjects();
@@ -53,7 +53,7 @@ export function EvaluationsPage() {
     if (loading) return <div className="p-8"><div className="animate-pulse h-32 bg-gray-100 rounded-3xl" /></div>;
 
     // --- STUDENT VIEW ---
-    if (userData?.rol === 'Estudiante') {
+    if (userData?.rol === 'Alumno') {
         if (!project) {
             return (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">

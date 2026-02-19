@@ -1,5 +1,5 @@
 /* ============================================
-   IntegradorHub Design System v2
+   Byfrost® Design System v2
    Apple-Inspired, Minimalist, Gray-Based
    ============================================ */
 
@@ -86,12 +86,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--gray-150) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      var(--gray-150) 50%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -100,6 +98,7 @@
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -123,14 +122,14 @@
   gap: var(--space-1);
 }
 
-.avatar-stack > * {
+.avatar-stack>* {
   margin-left: calc(var(--space-3) * -1);
   border: 2px solid #ffffff;
   border-radius: 50%;
   box-shadow: var(--shadow-sm);
 }
 
-.avatar-stack > *:first-child {
+.avatar-stack>*:first-child {
   margin-left: 0;
 }
 
@@ -201,9 +200,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -512,13 +514,13 @@
   .page-content {
     padding: var(--space-6) var(--space-4);
   }
-  
+
   .grid-auto-fit,
   .grid-auto-fill {
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
-  
+
   .empty-state {
     padding: var(--space-8) var(--space-4);
     min-height: 300px;

@@ -11,7 +11,7 @@ export function ProfilePage() {
     const hasRealName = userData.nombre && userData.nombre !== 'Usuario';
     const hasSurnames = userData.apellidoPaterno || userData.apellidoMaterno;
 
-    const displayNombre = hasRealName ? userData.nombre : (userData.email ? userData.email.split('@')[0] : 'Usuario');
+    const displayNombre = hasRealName ? userData.nombre.replace(/^\d+\s+/, '') : (userData.email ? userData.email.split('@')[0] : 'Usuario');
     const fullName = `${displayNombre} ${userData.apellidoPaterno || ''} ${userData.apellidoMaterno || ''}`.trim();
 
     return (
@@ -92,7 +92,7 @@ export function ProfilePage() {
                             {userData.rol === 'Alumno' && (
                                 <>
                                     <InfoCard icon={<UserIcon size={20} />} label="Matrícula" value={userData.matricula} color="text-slate-900" />
-                                    <InfoCard icon={<GraduationCap size={20} />} label="Carrera" value={userData.carreraId} color="text-slate-900" />
+                                    <InfoCard icon={<GraduationCap size={20} />} label="Carrera" value={userData.carreraId?.toUpperCase()} color="text-slate-900" />
                                     <InfoCard icon={<BookOpen size={20} />} label="Grupo" value={userData.grupoNombre || 'Sin grupo'} color="text-slate-900" />
                                 </>
                             )}
