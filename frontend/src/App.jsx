@@ -9,6 +9,7 @@ import { CalendarPage } from './features/dashboard/pages/CalendarPage';
 import { ProfilePage } from './features/profile/pages/ProfilePage';
 import { ProjectEditorPage } from './features/projects/pages/ProjectEditorPage';
 import { ShowcasePage } from './features/public/pages/ShowcasePage';
+import { RankingPage } from './features/public/pages/RankingPage';
 import { AdminPanel } from './features/admin/pages/AdminPanel';
 import MateriasPanel from './features/admin/pages/MateriasPanel';
 import StudentsPanel from './features/admin/pages/StudentsPanel';
@@ -52,6 +53,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/showcase" element={<ShowcasePage />} />
+            <Route path="/ranking" element={<RankingPage />} />
             <Route element={<RoleGuard allowedRoles={['Alumno', 'Docente']} />}>
               <Route path="/team" element={<TeamPage />} />
               <Route path="/evaluations" element={<EvaluationsPage />} />

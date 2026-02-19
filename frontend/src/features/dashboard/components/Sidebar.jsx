@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FolderOpen, Users, Calendar, LogOut, LayoutDashboard, Rocket } from 'lucide-react';
+import { FolderOpen, Users, Calendar, LogOut, LayoutDashboard, Rocket, Trophy } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 export function Sidebar() {
@@ -11,6 +11,7 @@ export function Sidebar() {
       items: [
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { label: 'Galería', path: '/showcase', icon: Rocket },
+        { label: 'Ranking', path: '/ranking', icon: Trophy },
       ]
     },
     {

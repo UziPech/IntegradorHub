@@ -7,24 +7,7 @@ namespace IntegradorHub.API.Features.Projects.GetPublic;
 // === QUERY ===
 public record GetPublicProjectsQuery() : IRequest<IEnumerable<PublicProjectDto>>;
 
-public record PublicProjectDto(
-    string Id,
-    string Titulo,
-    string Materia,
-    string Ciclo,
-    List<string> StackTecnologico,
-    string? ThumbnailUrl,
-    string? RepositorioUrl,
-    string? DemoUrl,
-    string? VideoUrl,
-    string LiderNombre,
-    List<string> MiembrosIds,
-    string? DocenteNombre,
-    string Estado,
-    string Descripcion, // Extract from canvas first text block if needed
-    List<CanvasBlock> Canvas,
-    DateTime CreatedAt
-);
+
 
 // === HANDLER ===
 public class GetPublicProjectsHandler : IRequestHandler<GetPublicProjectsQuery, IEnumerable<PublicProjectDto>>
@@ -67,10 +50,37 @@ public class GetPublicProjectsHandler : IRequestHandler<GetPublicProjectsQuery, 
                 project.Estado,
                 description,
                 project.CanvasBlocks ?? new List<CanvasBlock>(),
-                project.CreatedAt.ToDateTime()
+                project.CreatedAt.ToDateTime(),
+                project.Calificacion,
+                project.LiderId,
+                project.PuntosTotales,
+                project.ConteoVotos
             ));
         }
 
         return result.OrderByDescending(p => p.CreatedAt);
     }
 }
+
+public record PublicProjectDto(
+    string Id,
+    string Titulo,
+    string Materia,
+    string Ciclo,
+    List<string> StackTecnologico,
+    string? ThumbnailUrl,
+    string? RepositorioUrl,
+    string? DemoUrl,
+    string? VideoUrl,
+    string LiderNombre,
+    List<string> MiembrosIds,
+    string? DocenteNombre,
+    string Estado,
+    string Descripcion,
+    List<CanvasBlock> Canvas,
+    DateTime CreatedAt,
+    double? Calificacion,
+    string LiderId,
+    double PuntosTotales,
+    int ConteoVotos
+);

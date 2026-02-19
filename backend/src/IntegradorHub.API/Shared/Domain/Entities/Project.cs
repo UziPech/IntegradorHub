@@ -69,6 +69,16 @@ public class Project
 
     [FirestoreProperty("es_publico")]
     public bool EsPublico { get; set; } = false; // Privado por defecto
+
+    // --- Ranking System Fields ---
+    [FirestoreProperty("puntos_totales")]
+    public double PuntosTotales { get; set; } = 0; // Sum of all points (Official + Guest Votes)
+
+    [FirestoreProperty("conteo_votos")]
+    public int ConteoVotos { get; set; } = 0; // Number of people who voted (Stars)
+
+    [FirestoreProperty("votantes")]
+    public Dictionary<string, int> Votantes { get; set; } = new(); // UserId -> Stars (1-5) 
 }
 
 [FirestoreData]

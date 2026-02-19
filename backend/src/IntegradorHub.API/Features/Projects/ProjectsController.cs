@@ -8,10 +8,9 @@ using IntegradorHub.API.Features.Projects.RemoveMember;
 using IntegradorHub.API.Features.Projects.GetDetails;
 using IntegradorHub.API.Features.Projects.UpdateCanvas;
 using IntegradorHub.API.Features.Projects.Update;
+using IntegradorHub.API.Features.Projects.Rate; 
 using IntegradorHub.API.Shared.Domain.Entities;
-
 using IntegradorHub.API.Features.Projects.GetPublic;
-
 using IntegradorHub.API.Features.Projects.GetByMember;
 
 namespace IntegradorHub.API.Features.Projects;
@@ -44,10 +43,6 @@ public class ProjectsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CreateProjectResponse>> Create([FromBody] CreateProjectRequest request)
     {
-        // TODO: Obtener UserId y GroupId del token JWT en el futuro
-        // Por ahora confiamos en el request para desarrollo rápido, 
-        // pero esto DEBE cambiarse a ClaimsPrincipal en producción.
-        
         var command = new CreateProjectCommand(
             request.Titulo,
             request.Materia,
@@ -151,6 +146,7 @@ public class ProjectsController : ControllerBase
         catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
     }
+
     /// <summary>
     /// Elimina un proyecto completamente y libera a sus miembros. (Solo Líder)
     /// </summary>
@@ -167,20 +163,20 @@ public class ProjectsController : ControllerBase
         catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
     }
+
     /// <summary>
     /// Actualiza un proyecto (Título, Video, Canvas).
     /// </summary>
     [HttpPut("{id}")]
     public async Task<ActionResult<UpdateProjectResponse>> Update(string id, [FromBody] UpdateProjectRequest request)
     {
-        // TODO: Obtener UserId real del token
         var command = new UpdateProjectCommand(
             id,
             request.Titulo,
             request.VideoUrl,
-            request.CanvasBlocks ?? new List<CanvasBlock>(), // Manejo de nulos seguro
+            request.CanvasBlocks ?? new List<CanvasBlock>(), 
             request.EsPublico,
-            "temp-user-id" // Placeholder hasta tener Auth real
+            "temp-user-id" 
         );
 
         try
@@ -192,6 +188,7 @@ public class ProjectsController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
         catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
     }
+
     /// <summary>
     /// Obtiene el proyecto del usuario actual (si tiene).
     /// </summary>
@@ -206,7 +203,26 @@ public class ProjectsController : ControllerBase
             
         return Ok(response);
     }
+
+    /// <summary>
+    /// Califica un proyecto con estrellas (1-5).
+    /// </summary>
+    [HttpPost("{id}/rate")]
+    public async Task<ActionResult<RateProjectResponse>> RateProject(string id, [FromBody] RateProjectRequest request)
+    {
+        var command = new RateProjectCommand(id, request.UserId, request.Stars);
+        try
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+        catch (ArgumentException ex) { return BadRequest(ex.Message); }
+    }
 }
+
+public record RateProjectRequest(string UserId, int Stars);
 
 public record UpdateProjectRequest(
     string Titulo,
@@ -232,4 +248,3 @@ public record CreateProjectRequest(
 );
 
 public record AddMemberRequest(string LeaderId, string EmailOrMatricula);
-
