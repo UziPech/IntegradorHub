@@ -25,7 +25,7 @@ export function RankingPage() {
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
         </div>
     );
 
@@ -36,17 +36,17 @@ export function RankingPage() {
         <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
 
             {/* Header */}
-            <div className="bg-indigo-900 text-white py-12 relative overflow-hidden">
+            <div className="bg-slate-950 text-white py-12 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                 <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
-                    <div className="inline-flex items-center gap-2 bg-indigo-800/50 backdrop-blur-sm px-4 py-1.5 rounded-full border border-indigo-700 mb-4">
-                        <Trophy size={16} className="text-yellow-400" />
-                        <span className="text-sm font-semibold tracking-wide uppercase text-indigo-100">Leaderboard Oficial</span>
+                    <div className="inline-flex items-center gap-2 bg-cyan-950/40 backdrop-blur-sm px-4 py-1.5 rounded-full border border-cyan-900/50 mb-4">
+                        <Trophy size={16} className="text-cyan-400" />
+                        <span className="text-sm font-semibold tracking-wide uppercase text-cyan-100">Leaderboard Oficial</span>
                     </div>
                     <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
                         Ranking de Proyectos
                     </h1>
-                    <p className="text-indigo-200 text-lg max-w-2xl mx-auto">
+                    <p className="text-slate-300 text-lg max-w-2xl mx-auto">
                         Los mejores proyectos del ciclo escolar, votados por la comunidad y evaluados por expertos.
                     </p>
                 </div>

@@ -32,31 +32,58 @@ export function AuthProvider({ children }) {
                     console.log('Backend user data:', response.data);
 
                     // NORMALIZATION: Map backend PascalCase to camelCase to match app standards
+                    const d = response.data;
+
+                    // Priority logic for name: Backend > Firebase > Default
+                    // If backend returns "Usuario", try to use Firebase display name instead.
+                    let finalNombre = d.nombre || d.Nombre;
+                    if ((!finalNombre || finalNombre === 'Usuario') && firebaseUser.displayName && firebaseUser.displayName !== 'Usuario') {
+                        finalNombre = firebaseUser.displayName;
+                    }
+
                     const normalizedUser = {
-                        userId: response.data.userId || response.data.UserId,
-                        email: response.data.email || response.data.Email,
-                        nombre: response.data.nombre || response.data.Nombre,
-                        rol: response.data.rol || response.data.Rol,
-                        isFirstLogin: response.data.isFirstLogin ?? response.data.IsFirstLogin,
-                        grupoId: response.data.grupoId || response.data.GrupoId,
-                        matricula: response.data.matricula || response.data.Matricula,
-                        carreraId: response.data.carreraId || response.data.CarreraId
+                        userId: d.userId || d.UserId || firebaseUser.uid,
+                        email: d.email || d.Email || firebaseUser.email || '',
+                        nombre: finalNombre || 'Usuario',
+                        apellidoPaterno: d.apellidoPaterno || d.ApellidoPaterno || null,
+                        apellidoMaterno: d.apellidoMaterno || d.ApellidoMaterno || null,
+                        fotoUrl: d.fotoUrl || d.FotoUrl || firebaseUser.photoURL || null,
+                        rol: d.rol || d.Rol || 'Invitado',
+                        isFirstLogin: d.isFirstLogin ?? d.IsFirstLogin ?? false,
+                        grupoId: d.grupoId || d.GrupoId || null,
+                        grupoNombre: d.grupoNombre || d.GrupoNombre || null,
+                        matricula: d.matricula || d.Matricula || null,
+                        carreraId: d.carreraId || d.CarreraId || null,
+                        profesion: d.profesion || d.Profesion || null,
+                        especialidadDocente: d.especialidadDocente || d.EspecialidadDocente || null,
+                        organizacion: d.organizacion || d.Organizacion || null
                     };
 
                     setUserData(normalizedUser);
 
-                    // Guardar en Firestore para sincronización
-                    // FIREBASE FIX: Firestore crashes with 'undefined'. convert undefined to null.
+                    // Sync to Firestore using SNAKE_CASE for backend compatibility
                     const firestoreData = {
-                        ...normalizedUser,
-                        grupoId: normalizedUser.grupoId || null,
-                        matricula: normalizedUser.matricula || null,
-                        carreraId: normalizedUser.carreraId || null,
-                        photoURL: firebaseUser.photoURL || '',
+                        userId: normalizedUser.userId,
+                        email: normalizedUser.email,
+                        nombre: normalizedUser.nombre,
+                        apellido_paterno: normalizedUser.apellidoPaterno,
+                        apellido_materno: normalizedUser.apellidoMaterno,
+                        foto_url: normalizedUser.fotoUrl,
+                        rol: normalizedUser.rol,
+                        is_first_login: normalizedUser.isFirstLogin,
+                        grupo_id: normalizedUser.grupoId,
+                        matricula: normalizedUser.matricula,
+                        carrera_id: normalizedUser.carreraId,
+                        profesion: normalizedUser.profesion,
+                        especialidad_docente: normalizedUser.especialidadDocente,
+                        organizacion: normalizedUser.organizacion,
                         updatedAt: new Date().toISOString()
                     };
 
-                    await setDoc(doc(db, 'users', firebaseUser.uid), firestoreData, { merge: true });
+                    // Only update Firestore if we are authenticated and have data
+                    if (firebaseUser.uid) {
+                        await setDoc(doc(db, 'users', firebaseUser.uid), firestoreData, { merge: true });
+                    }
 
                 } catch (error) {
                     console.error('Error loading user data:', error);
