@@ -25,6 +25,12 @@ public class Evaluation
     
     [FirestoreProperty("calificacion")]
     public int? Calificacion { get; set; } // Solo para tipo "oficial", 0-100
+
+    [FirestoreProperty("es_publico")]
+    public bool EsPublico { get; set; } = false; // Control de privacidad por el líder
+
+    [FirestoreProperty("puntos_otorgados")]
+    public int PuntosOtorgados { get; set; } = 0; // Valor numérico para sumas (10-100 o 10-50)
     
     [FirestoreProperty("created_at")]
     public Timestamp CreatedAt { get; set; }

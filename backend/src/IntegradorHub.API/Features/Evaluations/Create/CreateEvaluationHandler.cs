@@ -97,6 +97,25 @@ public class CreateEvaluationHandler : IRequestHandler<CreateEvaluationCommand, 
             Calificacion = request.Tipo == "oficial" ? request.Calificacion : null
         };
 
+        if (request.Tipo == "oficial" && request.Calificacion.HasValue)
+        {
+            // Update Project Grade
+            project.Calificacion = request.Calificacion.Value;
+
+            // Recalculate Total Points
+            // Formula: OfficialGrade (0-100) + GuestVotesPoints (Stars * 10)
+            double guestPoints = 0;
+            if (project.Votantes != null)
+            {
+                 guestPoints = project.Votantes.Values.Sum() * 10;
+            }
+            
+            project.PuntosTotales = project.Calificacion.Value + guestPoints;
+
+            // Update Project in DB
+            await _projectRepository.UpdateAsync(project);
+        }
+
         await _evaluationRepository.CreateAsync(evaluation);
 
         return new CreateEvaluationResponse(true, "Evaluación creada correctamente", evaluation.Id);
