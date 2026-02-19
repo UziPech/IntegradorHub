@@ -37,6 +37,17 @@ public class MateriasController : ControllerBase
         return Ok(filtered);
     }
 
+    [HttpGet("available")]
+    public async Task<ActionResult<IEnumerable<AvailableMateriaDto>>> GetAvailable([FromQuery] string carreraId, [FromServices] MediatR.IMediator mediator)
+    {
+        if (string.IsNullOrEmpty(carreraId)) return BadRequest("El ID de la carrera es requerido.");
+        
+        var query = new GetAvailableMateriasQuery(carreraId);
+        var result = await mediator.Send(query);
+        
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<ActionResult> Create([FromBody] CreateMateriaRequest request)
     {

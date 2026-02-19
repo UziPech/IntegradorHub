@@ -2,6 +2,7 @@ using MediatR;
 using IntegradorHub.API.Shared.Domain.Entities;
 using IntegradorHub.API.Shared.Domain.Interfaces;
 using Google.Cloud.Firestore;
+using IntegradorHub.API.Features.Admin.Groups; // Added to resolve GroupDto reference
 
 namespace IntegradorHub.API.Features.Admin.Materias;
 
@@ -136,3 +137,102 @@ public class DeleteMateriaHandler : IRequestHandler<DeleteMateriaCommand, Delete
         return new DeleteMateriaResponse(true, "Materia desactivada");
     }
 }
+
+// === QUERY: Get Available Materias (Inteligente) ===
+public record GetAvailableMateriasQuery(string CarreraId) : IRequest<IEnumerable<AvailableMateriaDto>>;
+
+public record AvailableMateriaDto(
+    MateriaDto Materia,
+    IEnumerable<GroupDto> GruposDisponibles
+);
+
+public class GetAvailableMateriasHandler : IRequestHandler<GetAvailableMateriasQuery, IEnumerable<AvailableMateriaDto>>
+{
+    private readonly IMateriaRepository _materiaRepository;
+    private readonly IGroupRepository _groupRepository;
+    private readonly IUserRepository _userRepository;
+
+    public GetAvailableMateriasHandler(
+        IMateriaRepository materiaRepository, 
+        IGroupRepository groupRepository, 
+        IUserRepository userRepository)
+    {
+        _materiaRepository = materiaRepository;
+        _groupRepository = groupRepository;
+        _userRepository = userRepository;
+    }
+
+    public async Task<IEnumerable<AvailableMateriaDto>> Handle(GetAvailableMateriasQuery request, CancellationToken cancellationToken)
+    {
+        // 1. Obtener todas las materias de esta carrera
+        var allMaterias = await _materiaRepository.GetAllActiveAsync();
+        var materiasDeCarrera = allMaterias.Where(m => m.CarreraId == request.CarreraId).ToList();
+
+        if (!materiasDeCarrera.Any()) return Enumerable.Empty<AvailableMateriaDto>();
+
+        // 2. Obtener los grupos que pertenecen a la carrera (o todos si la carrera está mal llenada)
+        var allGroups = await _groupRepository.GetAllActiveAsync();
+        // Intentamos filtrar por carrera, pero permitiendo grupos donde la carrera venga vacía o diga "DSM" genérico (legacy)
+        var gruposDeCarrera = allGroups
+            .Where(g => g.Carrera == request.CarreraId || string.IsNullOrEmpty(g.Carrera) || g.Carrera == "DSM" || g.Carrera == "EVN" || g.Carrera == "RIC")
+            .ToList();
+
+        // 3. Obtener todos los docentes
+        var docentes = await _userRepository.GetByRoleAsync("Docente");
+
+        var results = new List<AvailableMateriaDto>();
+
+        // 4. Calcular grupos ocupados por materia
+        foreach (var materia in materiasDeCarrera)
+        {
+            // Encontrar todos los grupos que YA están asignados a esta materia por CUALQUIER docente
+            var gruposOcupados = new HashSet<string>();
+
+            foreach (var docente in docentes)
+            {
+                if (docente.Asignaciones != null)
+                {
+                    var asignacion = docente.Asignaciones.FirstOrDefault(a => a.MateriaId == materia.Id && a.CarreraId == request.CarreraId);
+                    if (asignacion != null && asignacion.GruposIds != null)
+                    {
+                        foreach (var gId in asignacion.GruposIds)
+                        {
+                            gruposOcupados.Add(gId);
+                        }
+                    }
+                }
+            }
+
+            // Filtrar los grupos disponibles (los que existen en la carrera menos los ocupados)
+            var gruposLibres = gruposDeCarrera.Where(g => !gruposOcupados.Contains(g.Id)).ToList();
+
+            // Solo enviar la materia si TODAVÍA tiene grupos libres.
+            // Si gruposLibres.Count == 0, significa que la materia ya está totalmente ocupada.
+            if (gruposLibres.Any())
+            {
+                var materiaDto = new MateriaDto(
+                    materia.Id,
+                    materia.Nombre,
+                    materia.Clave,
+                    materia.Cuatrimestre,
+                    materia.IsActive
+                );
+
+                var gruposDtos = gruposLibres.Select(g => new GroupDto(
+                    g.Id,
+                    g.Nombre,
+                    g.Carrera,
+                    g.Turno,
+                    g.CicloActivo,
+                    g.DocentesIds,
+                    g.IsActive
+                ));
+
+                results.Add(new AvailableMateriaDto(materiaDto, gruposDtos));
+            }
+        }
+
+        return results;
+    }
+}
+
