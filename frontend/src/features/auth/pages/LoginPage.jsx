@@ -63,9 +63,15 @@ export function LoginPage() {
     const [grupo, setGrupo] = useState('');
     const [carrera, setCarrera] = useState('');
     // Docente
+    const [carreraDocente, setCarreraDocente] = useState('');
+    const [materiaDocente, setMateriaDocente] = useState('');
     const [gruposDocente, setGruposDocente] = useState([]);
     const [profesion, setProfesion] = useState('');
-    const [carrerasDocente, setCarrerasDocente] = useState([]);
+
+    // Opciones en cascadas Docente
+    const [materiasDisponiblesDocente, setMateriasDisponiblesDocente] = useState([]);
+    const [gruposDisponiblesDocente, setGruposDisponiblesDocente] = useState([]);
+    const [loadingMaterias, setLoadingMaterias] = useState(false);
     // Invitado
     const [organizacion, setOrganizacion] = useState('');
 
@@ -109,6 +115,35 @@ export function LoginPage() {
         };
         fetchData();
     }, []);
+
+    // Cargar Materias Disponibles cuando el Docente selecciona una Carrera
+    useEffect(() => {
+        if (detectedRole === 'Docente' && carreraDocente) {
+            setLoadingMaterias(true);
+            api.get(`/api/admin/materias/available?carreraId=${carreraDocente}`)
+                .then(res => {
+                    setMateriasDisponiblesDocente(res.data || []);
+                    setMateriaDocente('');
+                    setGruposDocente([]);
+                    setGruposDisponiblesDocente([]);
+                })
+                .catch(err => console.error("Error fetching materias", err))
+                .finally(() => setLoadingMaterias(false));
+        }
+    }, [carreraDocente, detectedRole]);
+
+    // Filtrar Grupos Libres cuando el Docente selecciona una Materia
+    useEffect(() => {
+        if (materiaDocente) {
+            const mat = materiasDisponiblesDocente.find(m => m.materia.id === materiaDocente);
+            if (mat) {
+                setGruposDisponiblesDocente(mat.gruposDisponibles || []);
+            } else {
+                setGruposDisponiblesDocente([]);
+            }
+            setGruposDocente([]); // Reset grupos seleccionados si cambia la materia
+        }
+    }, [materiaDocente, materiasDisponiblesDocente]);
 
     if (loading) return <div style={styles.loadingContainer}><div style={styles.spinner}></div></div>;
 
@@ -236,7 +271,9 @@ export function LoginPage() {
 
         if (detectedRole === 'Docente') {
             if (!profesion) { setError('Indica tu profesión'); setSubmitting(false); return; }
-            if (carrerasDocente.length === 0) { setError('Selecciona al menos una carrera'); setSubmitting(false); return; }
+            if (!carreraDocente) { setError('Selecciona una carrera impartida'); setSubmitting(false); return; }
+            if (!materiaDocente) { setError('Selecciona la materia que impartes'); setSubmitting(false); return; }
+            if (gruposDocente.length === 0) { setError('Selecciona al menos un grupo'); setSubmitting(false); return; }
         }
 
         if (detectedRole === 'Invitado') {
@@ -274,8 +311,11 @@ export function LoginPage() {
                 carreraId: carrera || null,
                 // Docente
                 profesion: profesion || null,
-                gruposDocente: gruposDocente,
-                carrerasIds: carrerasDocente,
+                asignaciones: detectedRole === 'Docente' ? [{
+                    carreraId: carreraDocente,
+                    materiaId: materiaDocente,
+                    gruposIds: gruposDocente
+                }] : null,
                 // Invitado
                 organizacion: organizacion || null
             };
@@ -575,53 +615,66 @@ export function LoginPage() {
                                     </div>
 
                                     <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Carreras que Atiendes</label>
-                                        <p style={styles.helperText}>Selecciona las carreras donde impartes clases</p>
-                                        <div style={styles.gruposGrid}>
+                                        <label style={styles.label}>Carrera en la que impartes</label>
+                                        <select
+                                            value={carreraDocente}
+                                            onChange={(e) => setCarreraDocente(e.target.value)}
+                                            style={styles.select}
+                                            required
+                                        >
+                                            <option value="">Selecciona tu carrera...</option>
                                             {carrerasDisponibles.map(c => (
-                                                <button
-                                                    key={c.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setCarrerasDocente(prev =>
-                                                            prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
-                                                        );
-                                                    }}
-                                                    style={{
-                                                        ...styles.grupoChip,
-                                                        backgroundColor: carrerasDocente.includes(c.id) ? '#111827' : '#f3f4f6',
-                                                        color: carrerasDocente.includes(c.id) ? '#fff' : '#374151',
-                                                        borderColor: carrerasDocente.includes(c.id) ? '#111827' : '#d1d5db'
-                                                    }}
-                                                >
-                                                    {c.nombre}
-                                                    {carrerasDocente.includes(c.id) && <Check size={14} style={{ marginLeft: '4px' }} />}
-                                                </button>
+                                                <option key={c.id} value={c.id}>{c.nombre}</option>
                                             ))}
-                                        </div>
+                                        </select>
                                     </div>
 
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Grupos que Atiendes</label>
-                                        <div style={styles.gruposGrid}>
-                                            {gruposDisponibles.map(g => (
-                                                <button
-                                                    key={g.id}
-                                                    type="button"
-                                                    onClick={() => toggleGrupoDocente(g.id)}
-                                                    style={{
-                                                        ...styles.grupoChip,
-                                                        backgroundColor: gruposDocente.includes(g.id) ? '#111827' : '#f3f4f6',
-                                                        color: gruposDocente.includes(g.id) ? '#fff' : '#374151',
-                                                        borderColor: gruposDocente.includes(g.id) ? '#111827' : '#d1d5db'
-                                                    }}
-                                                >
-                                                    {g.nombre}
-                                                    {gruposDocente.includes(g.id) && <Check size={14} style={{ marginLeft: '4px' }} />}
-                                                </button>
-                                            ))}
+                                    {carreraDocente && (
+                                        <div style={styles.inputGroup}>
+                                            <label style={styles.label}>Materia Asignada {loadingMaterias && "(Cargando...)"}</label>
+                                            <select
+                                                value={materiaDocente}
+                                                onChange={(e) => setMateriaDocente(e.target.value)}
+                                                style={styles.select}
+                                                required
+                                                disabled={loadingMaterias || materiasDisponiblesDocente.length === 0}
+                                            >
+                                                <option value="">Selecciona una materia disponible...</option>
+                                                {materiasDisponiblesDocente.map(item => (
+                                                    <option key={item.materia.id} value={item.materia.id}>
+                                                        {item.materia.nombre} ({item.materia.clave}) - Cuatri {item.materia.cuatrimestre}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {!loadingMaterias && materiasDisponiblesDocente.length === 0 && (
+                                                <p style={{ ...styles.helperText, color: '#ef4444' }}>No hay materias con grupos libres en esta carrera.</p>
+                                            )}
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {materiaDocente && gruposDisponiblesDocente.length > 0 && (
+                                        <div style={styles.inputGroup}>
+                                            <label style={styles.label}>Grupos Disponibles (Selecciona uno o varios)</label>
+                                            <div style={styles.gruposGrid}>
+                                                {gruposDisponiblesDocente.map(g => (
+                                                    <button
+                                                        key={g.id}
+                                                        type="button"
+                                                        onClick={() => toggleGrupoDocente(g.id)}
+                                                        style={{
+                                                            ...styles.grupoChip,
+                                                            backgroundColor: gruposDocente.includes(g.id) ? '#111827' : '#f3f4f6',
+                                                            color: gruposDocente.includes(g.id) ? '#fff' : '#374151',
+                                                            borderColor: gruposDocente.includes(g.id) ? '#111827' : '#d1d5db'
+                                                        }}
+                                                    >
+                                                        {g.nombre}
+                                                        {gruposDocente.includes(g.id) && <Check size={14} style={{ marginLeft: '4px' }} />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             )}
 
