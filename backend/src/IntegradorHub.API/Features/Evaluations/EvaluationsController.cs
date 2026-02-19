@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using IntegradorHub.API.Features.Evaluations.Create;
 using IntegradorHub.API.Features.Evaluations.GetByProject;
+using IntegradorHub.API.Features.Evaluations.Visibility;
 
 namespace IntegradorHub.API.Features.Evaluations;
 
@@ -51,7 +52,24 @@ public class EvaluationsController : ControllerBase
         var evaluations = await _mediator.Send(query);
         return Ok(evaluations);
     }
+    /// <summary>
+    /// Cambia la visibilidad de una evaluación (Público/Privado).
+    /// </summary>
+    [HttpPatch("{id}/visibility")]
+    public async Task<ActionResult<UpdateEvaluationVisibilityResponse>> ChangeVisibility(string id, [FromBody] ChangeVisibilityRequest request)
+    {
+        var command = new UpdateEvaluationVisibilityCommand(id, request.UserId, request.EsPublico);
+        try
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+    }
 }
+
+public record ChangeVisibilityRequest(string UserId, bool EsPublico);
 
 public record CreateEvaluationRequest(
     string ProjectId,

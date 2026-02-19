@@ -7,16 +7,7 @@ namespace IntegradorHub.API.Features.Evaluations.GetByProject;
 // === QUERY ===
 public record GetEvaluationsByProjectQuery(string ProjectId) : IRequest<IEnumerable<EvaluationDto>>;
 
-public record EvaluationDto(
-    string Id,
-    string ProjectId,
-    string DocenteId,
-    string DocenteNombre,
-    string Tipo,
-    string Contenido,
-    int? Calificacion,
-    DateTime CreatedAt
-);
+
 
 // === HANDLER ===
 public class GetEvaluationsByProjectHandler : IRequestHandler<GetEvaluationsByProjectQuery, IEnumerable<EvaluationDto>>
@@ -40,7 +31,20 @@ public class GetEvaluationsByProjectHandler : IRequestHandler<GetEvaluationsByPr
             e.Tipo,
             e.Contenido,
             e.Calificacion,
-            e.CreatedAt.ToDateTime()
+            e.CreatedAt.ToDateTime(),
+            e.EsPublico
         ));
     }
 }
+
+public record EvaluationDto(
+    string Id,
+    string ProjectId,
+    string DocenteId,
+    string DocenteNombre,
+    string Tipo,
+    string Contenido,
+    int? Calificacion,
+    DateTime CreatedAt,
+    bool EsPublico
+);
