@@ -79,6 +79,18 @@ public class ProjectsController : ControllerBase
         return Ok(response);
     }
 
+
+    /// <summary>
+    /// Obtiene proyectos asignados a un docente.
+    /// </summary>
+    [HttpGet("teacher/{teacherId}")]
+    public async Task<ActionResult<List<GetByTeacher.ProjectDto>>> GetByTeacher(string teacherId)
+    {
+        var query = new GetByTeacher.GetProjectsByTeacherQuery(teacherId);
+        var response = await _mediator.Send(query);
+        return Ok(response);
+    }
+
     /// <summary>
     /// Obtiene detalles completos del proyecto.
     /// </summary>

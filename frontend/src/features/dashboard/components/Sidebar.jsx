@@ -17,15 +17,24 @@ export function Sidebar() {
     {
       title: 'GESTIÓN',
       items: [
-        { label: 'Mis Proyectos', path: '/projects', icon: FolderOpen },
-        { label: 'Mi Equipo', path: '/team', icon: Users },
+        // Items exclusivos para Estudiantes (y Admins para debug)
+        ...(['Estudiante', 'Alumno', 'Admin', 'admin', 'SuperAdmin'].includes(userData?.rol) ? [
+          { label: 'Mis Proyectos', path: '/projects', icon: FolderOpen },
+          { label: 'Mi Equipo', path: '/team', icon: Users },
+        ] : []),
+
+        // Items exclusivos para Docentes
+        ...(userData?.rol === 'Docente' ? [
+          { label: 'Evaluaciones', path: '/evaluations', icon: FolderOpen },
+        ] : []),
+
         { label: 'Agenda', path: '/calendar', icon: Calendar },
       ]
     },
     ...(userData?.rol === 'admin' || userData?.rol === 'SuperAdmin' ? [{
       title: 'ADMINISTRACIÓN',
       items: [
-        { label: 'Panel Admin', path: '/admin', icon: Users } // Using Users as generic admin icon or LayoutDashboard
+        { label: 'Panel Admin', path: '/admin', icon: Users }
       ]
     }] : [])
   ];
