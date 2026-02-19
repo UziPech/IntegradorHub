@@ -21,8 +21,9 @@ export function EvaluationPanel({ projectId }) {
     const userName = userData?.nombre;
 
     useEffect(() => {
+        console.log('EvaluationPanel for Project:', projectId, 'as User:', userId);
         Promise.all([fetchEvaluations(), fetchProject()]);
-    }, [projectId]);
+    }, [projectId, userId]);
 
     const fetchProject = async () => {
         try {
@@ -95,8 +96,11 @@ export function EvaluationPanel({ projectId }) {
     const currentGrade = latestOfficial ? latestOfficial.calificacion : null;
 
     // Check Permissions for Official Grading
-    const isTitular = project?.docenteId === userId;
+    const docente_id = project?.docenteId || project?.DocenteId;
+    const isTitular = docente_id === userId;
     const canGradeOfficially = isDocente && (isTitular || isAdmin);
+
+    console.log('Evaluation Permissions:', { isDocente, isTitular, isAdmin, canGradeOfficially, projectDocenteId: docente_id, currentUserId: userId });
 
 
 

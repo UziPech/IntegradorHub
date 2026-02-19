@@ -21,18 +21,27 @@ public record LoginResponse(
     string Rol,
     bool IsFirstLogin,
     string? GrupoId,
+    string? GrupoNombre,
     string? Matricula,
-    string? CarreraId
+    string? CarreraId,
+    string? ApellidoPaterno,
+    string? ApellidoMaterno,
+    string? FotoUrl,
+    string? Profesion,
+    string? EspecialidadDocente,
+    string? Organizacion
 );
 
 // === HANDLER ===
 public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IGroupRepository _groupRepository;
 
-    public LoginHandler(IUserRepository userRepository)
+    public LoginHandler(IUserRepository userRepository, IGroupRepository groupRepository)
     {
         _userRepository = userRepository;
+        _groupRepository = groupRepository;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -78,12 +87,39 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                         Console.WriteLine($"[AUTO-FIX] Corrected {existingUser.Email} to Docente role.");
                     }
                 }
-                // --- SYNC PROFILE DATA REMOVED ---
-                // Se eliminó la sincronización automática de nombre/foto para evitar
-                // sobrescribir datos existentes con valores por defecto ("Usuario") del frontend.
+                // --- SYNC PROFILE DATA IMPROVED ---
+                // Si el nombre en la DB es el genérico "Usuario" pero Firebase trae uno real, actualizar.
+                bool needsUpdate = false;
+                if ((existingUser.Nombre == "Usuario" || string.IsNullOrEmpty(existingUser.Nombre)) && 
+                    !string.IsNullOrEmpty(request.DisplayName) && request.DisplayName != "Usuario")
+                {
+                    existingUser.Nombre = request.DisplayName;
+                    needsUpdate = true;
+                }
+
+                // Sincronizar foto si no tiene una
+                if (string.IsNullOrEmpty(existingUser.FotoUrl) && !string.IsNullOrEmpty(request.PhotoUrl))
+                {
+                    existingUser.FotoUrl = request.PhotoUrl;
+                    needsUpdate = true;
+                }
+
+                if (needsUpdate)
+                {
+                    await _userRepository.UpdateAsync(existingUser);
+                    Console.WriteLine($"[SYNC] Updated name/photo for {existingUser.Email}");
+                }
                 // -----------------------------
 
                 // -----------------------------
+
+                // Resolver nombre del grupo si existe
+                string? grupoNombre = null;
+                if (!string.IsNullOrEmpty(existingUser.GrupoId))
+                {
+                    var group = await _groupRepository.GetByIdAsync(existingUser.GrupoId);
+                    grupoNombre = group?.Nombre;
+                }
 
                 // Usuario ya registrado, devolver datos
                 return new LoginResponse(
@@ -93,8 +129,15 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                     existingUser.Rol,
                     existingUser.IsFirstLogin,
                     existingUser.GrupoId,
+                    grupoNombre,
                     existingUser.Matricula,
-                    existingUser.CarreraId
+                    existingUser.CarreraId,
+                    existingUser.ApellidoPaterno,
+                    existingUser.ApellidoMaterno,
+                    existingUser.FotoUrl,
+                    existingUser.Profesion,
+                    existingUser.EspecialidadDocente,
+                    existingUser.Organizacion
                 );
             }
 
@@ -132,8 +175,15 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                 newUser.Rol,
                 newUser.IsFirstLogin,
                 newUser.GrupoId,
+                null, // Nuevo usuario no tiene grupo aún
                 newUser.Matricula,
-                newUser.CarreraId
+                newUser.CarreraId,
+                newUser.ApellidoPaterno,
+                newUser.ApellidoMaterno,
+                newUser.FotoUrl,
+                newUser.Profesion,
+                newUser.EspecialidadDocente,
+                newUser.Organizacion
             );
         }
         catch (Exception ex)

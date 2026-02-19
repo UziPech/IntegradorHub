@@ -35,7 +35,9 @@ export function EvaluationsPage() {
     const fetchTeacherProjects = async () => {
         try {
             // New endpoint: Fetch projects directly assigned to this teacher
+            console.log('Fetching projects for teacher:', userData.userId);
             const { data } = await api.get(`/api/projects/teacher/${userData.userId}`);
+            console.log('Projects received:', data);
 
             // Remove duplicates (though backend shouldn't return dupes, safe to keep)
             const uniqueProjects = [...new Map(data.map(p => [p.id, p])).values()];
