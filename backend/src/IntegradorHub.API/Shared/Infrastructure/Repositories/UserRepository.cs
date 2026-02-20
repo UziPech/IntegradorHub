@@ -52,6 +52,20 @@ public class UserRepository : IUserRepository
         await _collection.Document(user.Id).SetAsync(user);
     }
 
+    public async Task CreateIfNotExistsAsync(User user)
+    {
+        user.CreatedAt = DateTime.UtcNow.ToString("o");
+        user.UpdatedAt = DateTime.UtcNow.ToString("o");
+        try 
+        {
+            await _collection.Document(user.Id).CreateAsync(user);
+        }
+        catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.AlreadyExists)
+        {
+            Console.WriteLine($"[DEBUG] UserRepository: User {user.Id} already exists, skipping creation to avoid race condition overwrite.");
+        }
+    }
+
     public async Task UpdateAsync(User user)
     {
         user.UpdatedAt = DateTime.UtcNow.ToString("o");

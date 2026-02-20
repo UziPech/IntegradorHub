@@ -65,67 +65,8 @@ export function AuthProvider({ children }) {
 
                     setUserData(normalizedUser);
 
-                    // 1. SMART SYNC: Read Firestore FIRST to avoid corrupting good data with backend "placeholders"
-                    if (firebaseUser.uid) {
-                        const userDocRef = doc(db, 'users', firebaseUser.uid);
-                        const userDocSnap = await getDoc(userDocRef);
-                        const existingFirestoreData = userDocSnap.exists() ? userDocSnap.data() : {};
-
-                        // Priority logic for Nombre: Use what's in Firestore if it's not "Usuario"
-                        let finalNombreForFirestore = normalizedUser.nombre;
-                        if (existingFirestoreData.nombre &&
-                            existingFirestoreData.nombre !== 'Usuario' &&
-                            (!normalizedUser.nombre || normalizedUser.nombre === 'Usuario')) {
-                            finalNombreForFirestore = existingFirestoreData.nombre;
-
-                            // Immediately update session user name if it was "Usuario" but we have a better one
-                            normalizedUser.nombre = finalNombreForFirestore;
-                        }
-
-                        // Also sync other missing data from Firestore back to session if session is incomplete
-                        normalizedUser.apellidoPaterno = normalizedUser.apellidoPaterno || existingFirestoreData.apellido_paterno || null;
-                        normalizedUser.apellidoMaterno = normalizedUser.apellidoMaterno || existingFirestoreData.apellido_materno || null;
-                        normalizedUser.fotoUrl = normalizedUser.fotoUrl || existingFirestoreData.foto_url || null;
-                        normalizedUser.grupoId = normalizedUser.grupoId || existingFirestoreData.grupo_id || null;
-                        normalizedUser.matricula = normalizedUser.matricula || existingFirestoreData.matricula || null;
-                        normalizedUser.carreraId = normalizedUser.carreraId || existingFirestoreData.carrera_id || null;
-                        normalizedUser.profesion = normalizedUser.profesion || existingFirestoreData.profesion || null;
-                        normalizedUser.especialidadDocente = normalizedUser.especialidadDocente || existingFirestoreData.especialidad_docente || null;
-                        normalizedUser.organizacion = normalizedUser.organizacion || existingFirestoreData.organizacion || null;
-
-                        // Final state update with merged data
-                        setUserData({ ...normalizedUser });
-
-                        const firestoreData = {
-                            userId: normalizedUser.userId,
-                            email: normalizedUser.email,
-                            nombre: finalNombreForFirestore,
-                            apellido_paterno: normalizedUser.apellidoPaterno,
-                            apellido_materno: normalizedUser.apellidoMaterno,
-                            foto_url: normalizedUser.fotoUrl,
-                            rol: normalizedUser.rol,
-                            is_first_login: normalizedUser.isFirstLogin,
-                            updatedAt: new Date().toISOString()
-                        };
-
-                        // Merge extended fields for Firestore update
-                        const extendedFields = {
-                            grupo_id: normalizedUser.grupoId,
-                            matricula: normalizedUser.matricula,
-                            carrera_id: normalizedUser.carreraId,
-                            profesion: normalizedUser.profesion,
-                            especialidad_docente: normalizedUser.especialidadDocente,
-                            organizacion: normalizedUser.organizacion
-                        };
-
-                        // Only overwrite extended fields if they have value or if we're not in first login
-                        if (!normalizedUser.isFirstLogin || Object.values(extendedFields).some(v => v !== null)) {
-                            Object.assign(firestoreData, extendedFields);
-                        }
-
-                        await setDoc(userDocRef, firestoreData, { merge: true });
-                    }
-
+                    // Removed SMART SYNC direct Firestore writes from the frontend.
+                    // The backend is the single source of truth and handles database creation securely.
                 } catch (error) {
                     console.error('Error loading user data:', error);
                     // Fallback: usar datos de Firebase

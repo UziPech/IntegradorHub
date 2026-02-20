@@ -9,6 +9,7 @@ public interface IUserRepository
     Task<IEnumerable<User>> GetByGroupIdAsync(string groupId);
     Task<IEnumerable<User>> SearchByNameAsync(string searchTerm, string groupId);
     Task CreateAsync(User user);
+    Task CreateIfNotExistsAsync(User user);
     Task UpdateAsync(User user);
     
     // User Management

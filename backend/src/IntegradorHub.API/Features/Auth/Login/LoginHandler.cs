@@ -165,8 +165,8 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                 IsFirstLogin = true // Necesita seleccionar grupo
             };
 
-            await _userRepository.CreateAsync(newUser);
-            Console.WriteLine($"[DEBUG] LoginHandler: CREATED NEW USER {newUser.Email} with Role {newUser.Rol}");
+            await _userRepository.CreateIfNotExistsAsync(newUser);
+            Console.WriteLine($"[DEBUG] LoginHandler: Attempting to create new user {newUser.Email} with Role {newUser.Rol} (Safe from race conditions)");
 
             return new LoginResponse(
                 newUser.Id,
