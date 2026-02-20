@@ -32,3 +32,27 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 🎨 Rediseño del Componente y Galería de Proyectos `ShowcaseCard` (Febrero 2026)
+
+### 1. Formato y Relación de Aspecto
+- Se reemplazó la anticuada proporción cuadrada (`aspect-square`) por un inmersivo formato panorámico u horizontal (`aspect-video`) idóneo para aplicaciones de software web y móvil.
+- El contenedor de la tarjeta ahora utiliza un sistema de `max-w-4xl` en el grid de una sola columna, dotando al proyecto de un espacio privilegiado para mostrar sus detalles, similar a un feed profesional.
+
+### 2. Implementación de "Caja de Luz" Interactiva (Lightbox)
+- Se desarrolló e integró un componente de `Lightbox` personalizado cuando el usuario hace un clic en el "Pitch".
+- Este "Lightbox" no secuestra el navegador, sino que genera una elegante capa semitransparente color negro al 95% para oscurecer la galería y centrar la atención.
+- Se incluyeron controles dedicados: un botón de "Cerrar" en la esquina, e indicadores `dots` de paginación para cambiar rápidamente entre video e imágenes sin abandonar el modo inmersivo.
+
+### 3. Fusión Orgánica Multimedia
+- Se actualizaron todos los fondos que colindan con el contenido multimedia (Imágenes y Videos) de `bg-gray-100` y `bg-gray-900` hacia `bg-black` puro.
+- El contenido ahora usa `object-contain` en lugar de `cover`. Con el fondo negro integrado, las diferencias de relación de aspecto de las capturas (algunas más altas, algunas más chatas) se disfrazan mediante elegantes bandas negras que emulan el "letterbox" cinematográfico o panorámico sin mutilar los bordes de la imagen con recortes bruscos.
+
+### 4. Feed de Navegación "Infinita" Orgánica
+- Se detectó un problema de solapamiento jerárquico (`Z-Index`) al momento de hacer scroll donde el componente `Ranking Badge` interactuaba mal con la cabecera del sitio.
+- Se retiró el la propiedad "fija" (`sticky top-0`) de la cabecera `Galería de Proyectos`. Esto dota a la página de "Showcase" de una fluidez natural donde el encabezado principal otorga contexto al aterrizar, pero retrocede y cede el protagonismo al contenido al momento de explorar la lista de estudiantes, emulando la clásica UX de un "feed" de red social.
+
+---
+*Fin del registro de esta actualización.*
