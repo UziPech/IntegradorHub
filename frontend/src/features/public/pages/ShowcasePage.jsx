@@ -133,7 +133,7 @@ export function ShowcasePage() {
                         ))}
                     </div>
                 ) : filteredProjects.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-16 max-w-3xl mx-auto px-4">
+                    <div className="grid grid-cols-1 gap-16 max-w-4xl mx-auto px-4">
                         {filteredProjects.map(project => (
                             <ShowcaseCard
                                 key={project.id}
