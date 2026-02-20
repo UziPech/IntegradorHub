@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Play, Users, ExternalLink, Edit, Star, ChevronLeft, ChevronRight, Image as ImageIcon, Trophy } from 'lucide-react';
+import { Play, Users, ExternalLink, Edit, Star, ChevronLeft, ChevronRight, Image as ImageIcon, Trophy, X } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../lib/axios';
@@ -10,6 +10,8 @@ export function ShowcaseCard({ project, onClick }) {
     const { userData } = useAuth();
     const navigate = useNavigate();
     const videoRef = useRef(null);
+    const lightboxVideoRef = useRef(null);
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
     // Voting State
     // Voting State
@@ -99,7 +101,7 @@ export function ShowcaseCard({ project, onClick }) {
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col mb-12 group group-hover:-translate-y-1 hover:ring-1 hover:ring-indigo-100 w-full max-w-xl mx-auto">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col mb-12 group group-hover:-translate-y-1 hover:ring-1 hover:ring-indigo-100 w-full mx-auto">
 
             {/* --- 1. Header: User & Status (Instagram Style Top) --- */}
             <div className="p-4 flex items-center justify-between border-b border-gray-50 bg-white z-10">
@@ -138,9 +140,9 @@ export function ShowcaseCard({ project, onClick }) {
                 </div>
             </div>
 
-            {/* --- 2. Media Area (Full Width, Rectangular) --- */}
+            {/* --- 2. Media Area (Landscape 16:9 for Web/Mobile Systems) --- */}
             <div
-                className="w-full aspect-video bg-gray-50 relative flex items-center justify-center overflow-hidden"
+                className="w-full aspect-video bg-black relative flex items-center justify-center overflow-hidden"
                 onMouseEnter={() => {
                     if (currentMedia.type === 'video') {
                         setIsPlaying(true);
@@ -156,14 +158,21 @@ export function ShowcaseCard({ project, onClick }) {
             >
                 {/* Media Content */}
                 {currentMedia.type === 'video' ? (
-                    <div className="w-full h-full relative bg-gray-900 flex items-center justify-center">
+                    <div
+                        className="w-full h-full relative flex items-center justify-center cursor-pointer bg-black"
+                        title="Clic para ampliar"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsLightboxOpen(true);
+                        }}
+                    >
                         <video
                             ref={videoRef}
                             src={currentMedia.url}
                             loop
                             muted
                             playsInline
-                            className={`w-full h-full object-cover transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-40'}`}
+                            className={`w-full h-full object-contain transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-40'}`}
                         />
 
                         {/* Play Overlay (Only visible when paused) */}
@@ -180,11 +189,20 @@ export function ShowcaseCard({ project, onClick }) {
                         </span>
                     </div>
                 ) : currentMedia.type === 'image' ? (
-                    <img
-                        src={currentMedia.url}
-                        alt={project.titulo}
-                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    />
+                    <div
+                        className="w-full h-full bg-black flex items-center justify-center cursor-pointer group/img"
+                        title="Clic para ampliar"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsLightboxOpen(true);
+                        }}
+                    >
+                        <img
+                            src={currentMedia.url}
+                            alt={project.titulo}
+                            className="w-full h-full object-contain transition-transform duration-700 group-hover/img:scale-105"
+                        />
+                    </div>
                 ) : (
                     // Placeholder
                     <div className="flex flex-col items-center justify-center text-gray-500">
@@ -198,13 +216,13 @@ export function ShowcaseCard({ project, onClick }) {
                     <>
                         <button
                             onClick={prevSlide}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/70 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-30 shadow-lg"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/70 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-30 shadow-lg cursor-pointer"
                         >
                             <ChevronLeft size={20} />
                         </button>
                         <button
                             onClick={nextSlide}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/70 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-30 shadow-lg"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/70 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-30 shadow-lg cursor-pointer"
                         >
                             <ChevronRight size={20} />
                         </button>
@@ -299,6 +317,85 @@ export function ShowcaseCard({ project, onClick }) {
                     </button>
                 </div>
             </div>
+
+            {/* --- LIGHTBOX OVERLAY --- */}
+            {isLightboxOpen && (
+                <div
+                    className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-md"
+                    onClick={() => setIsLightboxOpen(false)}
+                >
+                    {/* Close Button */}
+                    <button
+                        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsLightboxOpen(false);
+                        }}
+                    >
+                        <X size={32} />
+                    </button>
+
+                    {/* Navigation Arrows (if multiple media) */}
+                    {mediaItems.length > 1 && (
+                        <>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentSlide((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
+                                }}
+                                className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
+                            >
+                                <ChevronLeft size={36} />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentSlide((prev) => (prev + 1) % mediaItems.length);
+                                }}
+                                className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
+                            >
+                                <ChevronRight size={36} />
+                            </button>
+                        </>
+                    )}
+
+                    {/* Lightbox Content */}
+                    <div
+                        className="relative w-full h-full max-w-[90vw] max-h-[90vh] flex items-center justify-center pointer-events-none"
+                    >
+                        {currentMedia.type === 'video' ? (
+                            <video
+                                src={currentMedia.url}
+                                controls
+                                autoPlay
+                                className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
+                            />
+                        ) : currentMedia.type === 'image' ? (
+                            <img
+                                src={currentMedia.url}
+                                alt="Contenido Ampliado"
+                                className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
+                            />
+                        ) : null}
+                    </div>
+
+                    {/* Lightbox Dots Indicator */}
+                    {mediaItems.length > 1 && (
+                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-50 bg-black/50 px-4 py-2 rounded-full border border-white/10">
+                            {mediaItems.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentSlide ? 'bg-white scale-125' : 'bg-white/30 cursor-pointer hover:bg-white/60'}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCurrentSlide(idx);
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
