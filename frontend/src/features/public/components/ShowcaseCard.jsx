@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Play, Users, ExternalLink, Edit, Star, ChevronLeft, ChevronRight, Image as ImageIcon, Trophy } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ export function ShowcaseCard({ project, onClick }) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const { userData } = useAuth();
     const navigate = useNavigate();
+    const videoRef = useRef(null);
 
     // Voting State
     // Voting State
@@ -98,49 +99,91 @@ export function ShowcaseCard({ project, onClick }) {
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col md:flex-row h-auto md:h-[320px] mb-8 group">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col mb-12 group group-hover:-translate-y-1 hover:ring-1 hover:ring-indigo-100 w-full max-w-xl mx-auto">
 
-            {/* --- LEFT: Media Carousel (55% width) --- */}
+            {/* --- 1. Header: User & Status (Instagram Style Top) --- */}
+            <div className="p-4 flex items-center justify-between border-b border-gray-50 bg-white z-10">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-50 text-sm shadow-sm">
+                        {project.liderNombre?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                    <div className="flex flex-col">
+                        <h4 className="text-sm font-bold text-gray-900 leading-none truncate max-w-[180px]" title={project.liderNombre}>
+                            {project.liderNombre || 'Desconocido'}
+                        </h4>
+                        <span className="text-[11px] text-gray-400 mt-1 font-medium">
+                            {new Date(project.createdAt).toLocaleDateString()}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Status Badge */}
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${project.estado === 'Completado' ? 'bg-green-50 text-green-700 border border-green-200/50' :
+                        project.estado === 'Activo' ? 'bg-blue-50 text-blue-700 border border-blue-200/50' :
+                            'bg-gray-50 text-gray-500 border border-gray-200/50'
+                        }`}>
+                        {project.estado}
+                    </span>
+
+                    {isOwner && (
+                        <button
+                            onClick={handleEditClick}
+                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
+                            title="Editar Proyecto"
+                        >
+                            <Edit size={16} />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* --- 2. Media Area (Full Width, Rectangular) --- */}
             <div
-                className="w-full md:w-[55%] bg-black relative flex items-center justify-center overflow-hidden"
-                onClick={onClick}
-                onMouseEnter={() => currentMedia.type === 'video' && setIsPlaying(true)}
-                onMouseLeave={() => currentMedia.type === 'video' && setIsPlaying(false)}
+                className="w-full aspect-video bg-gray-50 relative flex items-center justify-center overflow-hidden"
+                onMouseEnter={() => {
+                    if (currentMedia.type === 'video') {
+                        setIsPlaying(true);
+                        videoRef.current?.play().catch(() => { });
+                    }
+                }}
+                onMouseLeave={() => {
+                    if (currentMedia.type === 'video') {
+                        setIsPlaying(false);
+                        videoRef.current?.pause();
+                    }
+                }}
             >
                 {/* Media Content */}
                 {currentMedia.type === 'video' ? (
-                    isPlaying ? (
+                    <div className="w-full h-full relative bg-gray-900 flex items-center justify-center">
                         <video
+                            ref={videoRef}
                             src={currentMedia.url}
-                            muted
                             loop
-                            autoPlay
-                            className="w-full h-full object-contain bg-black"
+                            muted
+                            playsInline
+                            className={`w-full h-full object-cover transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-40'}`}
                         />
-                    ) : (
-                        <div className="relative w-full h-full">
-                            <img
-                                src={currentMedia.thumbnail || project.thumbnailUrl || ''}
-                                alt="Video Thumbnail"
-                                className="w-full h-full object-cover opacity-80"
-                                onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                            {/* Play Overlay */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
-                                    <Play fill="white" className="text-white ml-1" size={32} />
+
+                        {/* Play Overlay (Only visible when paused) */}
+                        {!isPlaying && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-16 h-16 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-xl transition-all duration-300">
+                                    <Play fill="white" className="text-white ml-2" size={32} />
                                 </div>
                             </div>
-                            <span className="absolute bottom-3 left-3 px-2 py-1 bg-black/70 rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10">
-                                Video Pitch
-                            </span>
-                        </div>
-                    )
+                        )}
+
+                        <span className="absolute bottom-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md rounded-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/20 shadow-lg pointer-events-none z-10">
+                            Video Pitch
+                        </span>
+                    </div>
                 ) : currentMedia.type === 'image' ? (
                     <img
                         src={currentMedia.url}
                         alt={project.titulo}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                     />
                 ) : (
                     // Placeholder
@@ -155,146 +198,105 @@ export function ShowcaseCard({ project, onClick }) {
                     <>
                         <button
                             onClick={prevSlide}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/70 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-30 shadow-lg"
                         >
                             <ChevronLeft size={20} />
                         </button>
                         <button
                             onClick={nextSlide}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 backdrop-blur-md text-white rounded-full hover:bg-black/70 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-30 shadow-lg"
                         >
                             <ChevronRight size={20} />
                         </button>
 
                         {/* Dots Indicator */}
-                        <div className="absolute bottom-3 right-3 flex gap-1.5 z-10">
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
                             {mediaItems.map((_, idx) => (
                                 <div
                                     key={idx}
-                                    className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all ${idx === currentSlide ? 'bg-white scale-110' : 'bg-white/50'}`}
+                                    className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${idx === currentSlide ? 'bg-white scale-125' : 'bg-white/40'}`}
                                 />
                             ))}
                         </div>
                     </>
                 )}
 
-                {/* Ranking Badge (Total Points) - Absolute Top Left */}
+                {/* Ranking Badge (Total Points) - Absolute Top Right */}
                 {project.puntosTotales > 0 && (
-                    <div className="absolute top-3 left-3 z-10 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-md shadow-lg flex items-center gap-1.5 font-bold text-xs border border-yellow-300">
-                        <Trophy size={14} fill="currentColor" />
+                    <div className="absolute top-4 right-4 z-30 bg-yellow-400/95 backdrop-blur-md text-yellow-900 px-3 py-1.5 rounded-full shadow-xl flex items-center gap-1.5 font-bold text-xs border border-yellow-300/50">
+                        <Trophy size={16} fill="currentColor" />
                         <span>{project.puntosTotales} pts</span>
                     </div>
                 )}
             </div>
 
-            {/* --- RIGHT: Content & Info (45% width) --- */}
-            <div className="w-full md:w-[45%] flex flex-col justify-between bg-white relative">
+            {/* --- 3. Body & Footer (Info Section) --- */}
+            <div className="p-5 flex flex-col flex-1 bg-white">
 
-                {/* 1. Header: User & Status */}
-                <div className="p-5 pb-2 flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-50 text-sm">
-                            {project.liderNombre?.charAt(0).toUpperCase() || '?'}
-                        </div>
-                        <div className="flex flex-col">
-                            <h4 className="text-sm font-bold text-gray-900 leading-none truncate max-w-[120px]" title={project.liderNombre}>
-                                {project.liderNombre || 'Desconocido'}
-                            </h4>
-                            <span className="text-[10px] text-gray-500 mt-0.5">
-                                {new Date(project.createdAt).toLocaleDateString()}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        {/* Status Badge */}
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${project.estado === 'Completado' ? 'bg-green-50 text-green-700 border-green-100' :
-                            project.estado === 'Activo' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                'bg-gray-50 text-gray-500 border-gray-100'
-                            }`}>
-                            {project.estado}
-                        </span>
-
-                        {isOwner && (
-                            <button
-                                onClick={handleEditClick}
-                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
-                                title="Editar Proyecto"
-                            >
-                                <Edit size={16} />
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* 2. Body: Title & Description */}
-                <div className="px-5 py-2 flex-1 overflow-hidden" onClick={onClick}>
-                    <h3 className="text-lg font-bold text-gray-900 leading-snug mb-2 cursor-pointer hover:text-indigo-600 transition-colors line-clamp-2">
+                {/* Title & Description */}
+                <div className="mb-4">
+                    <h3 onClick={onClick} className="text-lg font-bold text-gray-900 leading-snug mb-2 cursor-pointer hover:text-indigo-600 transition-colors line-clamp-1">
                         {project.titulo || 'Sin Título'}
                     </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-3 md:line-clamp-4 cursor-pointer">
+                    <p onClick={onClick} className="text-gray-600 text-sm leading-relaxed line-clamp-2 cursor-pointer">
                         {description}
                     </p>
                 </div>
 
-                {/* 3. Footer: Techs, Rating & Actions */}
-                <div className="px-5 pb-5 pt-3 mt-auto bg-gray-50/30 border-t border-gray-100">
+                {/* Tech Stack */}
+                <div className="flex flex-wrap gap-1.5 mb-5 mt-auto">
+                    {project.stackTecnologico?.slice(0, 3).map((tech, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-gray-50 border border-gray-100 text-gray-600 text-[11px] font-semibold rounded-md shadow-sm">
+                            {tech}
+                        </span>
+                    ))}
+                    {(project.stackTecnologico?.length || 0) > 3 && (
+                        <span className="px-2 py-1 text-gray-400 text-[11px] font-medium bg-gray-50/50 rounded-md">
+                            +{project.stackTecnologico.length - 3}
+                        </span>
+                    )}
+                </div>
 
-                    {/* Tech Stack (One line) */}
-                    <div className="flex flex-wrap gap-1.5 mb-4 max-h-[26px] overflow-hidden">
-                        {project.stackTecnologico?.slice(0, 4).map((tech, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-white border border-gray-200 text-gray-600 text-[10px] font-semibold rounded shadow-sm">
-                                {tech}
-                            </span>
-                        ))}
-                        {(project.stackTecnologico?.length || 0) > 4 && (
-                            <span className="px-1.5 py-0.5 text-gray-400 text-[10px] font-medium">
-                                +{project.stackTecnologico.length - 4}
-                            </span>
+                {/* Bottom Action Row */}
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+
+                    {/* Interactive Rating for Guests / Official Rating for Owner */}
+                    <div className="flex items-center gap-3">
+                        {/* Show Official Grade if exists */}
+                        {project.calificacion !== null && project.calificacion !== undefined && (
+                            <div className="flex items-center gap-1.5 text-indigo-700 font-bold text-xs bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100" title="Calificación Oficial">
+                                <span>Calificación: {project.calificacion}</span>
+                            </div>
+                        )}
+
+                        {/* Star Voting - Only if NOT owner */}
+                        {!isOwner && (
+                            <div className="flex items-center" onMouseLeave={() => setHoverRating(0)}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                        key={star}
+                                        onMouseEnter={() => setHoverRating(star)}
+                                        onClick={(e) => handleRate(e, star)}
+                                        disabled={isVoting}
+                                        className={`p-0.5 transition-all duration-200 hover:scale-125 ${(hoverRating || userRating) >= star
+                                            ? 'text-yellow-400 drop-shadow-sm'
+                                            : 'text-gray-200 hover:text-yellow-300'
+                                            }`}
+                                    >
+                                        <Star size={18} fill={(hoverRating || userRating) >= star ? "currentColor" : "none"} />
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
 
-                    {/* Bottom Action Row */}
-                    <div className="flex items-center justify-between">
-
-                        {/* Interactive Rating for Guests / Official Rating for Owner */}
-                        <div className="flex items-center gap-3">
-                            {/* Show Official Grade if exists */}
-                            {project.calificacion !== null && project.calificacion !== undefined && (
-                                <div className="flex items-center gap-1 text-gray-700 font-bold text-xs bg-gray-100 px-2 py-1 rounded border border-gray-200" title="Calificación Oficial">
-                                    <span>Nota: {project.calificacion}</span>
-                                </div>
-                            )}
-
-                            {/* Star Voting - Only if NOT owner */}
-                            {!isOwner && (
-                                <div className="flex items-center" onMouseLeave={() => setHoverRating(0)}>
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                            key={star}
-                                            onMouseEnter={() => setHoverRating(star)}
-                                            onClick={(e) => handleRate(e, star)}
-                                            disabled={isVoting}
-                                            className={`p-0.5 transition-colors ${(hoverRating || userRating) >= star
-                                                ? 'text-yellow-400'
-                                                : 'text-gray-300 hover:text-yellow-200'
-                                                }`}
-                                        >
-                                            <Star size={14} fill={(hoverRating || userRating) >= star ? "currentColor" : "none"} />
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        <button
-                            onClick={onClick}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-md hover:bg-gray-800 transition-all shadow-sm group/btn"
-                        >
-                            Ver Detalles
-                            <ExternalLink size={12} className="group-hover/btn:translate-x-0.5 transition-transform" />
-                        </button>
-                    </div>
+                    <button
+                        onClick={onClick}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all shadow-sm group/btn hover:shadow-md active:scale-95"
+                    >
+                        Ver más
+                        <ExternalLink size={14} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-0.5 transition-transform" />
+                    </button>
                 </div>
             </div>
         </div>
