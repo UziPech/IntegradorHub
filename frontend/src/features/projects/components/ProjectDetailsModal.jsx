@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, UserPlus, Trash2, ExternalLink, Calendar, BookOpen, Hash, Users, Activity, Image as ImageIcon, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { UserAvatar } from '../../../components/UserAvatar';
 import api from '../../../lib/axios';
 import { EvaluationPanel } from '../../evaluations/components/EvaluationPanel';
 import { CanvasEditor } from './CanvasEditor';
@@ -413,7 +414,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center border-2 border-white shadow-sm text-white overflow-hidden">
-                                            <span className="text-sm font-bold">{creadorNombre.charAt(0).toUpperCase()}</span>
+                                            <UserAvatar src={leader?.fotoUrl || leader?.FotoUrl} name={creadorNombre} size="md" className="w-full h-full" />
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-gray-900 leading-tight">
@@ -495,9 +496,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                         className="p-2 rounded-xl hover:bg-gray-50 flex items-center justify-between group transition-colors"
                                                     >
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 overflow-hidden">
-                                                                <span className="text-xs font-bold">{(member.nombre || 'U').charAt(0)}</span>
-                                                            </div>
+                                                            <UserAvatar src={member.fotoUrl || member.FotoUrl} name={member.nombre || 'U'} size="sm" className="bg-gray-200" />
                                                             <div>
                                                                 <p className="text-sm font-bold text-gray-800 leading-none">
                                                                     {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}

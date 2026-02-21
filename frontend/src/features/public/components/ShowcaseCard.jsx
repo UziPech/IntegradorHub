@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Play, Users, ExternalLink, Edit, Star, ChevronLeft, ChevronRight, Image as ImageIcon, Trophy, X } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { UserAvatar } from '../../../components/UserAvatar';
 import api from '../../../lib/axios';
 
 export function ShowcaseCard({ project, onClick }) {
@@ -106,9 +107,7 @@ export function ShowcaseCard({ project, onClick }) {
             {/* --- 1. Header: User & Status (Instagram Style Top) --- */}
             <div className="p-4 flex items-center justify-between border-b border-gray-50 bg-white z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-50 text-sm shadow-sm">
-                        {project.liderNombre?.charAt(0).toUpperCase() || '?'}
-                    </div>
+                    <UserAvatar src={project.liderFotoUrl} name={project.liderNombre} size="md" className="border border-indigo-50 shadow-sm" />
                     <div className="flex flex-col">
                         <h4 className="text-sm font-bold text-gray-900 leading-none truncate max-w-[180px]" title={project.liderNombre}>
                             {project.liderNombre || 'Desconocido'}
