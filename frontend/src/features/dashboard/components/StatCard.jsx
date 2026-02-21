@@ -11,10 +11,9 @@ export function StatCard({ title, value, subtitle, icon: Icon, color = 'blue' })
 
     return (
         <motion.div
-            variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 }
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
             className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow"
         >
             <div className="flex items-start justify-between">

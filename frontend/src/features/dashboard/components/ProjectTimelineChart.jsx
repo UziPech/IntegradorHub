@@ -80,7 +80,7 @@ export function ProjectTimelineChart({ project }) {
         <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
             <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Rendimiento del Proyecto</h3>
-                <p className="text-sm text-gray-500">Evolución de puntos (simulada)</p>
+                <p className="text-sm text-gray-500">Evolución de puntos</p>
             </div>
 
             <div className="h-64 w-full">

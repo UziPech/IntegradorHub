@@ -9,6 +9,7 @@ import { CreateProjectForm } from '../../projects/components/CreateProjectForm';
 import { ProjectCard } from '../../projects/components/ProjectCard';
 import { ProjectDetailsModal } from '../../projects/components/ProjectDetailsModal';
 import { StudentDashboard } from '../components/StudentDashboard';
+import { TeacherDashboard } from '../components/TeacherDashboard';
 
 export function DashboardPage() {
     const { userData } = useAuth();
@@ -43,8 +44,12 @@ export function DashboardPage() {
 
     useEffect(() => {
         if (userData?.rol === 'admin' || userData?.rol === 'SuperAdmin') window.location.href = '/admin';
-        if (userData?.grupoId) {
-            Promise.all([fetchProjects(), fetchGroupDetails(), fetchSuggestions()]);
+        if (userData) {
+            Promise.all([
+                fetchProjects(),
+                userData.grupoId ? fetchGroupDetails() : Promise.resolve(),
+                userData.rol === 'Alumno' ? fetchSuggestions() : Promise.resolve()
+            ]);
         } else {
             setLoading(false);
         }
@@ -85,7 +90,10 @@ export function DashboardPage() {
                     if (e.response?.status !== 404) console.error('Error fetching my project:', e);
                     projectsData = [];
                 }
-            } else {
+            } else if (userData?.rol === 'Docente') {
+                const response = await api.get(`/api/projects/teacher/${userData.userId}`);
+                projectsData = response.data;
+            } else if (userData?.grupoId) {
                 const response = await api.get(`/api/projects/group/${userData.grupoId}`);
                 projectsData = response.data;
             }
@@ -141,42 +149,13 @@ export function DashboardPage() {
                         onProjectClick={() => setSelectedProject(projects[0])}
                     />
                 ) : (
-                    <>
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-lg font-semibold text-gray-900">Proyectos Activos</h2>
-                                <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full text-xs font-semibold">
-                                    {projects.length}
-                                </span>
-                            </div>
-                        </div>
-
-                        <motion.div
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                        >
-                            {filteredProjects.length > 0 ? (
-                                filteredProjects.map(project => (
-                                    <motion.div key={project.id} variants={itemVariants}>
-                                        <ProjectCard
-                                            project={project}
-                                            onClick={() => setSelectedProject(project)}
-                                            layoutId={project.id}
-                                        />
-                                    </motion.div>
-                                ))
-                            ) : (
-                                <div className="col-span-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
-                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay proyectos activos</h3>
-                                    <p className="text-gray-500 max-w-md mx-auto mb-6">
-                                        Espera a que los alumnos comiencen a crear sus proyectos.
-                                    </p>
-                                </div>
-                            )}
-                        </motion.div>
-                    </>
+                    <TeacherDashboard
+                        userData={userData}
+                        projects={projects}
+                        groupName={groupName}
+                        searchQuery={searchQuery}
+                        onProjectClick={(project) => setSelectedProject(project)}
+                    />
                 )}
             </main>
 
