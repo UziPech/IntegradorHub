@@ -163,7 +163,9 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
 
     // Leader Name Resolution
     const leader = project?.members?.find(m => m.id === project.liderId);
-    const creadorNombre = leader ? (leader.nombre !== 'Usuario' ? leader.nombre : leader.email) : 'Desconocido';
+    const creadorNombre = leader
+        ? (leader.nombre !== 'Usuario' ? leader.nombre : leader.email)
+        : (project?.liderNombre || 'Desconocido');
 
     // Gather Media Items
     const mediaItems = [];
@@ -434,6 +436,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                 {/* Text Content from Canvas Editor */}
                                 <div className="prose prose-sm max-w-none text-gray-800">
                                     <CanvasEditor
+                                        key={`canvas-editor-${fetchingDetails ? 'loading' : 'loaded'}`}
                                         project={project}
                                         readOnly={true}
                                         mode="text"
