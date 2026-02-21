@@ -56,3 +56,29 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 🚀 Mejoras en Modal de Detalles de Proyectos y Sincronización de Datos (Febrero 2026)
+
+### 1. Rediseño del Componente `ProjectDetailsModal` (Estilo Instagram)
+- Se reestructuró el modal de detalles del proyecto adoptando un diseño de dos columnas (Master-Detail).
+- La columna izquierda ahora está dedicada íntegramente a un carrusel multimedia interactivo y centralizado, soportando tanto imágenes como video pitches interactivos.
+- La columna derecha agrupa la información vital: metadatos del equipo, documento del Canvas Editor y la sección de evaluaciones.
+- Se eliminaron pantallas de "Cargando..." artificiales, permitiendo una renderización casi instantánea.
+
+### 2. Carrusel Multimedia Integrado
+- Se reemplazó el antiguo diseño donde las imágenes y videos se apilaban verticalmente formando columnas interminables.
+- Ahora, el carrusel de `ProjectDetailsModal` hereda la misma fluidez y controles del `ShowcaseCard`, incluyendo flechas de navegación y dots indicadores para una UX homogénea en todo IntegradorHub.
+
+### 3. Sincronización del Text-Editor y Resoluciones en Tiempo Real
+- **Misterio del Editor Vacío:** Se detectó un glitch visual donde el texto elaborado en el `CanvasEditor` (descripción del proyecto) no se visualizaba al primer clic en la tarjeta debido a componentes que no se refrescaban al completarse la carga asíncrona (Async data fetching).
+- **La Solución (Frontend):** Se inyectó robustez al ciclo de vida del componente mediante una clave o `key` dinámica. Ahora el modal fuerza a que el editor principal se vuelva a ensamblar desde cero justo cuando la base de datos termina de enviar la información, garantizando que todo el contenido aparezca a la primera sin recargar la página.
+- **Icono de Creador "L":** Se solucionó un error lógico en la prioridad de renderización que causaba que el Avatar del Creador mostrara por error la inicial "L" (de Líder). 
+
+### 4. Inteligencia en Extracción de Textos para Tarjetas (Backend)
+- **El Problema:** Ciertas tarjetas (`ShowcaseCard`) en la galería pública mostraban "Sin descripción disponible" a pesar de que los alumnos sí habían escrito texto en su proyecto. Esto sucedía porque, a nivel estructural, el editor de texto introducía de manera invisible bloques HTML vacíos (`<p><br></p>`).
+- **La Solución (Backend):** Se optimizó la lógica central del endpoint de listado público en C# (`GetPublicProjectsHandler.cs`). Ahora, antes de pre-visualizar el resumen para la galería, el backend realiza una desinfección (limpieza con Expresiones Regulares `Regex`) que ignora las etiquetas HTML muertas y busca el primer bloque que contenga texto real para mostrarlo elegantemente a los visitantes como la verdadera descripción.
+
+---
+*Fin del registro de esta actualización.*
