@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import api from '../../../lib/axios';
 import { EvaluationPanel } from '../../evaluations/components/EvaluationPanel';
 import { CanvasEditor } from './CanvasEditor';
+import { ProjectPDFExportButton } from './ProjectPDFExport';
 
 export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate }) {
     const { userData } = useAuth();
@@ -225,12 +226,15 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                     </div>
                     <h2 className="text-3xl font-bold text-gray-800 tracking-tight">{project.titulo}</h2>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="neu-icon-btn w-12 h-12 bg-[#F0F0F3] flex items-center justify-center text-gray-500 hover:text-red-500 transition-colors"
-                >
-                    <X size={24} />
-                </button>
+                <div className="flex items-center gap-3">
+                    <ProjectPDFExportButton project={project} creadorNombre={creadorNombre} />
+                    <button
+                        onClick={onClose}
+                        className="neu-icon-btn w-12 h-12 bg-[#F0F0F3] flex items-center justify-center text-gray-500 hover:text-red-500 transition-colors shadow-sm border border-gray-200"
+                    >
+                        <X size={24} />
+                    </button>
+                </div>
             </div>
 
             {/* Master-Detail Layout (Instagram Style) */}
