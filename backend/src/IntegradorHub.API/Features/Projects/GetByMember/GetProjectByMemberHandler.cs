@@ -69,7 +69,8 @@ public class GetProjectByMemberHandler : IRequestHandler<GetProjectByMemberQuery
             project.EsPublico,
             project.PuntosTotales,
             project.ConteoVotos,
-            project.Votantes ?? new Dictionary<string, int>()
+            project.Votantes ?? new Dictionary<string, int>(),
+            project.Calificacion
         );
     }
 }
