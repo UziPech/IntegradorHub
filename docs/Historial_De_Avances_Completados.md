@@ -82,3 +82,47 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 📊 Rediseño y Optimización de Dashboards (Alumno y Docente) (Febrero 2026)
+
+### 1. Dashboard de Alumnos (Bento Grid)
+- Se desarrolló el nuevo componente `StudentDashboard.jsx` adoptando un diseño moderno estilo "Bento Grid".
+- **Métricas Rápidas:** Se agregaron tarjetas de estadísticas (`StatCard`) para mostrar la fracción de miembros del equipo, el estado de evaluación oficial y un indicador inteligente de "Listo para evaluar" (que calcula si han pasado más de 2 días desde la creación del proyecto).
+- **Rendimiento Visual:** Se integró la librería `recharts` para mostrar una gráfica de línea de tiempo del proyecto (`ProjectTimelineChart`), proyectando de manera gráfica la evolución del estado del proyecto.
+- **Búsqueda de Compañeros:** Se integró el panel lateral `TeamSuggestions` para sugerir proactivamente a los estudiantes sin equipo que se unan al proyecto actual, fomentando la colaboración.
+- **Correcciones:** Se solucionó un bug de carga donde la información de los miembros se mostraba oscilante o vacía en el renderizado inicial al mapear correctamente las propiedades del modelo (incluyendo `calificacion` y `puntosTotales`).
+
+### 2. Dashboard de Docentes (Atención Prioritaria)
+- Se implementó `TeacherDashboard.jsx` diseñado específicamente para resolver las necesidades del flujo de revisión.
+- **KPIs Educativos:** Se despliegan contadores en tiempo real mostrando "Proyectos Totales", "Proyectos Aprobados" (basado en una calificación >= 70) y "Listos para Evaluar".
+- **Filtro de Relevancia:** Se diseñó una sección de "Atención Prioritaria" que aísla visualmente los proyectos críticos. El sistema clasifica automáticamente a un proyecto como "Listo para Evaluar" únicamente si el equipo lo ha marcado como Público (`esPublico === true`) y el docente AÚN no le ha asignado una calificación.
+- **Extensión del Backend C#:** Se reconfiguraron los Data Transfer Objects (DTOs) en `GetProjectsByTeacherHandler.cs` y `GetProjectsByGroupHandler.cs` para transportar los campos `EsPublico`, `CreatedAt` y `Calificacion` hacia el frontend, empoderando los filtros del Dashboard.
+
+### 3. Fluidez y Corrección de Estados
+- **Arreglo del "Efecto Fantasma" en Animaciones:** Se detectó que las métricas (`StatCard`s) a veces no se mostraban tras el inicio de sesión. El problema provenía de un conflicto de estados encadenados heredados en `framer-motion`. Se reprogramó cada componente para gobernar individualmente sus propias animaciones iniciales (`initial` y `animate`), garantizando la aparición garantizada y ultra fluida al recargar o cambiar de datos rápidos.
+
+---
+*Fin del registro de esta actualización.*
+
+---
+
+## ⚡️ Optimización de Galería y Exportación PDF (Febrero 2026)
+
+### 1. Eliminación de Cuello de Botella (N+1) en Galería
+- **Problema:** En `GetPublicProjectsHandler.cs`, el servidor hacía peticiones secuenciales a la base de datos por cada proyecto público para obtener los datos de sus líderes y docentes, causando "lag" al cargar la Galería de Showcase.
+- **Solución:** Se transformó el algoritmo a un procesamiento en paralelo y búsqueda por diccionario usando `Task.WhenAll`. Ahora se extraen los IDs únicos y se lanza una única ráfaga a Firestore, reduciendo masivamente los tiempos de espera y entregando una experiencia de listado de proyectos fluida sin alterar los envíos de datos del Frontend.
+
+### 2. Generación Avanzada de PDF (`ProjectPDFExport`)
+- **Innovación en Cliente:** Se desarrolló un nuevo componente dinámico en React (`ProjectPDFExportButton`) interactuando con las librerías `html2canvas` y `jsPDF`. Permite a los usuarios exportar instantáneamente el contenido pesado de los proyectos como un reporte imprimible multipágina en formato A4 garantizando alta definición de texto e imágenes (scale x2).
+- **Template Neutro y CSS-Safe:** Se diseñó una plantilla estática ciega y blindada contra motores de render conflictivos. Para evadir la limitación impuesta por el nuevo soporte web de colores `oklch()` en Tailwind v4, se anularon sus selectores en este contexto mediante la inyección del tag `<style>` y el uso estricto de colores Hexadecimales (`#FFFFFF`, `#111827`) en formato `inline`, logrando que html2canvas interprete el DOM a la perfección sin colapsar el explorador.
+- **Manejo Robusto de Integración Web:** 
+  - Artefactos SVG complejos (Lucide) se reemplazaron transitoriamente por glifos universales neutros para neutralizar crashes nativos en el dibujo.
+  - Se orquestó la política dinámica de peticiones asíncronas para imágenes Firebase removiendo el tag rígido `crossOrigin` por el flexible flag global `useCORS`.
+  - Se engranó el motor con `allowTaint: true` e inyecciones de prórroga natural (`setTimeout`) para permitir que la ausencia o desconexión de un asset externo no mutile e impida la expedición del documento completo por completo de forma catastrófica.
+  - Los avatares dinámicos (iniciales) se recalcularon usando directivas arcaicas garantizadas como CSS `inline-block` y dimensiones fijas en lugar de Flexbox y auto-alineaciones, destrabando colapsos para renderizar bordes 50% perfectos sin distorsión.
+- **Conectividad QR Bridge:** Se instaló un generador matemático nativo (`react-qr-code`) anclado al header superior. Imprime firmemente y en tiempo real el código escaneable del link público de cada uno de los proyectos. Permitiéndole a examinadores o reclutadores obtener interatividad total del proyecto leyendo un folio en papel en el mundo real hacia un SmartPhone en apenas un instante.
+
+---
+*Fin del registro de esta actualización.*

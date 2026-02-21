@@ -25,12 +25,28 @@ public class GetPublicProjectsHandler : IRequestHandler<GetPublicProjectsQuery, 
     {
         var projects = await _projectRepository.GetPublicProjectsAsync();
 
+        // Extract unique user IDs for Leaders and Teachers to prevent N+1 queries
+        var userIds = projects.Select(p => p.LiderId)
+                              .Concat(projects.Where(p => !string.IsNullOrEmpty(p.DocenteId)).Select(p => p.DocenteId!))
+                              .Distinct()
+                              .ToList();
+
+        // Fetch users in parallel
+        var userTasks = userIds.Select(id => _userRepository.GetByIdAsync(id));
+        var usersArr = await Task.WhenAll(userTasks);
+        var usersDict = usersArr.Where(u => u != null).ToDictionary(u => u!.Id, u => u);
+
         var result = new List<PublicProjectDto>();
         foreach (var project in projects)
         {
-            var leader = await _userRepository.GetByIdAsync(project.LiderId);
-            var teacher = !string.IsNullOrEmpty(project.DocenteId) ? await _userRepository.GetByIdAsync(project.DocenteId) : null;
+            usersDict.TryGetValue(project.LiderId, out var leader);
             
+            User? teacher = null;
+            if (!string.IsNullOrEmpty(project.DocenteId))
+            {
+                usersDict.TryGetValue(project.DocenteId, out teacher);
+            }
+
             // Extract description from first non-empty text block if available
             var description = "";
             var textBlock = project.CanvasBlocks?.FirstOrDefault(b => 
