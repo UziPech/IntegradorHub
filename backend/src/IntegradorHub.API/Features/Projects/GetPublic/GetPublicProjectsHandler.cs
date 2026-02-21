@@ -31,8 +31,16 @@ public class GetPublicProjectsHandler : IRequestHandler<GetPublicProjectsQuery, 
             var leader = await _userRepository.GetByIdAsync(project.LiderId);
             var teacher = !string.IsNullOrEmpty(project.DocenteId) ? await _userRepository.GetByIdAsync(project.DocenteId) : null;
             
-            // Extract description from first text block if available
-            var description = project.CanvasBlocks?.FirstOrDefault(b => b.Type == "text")?.Content ?? "";
+            // Extract description from first non-empty text block if available
+            var description = "";
+            var textBlock = project.CanvasBlocks?.FirstOrDefault(b => 
+                b.Type == "text" && 
+                !string.IsNullOrWhiteSpace(System.Text.RegularExpressions.Regex.Replace(b.Content ?? "", "<[^>]*>", "")));
+            
+            if (textBlock != null)
+            {
+                description = System.Text.RegularExpressions.Regex.Replace(textBlock.Content ?? "", "<[^>]*>", "").Trim();
+            }
 
             result.Add(new PublicProjectDto(
                 project.Id,
