@@ -153,3 +153,26 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 🔐 Refinamiento de Autenticación y Mejoras de UI en Dashboard (Febrero 2026)
+
+### 1. Corrección Crítica en Lógica de Login (Frontend)
+- **El Problema:** Al ingresar una contraseña incorrecta para una cuenta existente, Firebase Auth arroja el error genérico `auth/invalid-credential` (por motivos de seguridad anti-enumeración de cuentas). La aplicación asumía erróneamente que cualquier error de este tipo significaba "Usuario No Encontrado" e inmediatamente redirigía al usuario a la pantalla de "Completar Registro".
+- **La Solución:** Se refactorizó la función `handleLogin` en `LoginPage.jsx` implementando un patrón de "Sonda de Creación". Cuando ocurre el error genérico, el sistema intenta ejecutar internamente un `createUserWithEmailAndPassword`:
+  - Si Firebase rechaza la creación con el error `auth/email-already-in-use`, el sistema **comprueba** matemáticamente que el usuario SÍ existe pero introdujo una contraseña incorrecta, mostrando el mensaje adecuado ("Contraseña incorrecta. Verifica tu contraseña e intenta de nuevo.").
+  - Si la creación tiene **éxito**, se comprueba que el usuario era genuinamente nuevo. Acto seguido, la cuenta temporal se elimina silenciosamente y al usuario se le redirige correctamente al formulario para completar su información.
+- Se agregó también manejo explícito para el error `auth/too-many-requests`.
+
+### 2. Pulido de UI en Formularios de Autenticación
+- **Selector de Visibilidad de Contraseña:** Se integró un botón interactivo (ícono de ojo de `lucide-react`) dentro del campo de contraseña en `LoginPage.jsx`, permitiendo a los usuarios revelar u ocultar el texto de su contraseña para mayor comodidad y prevención de errores tipográficos.
+- **Micro-interacciones y Compactación:** Se crearon nuevos estilos CSS-in-JS (`inputCompact`, `selectCompact`, `passwordWrapper`, `passwordToggle`) para reducir los espacios muertos (paddings verticales y fuentes) en el formulario de registro extendido, dándole un aspecto visual mucho más denso y profesional, evitando que el usuario necesite hacer un scroll excesivo.
+
+### 3. Solución de Mapeo de Datos en Dashboard (Alumnos)
+- **El Problema:** La sección "Encuentra a tu equipo" en `StudentDashboard.jsx` mostraba nombres genéricos como "US" e "Ingeniería" para los compañeros de grupo, a pesar de que el backend ya enviaba la información real a través del endpoint `/api/teams/available-students`.
+- **La Solución:** Se actualizó el componente dependiente `TeamSuggestions.jsx` porque estaba intentando extraer variables anticuadas (`student.nombre` y `student.carrera`). Ahora mapea correctamente la estructura del Backend contemporáneo leyendo `student.nombreCompleto` y `student.matricula`. 
+- **Mejora de UI Cortesia:** Aprovechando el rediseño, las tarjetas de estudiantes sugeridos se centraron por completo en su contenedor, y se les añadió la lógica para renderizar la foto de perfil en tiempo real (`student.fotoUrl`) mediante el componente circular, empleando un fallback de iniciales estilizadas si la foto es nula.
+
+---
+*Fin del registro de esta actualización.*
