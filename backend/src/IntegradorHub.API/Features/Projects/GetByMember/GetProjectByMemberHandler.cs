@@ -56,6 +56,7 @@ public class GetProjectByMemberHandler : IRequestHandler<GetProjectByMemberQuery
             project.Materia,
             project.MateriaId,
             project.Ciclo,
+            project.GrupoId,
             project.Estado,
             project.LiderId,
             project.DocenteId,

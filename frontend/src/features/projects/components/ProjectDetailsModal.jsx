@@ -36,6 +36,11 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     const [editTitle, setEditTitle] = useState(initialProject.titulo || '');
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Autocomplete State
+    const [availableStudents, setAvailableStudents] = useState([]);
+    const [fetchingStudents, setFetchingStudents] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
     // Carousel State
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -46,7 +51,22 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
 
     useEffect(() => {
         fetchDetails();
-    }, []);
+        if (project?.grupoId) {
+            fetchAvailableStudents();
+        }
+    }, [project?.grupoId]);
+
+    const fetchAvailableStudents = async () => {
+        setFetchingStudents(true);
+        try {
+            const response = await api.get(`/api/Teams/available-students?groupId=${project.grupoId}`);
+            setAvailableStudents(response.data || []);
+        } catch (err) {
+            console.error('Error fetching available students:', err);
+        } finally {
+            setFetchingStudents(false);
+        }
+    };
 
     const fetchDetails = async () => {
         try {
@@ -455,18 +475,66 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                         Squad ({project.miembrosIds?.length || 0}/5)
                                     </h3>
 
-                                    {/* Add Member */}
+                                    {/* Add Member Combobox */}
                                     {isLeader && (
-                                        <form onSubmit={handleAddMember} className="mb-4">
+                                        <form onSubmit={handleAddMember} className="mb-4 relative">
                                             <div className="bg-gray-50 border border-gray-100 rounded-xl p-1.5 flex items-center gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={newMemberEmail}
-                                                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                                                    placeholder="Matrícula del nuevo miembro..."
-                                                    className="bg-transparent flex-1 px-3 py-1 outline-none text-sm font-medium text-gray-800 placeholder-gray-400"
-                                                    disabled={loading}
-                                                />
+                                                <div className="relative flex-1">
+                                                    <input
+                                                        type="text"
+                                                        value={newMemberEmail}
+                                                        onChange={(e) => {
+                                                            setNewMemberEmail(e.target.value);
+                                                            setShowSuggestions(true);
+                                                        }}
+                                                        onFocus={() => setShowSuggestions(true)}
+                                                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                                        placeholder="Buscar por matrícula o nombre..."
+                                                        className="w-full bg-transparent px-3 py-1 outline-none text-sm font-medium text-gray-800 placeholder-gray-400"
+                                                        disabled={loading || fetchingStudents}
+                                                    />
+
+                                                    {/* Suggestions Dropdown */}
+                                                    {showSuggestions && newMemberEmail && (
+                                                        <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white rounded-xl border border-gray-100 shadow-xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
+                                                            {fetchingStudents ? (
+                                                                <div className="p-4 text-center text-xs text-gray-500">Cargando compañeros...</div>
+                                                            ) : availableStudents.filter(s =>
+                                                            (s.nombreCompleto?.toLowerCase().includes(newMemberEmail.toLowerCase()) ||
+                                                                s.matricula?.toLowerCase().includes(newMemberEmail.toLowerCase()) ||
+                                                                s.email?.toLowerCase().includes(newMemberEmail.toLowerCase()))
+                                                            ).length > 0 ? (
+                                                                availableStudents.filter(s =>
+                                                                (s.nombreCompleto?.toLowerCase().includes(newMemberEmail.toLowerCase()) ||
+                                                                    s.matricula?.toLowerCase().includes(newMemberEmail.toLowerCase()) ||
+                                                                    s.email?.toLowerCase().includes(newMemberEmail.toLowerCase()))
+                                                                ).map(student => (
+                                                                    <div
+                                                                        key={student.id}
+                                                                        onClick={() => {
+                                                                            setNewMemberEmail(student.matricula || student.email);
+                                                                            setShowSuggestions(false);
+                                                                        }}
+                                                                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+                                                                    >
+                                                                        <UserAvatar src={student.fotoUrl || student.FotoUrl} name={student.nombreCompleto || 'U'} size="sm" className="bg-gradient-to-tr from-blue-100 to-purple-100 text-blue-600 shrink-0" />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-sm font-bold text-gray-800 truncate">
+                                                                                {student.nombreCompleto && student.nombreCompleto.trim() !== '' ? student.nombreCompleto : (student.email || 'Estudiante')}
+                                                                            </p>
+                                                                            <p className="text-[11px] font-medium text-gray-400 truncate uppercase mt-0.5">
+                                                                                {student.matricula || student.email}
+                                                                            </p>
+                                                                        </div>
+                                                                        <UserPlus size={14} className="text-gray-300" />
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <div className="p-4 text-center text-xs text-gray-500">No se encontraron compañeros disponibles.</div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <button
                                                     type="submit"
                                                     disabled={loading || !newMemberEmail}
