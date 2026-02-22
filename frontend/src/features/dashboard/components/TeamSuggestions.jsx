@@ -8,34 +8,38 @@ export function TeamSuggestions({ suggestions }) {
 
     return (
         <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900">Encuentra a tu equipo</h3>
-                    <p className="text-sm text-gray-500">Compañeros sin equipo en tu grupo</p>
-                </div>
+            <div className="flex flex-col items-center justify-center text-center mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Encuentra a tu equipo</h3>
+                <p className="text-sm text-gray-500 mt-1">Compañeros sin equipo en tu grupo</p>
             </div>
 
             <div className="space-y-4">
                 {suggestions.map((student, index) => (
                     <motion.div
                         key={student.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100"
+                        className="flex flex-col items-center p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-50 hover:border-gray-100"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center text-indigo-700 font-bold uppercase shrink-0">
-                                {student.nombre?.substring(0, 2) || 'US'}
+                        {student.fotoUrl ? (
+                            <img
+                                src={student.fotoUrl}
+                                alt={student.nombreCompleto}
+                                className="h-12 w-12 rounded-full object-cover mb-3 shadow-sm border border-gray-100"
+                            />
+                        ) : (
+                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center text-indigo-700 font-bold uppercase mb-3 shadow-sm">
+                                {student.nombreCompleto?.substring(0, 2) || 'US'}
                             </div>
-                            <div>
-                                <p className="text-sm font-semibold text-gray-900">{student.nombre}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                                        <Code size={10} />
-                                        {student.carrera || 'Ingeniería'}
-                                    </span>
-                                </div>
+                        )}
+                        <div className="text-center">
+                            <p className="text-sm font-semibold text-gray-900">{student.nombreCompleto}</p>
+                            <div className="flex items-center justify-center mt-1.5">
+                                <span className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full font-medium">
+                                    <Code size={12} />
+                                    {student.matricula || 'Sin Matrícula'}
+                                </span>
                             </div>
                         </div>
                     </motion.div>

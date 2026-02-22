@@ -65,7 +65,7 @@ export function StudentDashboard({
                         <span>Empezar mi Proyecto</span>
                     </button>
                     {suggestedStudents && suggestedStudents.length > 0 && (
-                        <div className="w-full max-w-md text-left mt-4">
+                        <div className="w-full max-w-md mt-4">
                             <TeamSuggestions suggestions={suggestedStudents} />
                         </div>
                     )}
