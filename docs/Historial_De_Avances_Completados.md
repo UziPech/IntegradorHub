@@ -126,3 +126,30 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 📸 Funcionalidad de Foto de Perfil y Mejoras de UI (Febrero 2026)
+
+### 1. Sistema Integral de Avatares (Frontend & Backend)
+- **Subida a Storage:** Se integró un botón "Cámara" en la página de perfil (`ProfilePage.jsx`) que sube de forma asíncrona la imagen a Supabase Storage mediante un endpoint existente.
+- **Persistencia en Base de Datos:** Se creó el endpoint `PUT /api/users/{id}/photo` en `UsersProfileController.cs` apoyado por el handler `UpdateProfilePhotoHandler.cs` para actualizar y persistir de manera resiliente el campo `FotoUrl` en el documento del usuario en Firestore.
+- **Componente Universal `UserAvatar`:** Se desarrolló un componente reutilizable de React robusto. Este componente renderiza de manera segura la foto de perfil o, en caso de que la imagen sea nula o tenga un enlace roto, genera un "fallback" elegante renderizando la inicial del usuario con los colores del sistema. 
+
+### 2. Propagación Global de Avatares
+- Se refactorizaron 5 componentes críticos de la aplicación para desterrar los avatares hardcodeados (inicial manual en un `div`) y utilizar el nuevo componente inteligente `UserAvatar`.
+- **Componentes actualizados:** 
+  - `Sidebar.jsx` (Información del usuario autenticado en la esquina inferior).
+  - `ShowcaseCard.jsx` (Avatar del líder del proyecto en la galería pública). **Nota:** Para esto fue necesario extender el DTO público de proyectos en `GetPublicProjectsHandler.cs` exportando el campo `LiderFotoUrl`.
+  - `ProjectDetailsModal.jsx` (Avatares del creador del proyecto y su equipo).
+  - `TeamPage.jsx` (Directorio de compañeros de clase y miembros de proyecto).
+  - `CreateProjectForm.jsx` (Mural dinámico de estudiantes al formar equipo).
+
+### 3. Correcciones Quirúrgicas de Interfaz (Profile UI)
+- **Formato Circular del Avatar:** Se arregló un glitch visual donde el contenedor dinámico deformaba los avatares haciéndolos con forma de "cuadrados chuecos". Al abstraer a un div estricto `w-44 h-44 shrink-0` y aplicando utilidades a sub-elementos absolutos (como el icono de cámara flotante centrado), se logró el círculo perfecto garantizado de la maqueta original.
+- **Resolución Inteligente de Carrera:** Anteriormente, la tarjeta de Carrera imprimía ciegamente el Hash de Firestore. Ahora, el sistema detecta IDs asimétricos e invoca al vuelo el endpoint maestro `/api/admin/carreras`, interpolando en pantalla el nombre real y legible de la entidad (ej: "Desarrollo y Gestión de Software").
+- **Visualización Condicional de Campos "Vacíos":** Se eliminó el comportamiento de la tarjeta (`InfoCard`) que imprimía textos anti-estéticos como "---" o "No registrado". Ahora la UI evalúa dinámicamente si campos opcionales como `Especialidad` (Docentes), `Organización` (Invitados) o `Teléfono` realmente existen. Si el backend entrega valores nulos, el contenedor simplemente no se crea en pantalla para mantener una tarjeta minimalista y enfocada en lo que sí hay.
+- **Desbordamiento de Texto Controlado:** Se reemplazó la primitiva utilidad `truncate` que ocultaba prematuramente datos valiosos en dispositivos móviles (ej: mutilando direcciones de correo) hacia estrategias semánticas como `break-words` y `break-all` garantizando una lectura multilinea y de adaptabilidad horizontal 100% fluida.
+
+---
+*Fin del registro de esta actualización.*
