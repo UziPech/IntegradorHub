@@ -182,27 +182,35 @@ export function LoginPage() {
             await checkAdminSetup(result.user);
         } catch (err) {
             console.error('Login error:', err);
-            if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                // Smart Auth: Si el usuario no existe (o credenciales inválidas que podrían ser nuevo usuario)
-                // Verificamos si parece ser una contraseña válida para registro
-                if (password.length >= 6) {
-                    // Si es nuevo usuario, lo mandamos a completar perfil
-                    // Pero si es credencial inválida de usuario existente, esto podría ser confuso.
-                    // Firebase unifica "wrong-password" y "user-not-found" en "invalid-credential" a veces por seguridad.
-                    // Sin validación previa de existencia, asumimos intento de registro si la contraseña cumple politicas.
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                // Firebase combina 'wrong-password' y 'user-not-found' en 'invalid-credential'
+                // Para distinguir: intentamos crear el usuario.
+                //   - Si falla con 'email-already-in-use' → el usuario EXISTE → contraseña incorrecta
+                //   - Si se crea exitosamente → es usuario NUEVO → lo eliminamos y vamos a registro
 
-                    // Nota: Para saber con certeza si existe el email, necesitaríamos fetchSignInMethodsForEmail, 
-                    // pero eso puede estar protegido. 
-                    // Por ahora, asumiremos que si falla el login, intentamos flujo de registro.
-                    // Si el usuario ya existe y puso mal la pass, el "createUser" fallará con 'email-already-in-use'.
-
-                    setMode('register-info');
-                    setError(''); // Limpiamos error visual
-                } else {
+                if (password.length < 6) {
                     setError('La contraseña debe tener al menos 6 caracteres');
+                } else {
+                    try {
+                        // Intentamos crear el usuario como prueba
+                        const tempUser = await createUserWithEmailAndPassword(auth, email, password);
+                        // Si llegamos aquí, el usuario NO existía → es nuevo
+                        // Eliminamos la cuenta temporal (se re-creará en el flujo de registro con datos completos)
+                        await tempUser.user.delete();
+                        setMode('register-info');
+                        setError('');
+                    } catch (createErr) {
+                        if (createErr.code === 'auth/email-already-in-use') {
+                            // El usuario YA existe en Firebase Auth → contraseña incorrecta
+                            setError('Contraseña incorrecta. Verifica tu contraseña e intenta de nuevo.');
+                        } else {
+                            // Otro error al intentar crear
+                            setError('Credenciales inválidas. Si ya tienes cuenta, verifica tu contraseña.');
+                        }
+                    }
                 }
-            } else if (err.code === 'auth/wrong-password') {
-                setError('Contraseña incorrecta');
+            } else if (err.code === 'auth/too-many-requests') {
+                setError('Demasiados intentos fallidos. Espera unos minutos antes de intentar de nuevo.');
             } else {
                 setError(err.message);
             }
