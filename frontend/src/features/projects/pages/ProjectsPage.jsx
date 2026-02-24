@@ -105,8 +105,8 @@ export function ProjectsPage() {
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Mis Proyectos</h1>
-                    <p className="text-gray-600">Administra y colabora en tus proyectos.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mis Proyectos</h1>
+                    <p className="text-gray-600 dark:text-slate-400">Administra y colabora en tus proyectos.</p>
                 </div>
                 {isAlumno && !alumnoProject && !loading && (
                     <button
@@ -121,7 +121,7 @@ export function ProjectsPage() {
 
             {/* Search - Solo para Docente/Admin */}
             {!isAlumno && (
-                <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d27] p-4 rounded-lg border border-gray-200 dark:border-slate-700/50 shadow-sm">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
@@ -129,7 +129,7 @@ export function ProjectsPage() {
                             placeholder="Buscar proyectos..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-gray-200 focus:bg-white outline-none transition-all placeholder:text-gray-400"
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 dark:text-white border-0 rounded-lg focus:ring-2 focus:ring-gray-200 dark:focus:ring-slate-600 focus:bg-white dark:focus:bg-slate-700 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                         />
                     </div>
                 </div>
@@ -140,7 +140,7 @@ export function ProjectsPage() {
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
+                            <div key={i} className="h-64 bg-gray-100 dark:bg-slate-800 rounded-2xl animate-pulse" />
                         ))}
                     </div>
                 ) : isAlumno ? (
@@ -170,7 +170,7 @@ export function ProjectsPage() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.3, delay: 0.1 }}
-                                    className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col items-center text-center"
+                                    className="bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-200 dark:border-slate-700/50 p-6 shadow-sm flex flex-col items-center text-center"
                                 >
                                     <UserAvatar
                                         src={userData?.fotoUrl}
@@ -178,15 +178,15 @@ export function ProjectsPage() {
                                         size="xl"
                                         className="mb-4 ring-4 ring-gray-50 bg-white"
                                     />
-                                    <h3 className="text-xl font-bold text-gray-900 mt-3">{userData?.nombre}</h3>
-                                    <p className="text-sm text-gray-500 mb-6">{userData?.carrera || 'Alumno'}</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-3">{userData?.nombre}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">{userData?.carrera || 'Alumno'}</p>
 
                                     <div className="w-full space-y-3 mb-8">
-                                        <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100 text-left">
+                                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300 bg-gray-50 dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 text-left">
                                             <Mail size={16} className="text-gray-400 shrink-0" />
                                             <span className="truncate">{userData?.email}</span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100 text-left">
+                                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300 bg-gray-50 dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 text-left">
                                             <GraduationCap size={16} className="text-gray-400 shrink-0" />
                                             <span className="truncate">Matrícula: {userData?.matricula || 'N/D'}</span>
                                         </div>
@@ -194,7 +194,7 @@ export function ProjectsPage() {
 
                                     <Link
                                         to="/profile"
-                                        className="w-full py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-all text-sm mt-auto"
+                                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 font-semibold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-300 transition-all text-sm mt-auto"
                                     >
                                         Ver Perfil Completo
                                     </Link>
@@ -205,21 +205,21 @@ export function ProjectsPage() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.3, delay: 0.2 }}
-                                    className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex-1"
+                                    className="bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-200 dark:border-slate-700/50 p-6 shadow-sm flex-1"
                                 >
-                                    <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
                                         <User size={20} className="text-blue-500" />
                                         Mi Equipo
                                     </h3>
                                     <div className="space-y-4">
                                         {(alumnoProject.miembros || []).map(member => (
-                                            <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all">
+                                            <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 border border-transparent hover:border-gray-100 dark:hover:border-slate-600 transition-all">
                                                 <Link to={`/profile/${member.id}`} className="shrink-0 rounded-full hover:ring-2 hover:ring-blue-500 transition-all" title="Ver perfil">
                                                     <UserAvatar src={member.fotoUrl} name={(member.nombre && member.nombre !== 'Usuario') ? member.nombre : member.email} size="md" className="ring-2 ring-white shadow-sm" />
                                                 </Link>
                                                 <div className="flex-1 min-w-0 text-left">
                                                     <Link to={`/profile/${member.id}`} className="hover:text-blue-600 transition-colors">
-                                                        <p className="text-sm font-semibold text-gray-900 truncate">
+                                                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                                             {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}
                                                             {member.id === userData.userId && " (Tú)"}
                                                         </p>
@@ -231,7 +231,7 @@ export function ProjectsPage() {
                                             </div>
                                         ))}
                                         {(!alumnoProject.miembros || alumnoProject.miembros.length === 0) && (
-                                            <p className="text-sm text-gray-500 text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                            <p className="text-sm text-gray-500 dark:text-slate-400 text-center py-6 bg-gray-50 dark:bg-slate-800 rounded-xl border border-dashed border-gray-200 dark:border-slate-600">
                                                 No hay otros miembros en el equipo aún.
                                             </p>
                                         )}
@@ -241,15 +241,15 @@ export function ProjectsPage() {
                         </div>
                     ) : (
                         // Empty State Alumno
-                        <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-white rounded-2xl border border-gray-200 shadow-sm max-w-2xl mx-auto my-10 relative overflow-hidden">
+                        <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-200 dark:border-slate-700/50 shadow-sm max-w-2xl mx-auto my-10 relative overflow-hidden">
                             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-50 blur-3xl pointer-events-none"></div>
 
                             <div className="relative z-10 flex flex-col items-center">
                                 <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-8 shadow-sm border border-blue-100">
                                     <LayoutGrid size={40} />
                                 </div>
-                                <h3 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">Aún no tienes un proyecto</h3>
-                                <p className="text-gray-500 mb-10 max-w-md text-lg leading-relaxed">
+                                <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">Aún no tienes un proyecto</h3>
+                                <p className="text-gray-500 dark:text-slate-400 mb-10 max-w-md text-lg leading-relaxed">
                                     El proyecto integrador es tu oportunidad para brillar. Agrega a tu equipo, documenta tu progreso y logra una calificación de excelencia.
                                 </p>
                                 <button
@@ -283,12 +283,12 @@ export function ProjectsPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-white rounded-2xl border border-dashed border-gray-300">
-                            <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
+                        <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-white dark:bg-[#1a1d27] rounded-2xl border border-dashed border-gray-300 dark:border-slate-600">
+                            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full flex items-center justify-center mb-4">
                                 <Search size={24} />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">No se encontraron proyectos</h3>
-                            <p className="text-gray-500">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No se encontraron proyectos</h3>
+                            <p className="text-gray-500 dark:text-slate-400">
                                 Intenta con otros términos en tu búsqueda.
                             </p>
                         </div>
@@ -311,7 +311,7 @@ export function ProjectsPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[85vh] flex flex-col"
+                            className="bg-white dark:bg-[#1a1d27] w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden max-h-[85vh] flex flex-col"
                         >
                             <CreateProjectForm
                                 onClose={() => setShowCreateModal(false)}
@@ -337,7 +337,7 @@ export function ProjectsPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden h-[85vh] flex flex-col"
+                            className="bg-white dark:bg-[#1a1d27] w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden h-[85vh] flex flex-col"
                         >
                             <ProjectDetailsModal
                                 project={selectedProject}

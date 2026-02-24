@@ -147,10 +147,10 @@ export function DashboardPage() {
             <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header Section */}
                 <div className="mb-10">
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">
                         Dashboard
                     </h1>
-                    <p className="text-gray-600 text-base max-w-2xl">
+                    <p className="text-gray-600 dark:text-slate-400 text-base max-w-2xl">
                         Gestión integral de proyectos integradores.
                     </p>
                 </div>
@@ -158,7 +158,7 @@ export function DashboardPage() {
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+                            <div key={i} className="h-64 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
                         ))}
                     </div>
                 ) : userData?.rol === 'Alumno' ? (
@@ -195,7 +195,7 @@ export function DashboardPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+                            className="bg-white dark:bg-[#1a1d27] w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
                         >
                             <CreateProjectForm
                                 onClose={() => setShowCreateModal(false)}
@@ -221,7 +221,7 @@ export function DashboardPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden h-[85vh] flex flex-col"
+                            className="bg-white dark:bg-[#1a1d27] w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden h-[85vh] flex flex-col"
                         >
                             <ProjectDetailsModal
                                 project={selectedProject}

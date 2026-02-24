@@ -601,14 +601,14 @@ function Block({ block, active, onFocus, onChange, onRemove, onAddBlock, showMen
         }
 
         const styles = {
-            [BLOCK_TYPES.H1]: 'text-4xl font-bold text-gray-900 leading-tight',
-            [BLOCK_TYPES.H2]: 'text-2xl font-semibold text-gray-800 mt-6 mb-2',
-            [BLOCK_TYPES.H3]: 'text-xl font-semibold text-gray-800 mt-4 mb-2',
-            [BLOCK_TYPES.QUOTE]: 'border-l-4 border-gray-900 pl-4 italic text-gray-600 my-4 text-lg',
+            [BLOCK_TYPES.H1]: 'text-4xl font-bold text-gray-900 dark:text-white leading-tight',
+            [BLOCK_TYPES.H2]: 'text-2xl font-semibold text-gray-800 dark:text-slate-100 mt-6 mb-2',
+            [BLOCK_TYPES.H3]: 'text-xl font-semibold text-gray-800 dark:text-slate-200 mt-4 mb-2',
+            [BLOCK_TYPES.QUOTE]: 'border-l-4 border-gray-900 dark:border-slate-400 pl-4 italic text-gray-600 dark:text-slate-300 my-4 text-lg',
             [BLOCK_TYPES.CODE]: 'font-mono text-sm bg-gray-900 text-gray-100 p-4 rounded-xl my-2 block w-full',
-            [BLOCK_TYPES.TEXT]: 'text-base text-gray-600 leading-relaxed',
-            [BLOCK_TYPES.BULLET]: 'text-base text-gray-600 leading-relaxed',
-            [BLOCK_TYPES.TODO]: 'text-base text-gray-600 leading-relaxed',
+            [BLOCK_TYPES.TEXT]: 'text-base text-gray-600 dark:text-slate-300 leading-relaxed',
+            [BLOCK_TYPES.BULLET]: 'text-base text-gray-600 dark:text-slate-300 leading-relaxed',
+            [BLOCK_TYPES.TODO]: 'text-base text-gray-600 dark:text-slate-300 leading-relaxed',
         };
 
         if (readOnly) {

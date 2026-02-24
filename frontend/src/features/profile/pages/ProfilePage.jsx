@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { UserAvatar } from '../../../components/UserAvatar';
+import { GlobeBanner } from '../components/GlobeBanner';
 import { Mail, Phone, MapPin, Calendar, Camera, Edit2, Shield, User as UserIcon, BookOpen, GraduationCap, Briefcase, Building, Loader2, Link as LinkIcon, Github, Linkedin, Twitter, Globe, Plus, Trash2, X, Save, Youtube } from 'lucide-react';
 import api from '../../../lib/axios';
 
@@ -253,29 +254,29 @@ export function ProfilePage() {
         const size = 20;
         let icon;
         let colorClass;
-        let bgClass = 'bg-slate-900 border-slate-800 hover:bg-slate-800 text-white';
+        let bgClass = 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm text-slate-700';
 
         switch (platform.toLowerCase()) {
             case 'github':
                 icon = <Github size={size} />;
-                colorClass = 'text-white group-hover:text-slate-300';
+                colorClass = 'text-slate-800 group-hover:text-black';
                 break;
             case 'linkedin':
                 icon = <Linkedin size={size} />;
-                colorClass = 'text-[#0A66C2] group-hover:text-[#4294ff]';
+                colorClass = 'text-[#0A66C2] group-hover:text-[#004182]';
                 break;
             case 'twitter':
             case 'x':
                 icon = <Twitter size={size} />;
-                colorClass = 'text-white group-hover:text-slate-300';
+                colorClass = 'text-slate-800 group-hover:text-black';
                 break;
             case 'youtube':
                 icon = <Youtube size={size} />;
-                colorClass = 'text-[#FF0000] group-hover:text-[#ff4d4d]';
+                colorClass = 'text-[#FF0000] group-hover:text-[#cc0000]';
                 break;
             default:
                 icon = <LinkIcon size={size} />;
-                colorClass = 'text-blue-500 group-hover:text-blue-400';
+                colorClass = 'text-blue-500 group-hover:text-blue-600';
                 break;
         }
 
@@ -301,12 +302,26 @@ export function ProfilePage() {
             />
 
             {/* Main Neumorphic Card */}
-            <div className="neu-flat rounded-[3rem] overflow-hidden relative">
+            <div className="neu-flat rounded-[3rem] overflow-hidden relative dark:bg-[#1a1d27]">
 
-                {/* Cover with Gradient Overlay and New Pattern */}
-                <div className="h-72 w-full bg-slate-900 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay"></div>
-                    <div className="absolute inset-0 bg-gradient-to-tr from-slate-950/90 via-slate-900/50 to-blue-900/30"></div>
+                {/* Cover with Animated Geometric Pattern and Gradients */}
+                <div className="h-72 w-full relative overflow-hidden group bg-slate-900">
+                    {/* Modern mesh gradient background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950"></div>
+
+                    {/* Animated gradient orbs */}
+                    <div className="absolute -top-32 -left-20 w-[30rem] h-[30rem] bg-blue-600/20 rounded-full mix-blend-screen filter blur-[80px] group-hover:scale-110 transition-transform duration-1000"></div>
+                    <div className="absolute top-10 right-0 w-[25rem] h-[25rem] bg-indigo-500/10 rounded-full mix-blend-screen filter blur-[60px] group-hover:-translate-x-10 transition-transform duration-1000"></div>
+
+                    {/* Geometric Hexagon Grid overlay (CSS only approach) */}
+                    <div className="absolute inset-0 opacity-[0.08]" style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill-rule='evenodd' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3C/svg%3E")`,
+                        backgroundSize: '40px 40px'
+                    }}></div>
+
+                    <GlobeBanner />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 to-transparent"></div>
                 </div>
 
                 {/* Profile Header Content */}
@@ -315,7 +330,7 @@ export function ProfilePage() {
 
                         {/* Avatar with upload */}
                         <div className="relative group shrink-0">
-                            <div className="w-44 h-44 rounded-full neu-flat p-2 bg-[#e0e5ec] flex items-center justify-center">
+                            <div className="w-44 h-44 rounded-full neu-flat p-2 bg-[#e0e5ec] dark:bg-slate-800 flex items-center justify-center">
                                 <UserAvatar
                                     src={userData.fotoUrl}
                                     name={userData.nombre}
@@ -354,14 +369,14 @@ export function ProfilePage() {
                         {/* Name & Role */}
                         <div className="flex-1 mt-4 md:mt-20 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
-                                <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+                                <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                                     {fullName}
                                 </h1>
                                 <div className="flex items-center gap-3 mt-2">
-                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white shadow-sm ring-1 ring-slate-800">
+                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm ring-1 ring-slate-800 dark:ring-white/20">
                                         {userData.rol}
                                     </span>
-                                    <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs font-bold">
                                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                                         En línea
                                     </div>
@@ -370,7 +385,7 @@ export function ProfilePage() {
 
                             {/* Edit Button */}
                             {isOwnProfile && (
-                                <button className="px-6 py-3 bg-white rounded-xl font-black text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest shrink-0">
+                                <button className="px-6 py-3 bg-white dark:bg-slate-800 rounded-xl font-black text-slate-700 dark:text-slate-200 shadow-sm border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest shrink-0">
                                     <Edit2 size={16} />
                                     <span>Configurar</span>
                                 </button>
@@ -387,9 +402,9 @@ export function ProfilePage() {
                 <div className="xl:col-span-4 flex flex-col gap-6">
 
                     {/* Social Links Card */}
-                    <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm">
+                    <div className="bg-white dark:bg-[#1a1d27] border border-slate-100 dark:border-slate-700/50 rounded-3xl p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2 uppercase tracking-tighter">
+                            <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-tighter">
                                 <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
                                 Redes y Enlaces
                             </h2>
@@ -516,8 +531,8 @@ export function ProfilePage() {
                     </div>
 
                     {/* Contact Info Card */}
-                    <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm">
-                        <h2 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2 uppercase tracking-tighter">
+                    <div className="bg-white dark:bg-[#1a1d27] border border-slate-100 dark:border-slate-700/50 rounded-3xl p-6 shadow-sm">
+                        <h2 className="text-lg font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tighter">
                             <span className="w-1 h-5 bg-slate-800 rounded-full"></span>
                             Contacto
                         </h2>
@@ -532,13 +547,13 @@ export function ProfilePage() {
 
                 {/* Right Column (Academic/Professional Info) */}
                 <div className="xl:col-span-8 flex flex-col gap-6">
-                    <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm h-full">
-                        <h2 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3 uppercase tracking-tighter">
+                    <div className="bg-white dark:bg-[#1a1d27] border border-slate-100 dark:border-slate-700/50 rounded-3xl p-8 shadow-sm h-full">
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tighter">
                             <span className="w-1.5 h-6 bg-slate-900 rounded-full"></span>
                             Información Académica / Profesional
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-100 pb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-100 dark:border-slate-700/50 pb-8">
                             {/* Academic/Professional Fields based on Role */}
                             {userData.rol === 'Alumno' && (
                                 <>
@@ -562,20 +577,20 @@ export function ProfilePage() {
                         </div>
 
                         {/* Premium Status Inside Academic */}
-                        <div className="mt-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-slate-50 border border-slate-100 rounded-3xl p-6 relative overflow-hidden">
+                        <div className="mt-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-3xl p-6 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl opacity-50 -translate-y-10 translate-x-10 pointer-events-none"></div>
                             <div className="w-20 h-20 shrink-0 relative flex items-center justify-center bg-white rounded-full shadow-sm z-10 p-1">
                                 <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 36 36">
                                     <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f5f9" strokeWidth="3" />
                                     <circle cx="18" cy="18" r="16" fill="none" stroke="#2563eb" strokeWidth="3" strokeDasharray="95, 100" strokeLinecap="round" />
                                 </svg>
-                                <span className="absolute text-base font-black text-slate-900">95%</span>
+                                <span className="absolute text-base font-black text-slate-900 dark:text-white">95%</span>
                             </div>
                             <div className="text-center sm:text-left z-10 w-full">
-                                <h3 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2 justify-center sm:justify-start">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2 justify-center sm:justify-start">
                                     Perfil Premium <Shield size={16} className="text-blue-600" />
                                 </h3>
-                                <p className="text-slate-500 mt-2 text-sm max-w-lg">
+                                <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm max-w-lg">
                                     Tu perfil casi está completo. Agregar redes sociales públicas aumentará tu visibilidad y te permitirá conectar de mejor forma dentro de la plataforma.
                                 </p>
                             </div>
@@ -593,12 +608,12 @@ function ContactRow({ icon, label, value }) {
     if (!value) return null;
     return (
         <div className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+            <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 transition-colors">
                 {icon}
             </div>
             <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{label}</span>
-                <span className="text-sm font-medium text-slate-700 truncate" title={value}>{value}</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate" title={value}>{value}</span>
             </div>
         </div>
     );
@@ -606,13 +621,13 @@ function ContactRow({ icon, label, value }) {
 
 function InfoCard({ icon, label, value, color, fullWidth = false }) {
     return (
-        <div className={`bg-white border border-slate-100 shadow-sm rounded-2xl p-4 flex items-center gap-4 group hover:border-slate-200 transition-all ${fullWidth ? 'md:col-span-2' : ''}`}>
+        <div className={`bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 shadow-sm rounded-2xl p-4 flex items-center gap-4 group hover:border-slate-200 dark:hover:border-slate-600 transition-all ${fullWidth ? 'md:col-span-2' : ''}`}>
             <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${color}`}>
                 {icon}
             </div>
             <div className="min-w-0 flex-1">
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{label}</p>
-                <p className={`text-slate-900 font-bold ${fullWidth ? 'break-all text-sm' : 'break-words text-sm'}`} title={value}>
+                <p className={`text-slate-900 dark:text-white font-bold ${fullWidth ? 'break-all text-sm' : 'break-words text-sm'}`} title={value}>
                     {value}
                 </p>
             </div>

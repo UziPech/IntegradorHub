@@ -4,6 +4,22 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 
+## 🖥️ Refactorización UI: Sidebar Responsivo y Nueva Identidad (Febrero 2026)
+
+### 1. Menú Lateral Inteligente (Desktop & Mobile)
+- **Desktop (Hover-to-Expand):** Se rediseñó el `Sidebar` para comportarse como una "Píldora" colapsada por defecto (ahorrando espacio en la pantalla). Al pasar el cursor, el menú se expande fluidamente revelando los textos de navegación completos, usando transiciones nativas de Tailwind CSS sin librerías externas.
+- **Mobile (Drawer Modal):** En dispositivos móviles, la lógica _hover_ se desactiva. En su lugar, el `DashboardLayout` ahora incluye un elegante **Topbar** con un botón de menú tipo "Hamburguesa". Al tocarlo, el menú lateral se desliza (Drawer) superponiéndose a la pantalla junto con un fondo oscurecido (Overlay). El menú se auto-cierra al seleccionar una opción.
+
+### 2. Identidad Corporativa (Tema Monocromático)
+- Se sustituyó el logo temporal ("B" degradada) por el ícono corporativo oficial de **Byfrost** (el "Puente"). 
+- El esquema de colores del sistema de navegación fue ajustado para seguir una estética **limpia, blanca y profesional**. Los íconos inactivos usan tonos grises (`slate-400`/`500`), el texto activo e íconos usan tonos muy oscuros (`gray-900`), logrando una Interfaz de Usuario de tipo "Dashboard Corporativo" libre de ruidos visuales distractores.
+
+### 3. Escalado Dinámico de Elementos (Íconos)
+- Para aprovechar el espacio cuando el menú está colapsado en pantallas grandes (Desktop), se creó un sistema de redimensionamiento matemático responsivo.
+- Los íconos de navegación (junto con el botón de logout y la foto de perfil) aumentan considerablemente su tamaño automáticamente para lucir prominentes mientras están colapsados. Al expandir el panel o cambiar a vista móvil, los íconos regresan fluida y proporcionalmente a su tamaño normal para encajar armónicamente con los textos.
+
+---
+
 ## 🔗 Redes Sociales y Perfiles Públicos de Solo Lectura (Febrero 2026)
 
 ### 1. Sistema Modular de Enlaces Sociales (Backend & Frontend)
