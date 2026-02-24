@@ -109,7 +109,13 @@ export function Sidebar({ isOpen, onClose }) {
                         if (window.innerWidth < 1024) onClose();
                       }}
                       className={({ isActive }) => `
-                        flex items-center relative px-3 py-2.5 rounded-xl transition-all duration-200 group/navitem
+                        flex items-center relative transition-all duration-300 group/navitem rounded-xl
+                        /* Mobile Padding */
+                        px-3 py-2.5
+                        /* Desktop Collapsed */
+                        lg:px-1 lg:py-3 lg:justify-center
+                        /* Desktop Expanded */
+                        lg:group-hover:px-4 lg:group-hover:py-3 lg:group-hover:justify-start
                         ${isActive
                           ? 'bg-gray-100 text-gray-900 font-semibold'
                           : 'text-gray-500 font-medium hover:text-gray-900 hover:bg-gray-50'
@@ -120,18 +126,35 @@ export function Sidebar({ isOpen, onClose }) {
                     >
                       {({ isActive }) => (
                         <>
-                          <div className={`flex items-center justify-center shrink-0 w-8 h-8 rounded-lg transition-colors ${isActive ? 'text-gray-900' : 'text-gray-400 group-hover/navitem:text-gray-700'}`}>
-                            <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                          <div className={`flex items-center justify-center shrink-0 transition-all duration-300
+                            /* Mobile Size */
+                            w-8 h-8 rounded-lg
+                            /* Desktop Collapsed Size */
+                            lg:w-11 lg:h-11 lg:rounded-xl
+                            /* Desktop Expanded Size */
+                            lg:group-hover:w-9 lg:group-hover:h-9 lg:group-hover:rounded-lg
+                            ${isActive ? 'text-gray-900' : 'text-gray-400 group-hover/navitem:text-gray-700'}
+                          `}>
+                            <Icon
+                              className="transition-all duration-300 w-[18px] h-[18px] lg:w-[22px] lg:h-[22px] lg:group-hover:w-5 lg:group-hover:h-5"
+                              strokeWidth={isActive ? 2.5 : 2}
+                            />
                           </div>
 
                           {/* Label Text */}
-                          <span className={`
-                            ml-3 whitespace-nowrap transition-all duration-300
-                            lg:opacity-0 lg:-translate-x-2 lg:group-hover:opacity-100 lg:group-hover:translate-x-0
-                            ${isActive ? 'text-gray-900' : 'text-gray-600'}
+                          <div className={`
+                            whitespace-nowrap transition-all duration-300 overflow-hidden flex items-center
+                            /* Mobile */
+                            ml-3
+                            /* Desktop Collapsed */
+                            lg:max-w-0 lg:opacity-0 lg:ml-0
+                            /* Desktop Expanded */
+                            lg:group-hover:max-w-xs lg:group-hover:opacity-100 lg:group-hover:ml-3
                           `}>
-                            {item.label}
-                          </span>
+                            <span className={isActive ? 'text-gray-900' : 'text-gray-600'}>
+                              {item.label}
+                            </span>
+                          </div>
                         </>
                       )}
                     </NavLink>
@@ -147,16 +170,31 @@ export function Sidebar({ isOpen, onClose }) {
           <NavLink
             to="/profile"
             onClick={() => { if (window.innerWidth < 1024) onClose(); }}
-            className="bg-slate-900 rounded-2xl border border-slate-800 flex items-center p-2 transition-all hover:bg-black group/profile overflow-hidden"
+            className="bg-slate-900 rounded-2xl border border-slate-800 flex items-center transition-all hover:bg-black group/profile overflow-hidden
+              /* Mobile Padding */
+              p-2
+              /* Desktop Collapsed */
+              lg:p-1.5 lg:justify-center
+              /* Desktop Expanded */
+              lg:group-hover:p-2 lg:group-hover:justify-start
+            "
             title="Ir a Perfil"
           >
-            <div className="shrink-0 relative">
+            <div className="shrink-0 relative transition-all duration-300 lg:scale-110 lg:group-hover:scale-100">
               <UserAvatar src={userData?.fotoUrl} name={userData?.nombre} size="sm" className="border border-slate-700 shadow-md group-hover/profile:scale-105 transition-transform" />
               {/* Status indicator */}
               <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-900 rounded-full"></div>
             </div>
 
-            <div className="ml-3 min-w-0 flex-1 transition-all duration-300 lg:opacity-0 lg:-translate-x-2 lg:group-hover:opacity-100 lg:group-hover:translate-x-0 whitespace-nowrap">
+            <div className={`
+              min-w-0 flex-col justify-center transition-all duration-300 overflow-hidden
+              /* Mobile */
+              ml-3 flex
+              /* Desktop Collapsed */
+              lg:max-w-0 lg:opacity-0 lg:ml-0
+              /* Desktop Expanded */
+              lg:group-hover:max-w-xs lg:group-hover:opacity-100 lg:group-hover:flex lg:group-hover:ml-3
+            `}>
               <p className="text-sm font-bold text-white truncate tracking-tight">
                 {(userData?.nombre && userData?.nombre !== 'Usuario')
                   ? userData.nombre.replace(/^\d+\s+/, '').split(' ')[0]
@@ -168,18 +206,40 @@ export function Sidebar({ isOpen, onClose }) {
             </div>
           </NavLink>
 
-          <div className="mt-2">
+          <div className="mt-2 text-center">
             <button
               onClick={logout}
               title="Cerrar Sesión"
-              className="w-full flex items-center p-3 text-xs font-bold text-slate-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 group/logout"
+              className="w-full flex items-center transition-all duration-300 group/logout rounded-xl text-slate-500 hover:text-gray-900 hover:bg-gray-100
+                /* Mobile Padding */
+                p-3
+                /* Desktop Collapsed */
+                lg:p-3 lg:justify-center
+                /* Desktop Expanded */
+                lg:group-hover:px-4 lg:group-hover:justify-start
+              "
             >
-              <div className="shrink-0 flex items-center justify-center w-6">
-                <LogOut size={16} className="group-hover/logout:-translate-x-0.5 transition-transform" />
+              <div className="shrink-0 flex items-center justify-center transition-all duration-300
+                /* Mobile */
+                w-6 h-6
+                /* Desktop Collapsed */
+                lg:w-8 lg:h-8
+                /* Desktop Expanded */
+                lg:group-hover:w-6 lg:group-hover:h-6
+              ">
+                <LogOut className="group-hover/logout:-translate-x-0.5 transition-transform w-[18px] h-[18px] lg:w-5 lg:h-5 lg:group-hover:w-[18px] lg:group-hover:h-[18px]" strokeWidth={2} />
               </div>
-              <span className="ml-3 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100 whitespace-nowrap">
-                Cerrar Sesión
-              </span>
+              <div className={`
+                transition-all duration-300 overflow-hidden flex items-center
+                /* Mobile */
+                ml-3
+                /* Desktop Collapsed */
+                lg:max-w-0 lg:opacity-0 lg:ml-0
+                /* Desktop Expanded */
+                lg:group-hover:max-w-xs lg:group-hover:opacity-100 lg:group-hover:ml-3
+              `}>
+                <span className="text-xs font-bold whitespace-nowrap">Cerrar Sesión</span>
+              </div>
             </button>
           </div>
         </div>
