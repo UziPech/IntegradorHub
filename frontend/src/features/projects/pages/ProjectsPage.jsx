@@ -214,12 +214,16 @@ export function ProjectsPage() {
                                     <div className="space-y-4">
                                         {(alumnoProject.miembros || []).map(member => (
                                             <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all">
-                                                <UserAvatar src={member.fotoUrl} name={(member.nombre && member.nombre !== 'Usuario') ? member.nombre : member.email} size="md" className="ring-2 ring-white shadow-sm" />
+                                                <Link to={`/profile/${member.id}`} className="shrink-0 rounded-full hover:ring-2 hover:ring-blue-500 transition-all" title="Ver perfil">
+                                                    <UserAvatar src={member.fotoUrl} name={(member.nombre && member.nombre !== 'Usuario') ? member.nombre : member.email} size="md" className="ring-2 ring-white shadow-sm" />
+                                                </Link>
                                                 <div className="flex-1 min-w-0 text-left">
-                                                    <p className="text-sm font-semibold text-gray-900 truncate">
-                                                        {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}
-                                                        {member.id === userData.userId && " (Tú)"}
-                                                    </p>
+                                                    <Link to={`/profile/${member.id}`} className="hover:text-blue-600 transition-colors">
+                                                        <p className="text-sm font-semibold text-gray-900 truncate">
+                                                            {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}
+                                                            {member.id === userData.userId && " (Tú)"}
+                                                        </p>
+                                                    </Link>
                                                     <p className="text-xs text-blue-600 font-medium inline-block bg-blue-50 px-2 py-0.5 rounded-full mt-1">
                                                         {member.rol || 'Miembro'}
                                                     </p>

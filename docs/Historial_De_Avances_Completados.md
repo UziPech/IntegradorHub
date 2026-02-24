@@ -4,6 +4,27 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 
+## 🔗 Redes Sociales y Perfiles Públicos de Solo Lectura (Febrero 2026)
+
+### 1. Sistema Modular de Enlaces Sociales (Backend & Frontend)
+- **Persistencia Flexible:** Se integró un nuevo campo `RedesSociales` (tipo Diccionario) a los perfiles en Firestore. Esto evita "hardcodear" columnas y permite almacenar un número dinámico de plataformas sociales.
+- **Endpoints de Actualización (`UsersProfileController.cs`)**: Se creó la ruta `PUT /api/users/{userId}/social` controlada por `UpdateSocialLinksHandler.cs`. Dicho handler fue diseñado para fusionar inteligentemente los enlaces nuevos con los existentes, permitiendo agregarlos 1x1, editarlos o purgar enlaces vacíos, valiéndose de resoluciones de mapeo en Diccionarios con `SetOptions.MergeAll`.
+- **Panel de Configuración Interactivo (`ProfilePage.jsx`)**: Se rediseñó la experiencia de usuario agregando la "Caja de Herramientas Social". Ahora los usuarios pueden insertar URLs de Github, LinkedIn, Twitter, Website o YouTube, desplegándose en elegantes pastillas flotantes (Badges) con iconos nativos.
+
+### 2. Visores de Perfiles Públicos (Modo Social)
+- **Extracción Segura (`PublicProfileDto`)**: Se expuso la ruta `GET /api/users/{userId}/profile` que exporta un DTO higienizado conteniendo únicamente datos inofensivos para proteger la identidad y privacidad del titular frente a visitantes curiosos.
+- **Reciclaje Inteligente de Vistas (`ProfilePage.jsx`)**: En lugar de crear pantallas duplicadas, se capitalizó la robusta UI del "Perfil Privado". El sistema inyecta una guardia booleana (`isOwnProfile`) que detecta visitantes externos (mediante parámetros `/profile/:userId`) para blindar el perfil, ocultando los controles de subida de fotos y botones de edición de forma incondicional, dejando una nítida tarjeta de "Solo Lectura".
+
+### 3. Hiper-Navegabilidad Transversal (Frontend)
+- **Social Graph en IntegradorHub**: Fomentando el sentido de comunidad, ahora cualquier usuario puede explorar los perfiles de todos los creadores de software del ecosistema. 
+- La arquitectura cobró vida al envolver con componentes interactivos los avatares en los puntos neurálgicos más importantes del portal:
+  - La Galería Pública de Proyectos (`ShowcaseCard`).
+  - La ventana de Detalles y Creadores (`ProjectDetailsModal`).
+  - El Directorio del Aula Virtual (`TeamPage`).
+  - El Panel de Listado "Mis Proyectos" (`ProjectsPage`).
+
+---
+
 ## ✅ Módulo de Registro y Asignación de Docentes (Febrero 2026)
 
 ### 1. Sistema de Asignación Inteligente (Backend)

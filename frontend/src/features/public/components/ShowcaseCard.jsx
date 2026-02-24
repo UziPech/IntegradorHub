@@ -107,9 +107,11 @@ export function ShowcaseCard({ project, onClick }) {
             {/* --- 1. Header: User & Status (Instagram Style Top) --- */}
             <div className="p-4 flex items-center justify-between border-b border-gray-50 bg-white z-10">
                 <div className="flex items-center gap-3">
-                    <UserAvatar src={project.liderFotoUrl} name={project.liderNombre} size="md" className="border border-indigo-50 shadow-sm" />
-                    <div className="flex flex-col">
-                        <h4 className="text-sm font-bold text-gray-900 leading-none truncate max-w-[180px]" title={project.liderNombre}>
+                    <div onClick={(e) => { e.stopPropagation(); navigate(`/profile/${project.liderId}`); }} className="cursor-pointer hover:ring-2 hover:ring-indigo-200 rounded-full transition-all shrink-0">
+                        <UserAvatar src={project.liderFotoUrl} name={project.liderNombre} size="md" className="border border-indigo-50 shadow-sm" />
+                    </div>
+                    <div className="flex flex-col cursor-pointer hover:text-indigo-600 transition-colors" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${project.liderId}`); }}>
+                        <h4 className="text-sm font-bold leading-none truncate max-w-[180px]" title={project.liderNombre}>
                             {project.liderNombre || 'Desconocido'}
                         </h4>
                         <span className="text-[11px] text-gray-400 mt-1 font-medium">

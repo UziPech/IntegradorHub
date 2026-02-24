@@ -7,6 +7,7 @@ import api from '../../../lib/axios';
 import { EvaluationPanel } from '../../evaluations/components/EvaluationPanel';
 import { CanvasEditor } from './CanvasEditor';
 import { ProjectPDFExportButton } from './ProjectPDFExport';
+import { Link } from 'react-router-dom';
 
 export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate }) {
     const { userData } = useAuth();
@@ -454,13 +455,15 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                 {/* Leader/Team Meta */}
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center border-2 border-white shadow-sm text-white overflow-hidden">
+                                        <Link to={`/profile/${project.liderId}`} className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center border-2 border-white shadow-sm text-white overflow-hidden hover:ring-2 hover:ring-blue-500 transition-all shrink-0" title="Ver perfil">
                                             <UserAvatar src={leader?.fotoUrl || leader?.FotoUrl} name={creadorNombre} size="md" className="w-full h-full" />
-                                        </div>
+                                        </Link>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900 leading-tight">
-                                                {creadorNombre}
-                                            </p>
+                                            <Link to={`/profile/${project.liderId}`} className="hover:text-blue-600 transition-colors">
+                                                <p className="text-sm font-bold text-gray-900 leading-tight">
+                                                    {creadorNombre}
+                                                </p>
+                                            </Link>
                                             <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                                                 Ciclo {project.ciclo} • {project.materia}
                                             </p>
@@ -585,11 +588,15 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                         className="p-2 rounded-xl hover:bg-gray-50 flex items-center justify-between group transition-colors"
                                                     >
                                                         <div className="flex items-center gap-3">
-                                                            <UserAvatar src={member.fotoUrl || member.FotoUrl} name={member.nombre || 'U'} size="sm" className="bg-gray-200" />
+                                                            <Link to={`/profile/${member.id}`} className="shrink-0 rounded-full hover:ring-2 hover:ring-blue-500 transition-all" title="Ver perfil">
+                                                                <UserAvatar src={member.fotoUrl || member.FotoUrl} name={member.nombre || 'U'} size="sm" className="bg-gray-200" />
+                                                            </Link>
                                                             <div>
-                                                                <p className="text-sm font-bold text-gray-800 leading-none">
-                                                                    {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}
-                                                                </p>
+                                                                <Link to={`/profile/${member.id}`} className="hover:text-blue-600 transition-colors">
+                                                                    <p className="text-sm font-bold text-gray-800 leading-none">
+                                                                        {(member.nombre && member.nombre !== 'Usuario') ? member.nombre : (member.email || 'Miembro')}
+                                                                    </p>
+                                                                </Link>
                                                                 <p className="text-[10px] uppercase font-bold text-gray-400 mt-1 leading-none">{member.rol || 'Miembro'}</p>
                                                             </div>
                                                         </div>
