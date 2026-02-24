@@ -4,7 +4,7 @@ import { Users, Star, Clock, CheckCircle, ExternalLink, Plus } from 'lucide-reac
 import { StatCard } from './StatCard';
 import { ProjectTimelineChart } from './ProjectTimelineChart';
 import { TeamSuggestions } from './TeamSuggestions';
-import { ProjectCard } from '../../projects/components/ProjectCard';
+import { ShowcaseCard } from '../../public/components/ShowcaseCard';
 
 export function StudentDashboard({
     userData,
@@ -141,8 +141,8 @@ export function StudentDashboard({
                 <div className="lg:col-span-1 flex flex-col gap-6">
 
                     {/* Proyecto Card */}
-                    <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col h-full">
-                        <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between px-1">
                             <h3 className="text-lg font-bold text-gray-900">Acceso Rápido</h3>
                             <button
                                 onClick={onProjectClick}
@@ -152,13 +152,10 @@ export function StudentDashboard({
                                 <ExternalLink size={18} />
                             </button>
                         </div>
-                        <div className="flex-1">
-                            <ProjectCard
-                                project={project}
-                                onClick={onProjectClick}
-                                layoutId={`dashboard-${project.id}`}
-                            />
-                        </div>
+                        <ShowcaseCard
+                            project={{ ...project, coverUrl: project.videoUrl || project.thumbnailUrl || null }}
+                            onClick={onProjectClick}
+                        />
                     </div>
 
                     {/* Team Suggestions */}

@@ -21,8 +21,25 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
 
         // Specific field mapping if needed (e.g. if backend sends weird names)
         // Ensure arrays are initialized
-        if (!normalized.members) normalized.members = [];
+        if (!normalized.members) normalized.members = normalized.miembros || [];
         if (!normalized.miembrosIds) normalized.miembrosIds = [];
+        if (!normalized.canvas) normalized.canvas = normalized.canvasBlocks || [];
+
+        // Deep normalize members
+        normalized.members = normalized.members.map(m => {
+            if (!m) return m;
+            const nm = {};
+            Object.keys(m).forEach(k => nm[k.charAt(0).toLowerCase() + k.slice(1)] = m[k]);
+            return nm;
+        });
+
+        // Deep normalize canvas blocks
+        normalized.canvas = normalized.canvas.map(b => {
+            if (!b) return b;
+            const nb = {};
+            Object.keys(b).forEach(k => nb[k.charAt(0).toLowerCase() + k.slice(1)] = b[k]);
+            return nb;
+        });
 
         return normalized;
     };
@@ -191,8 +208,12 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
 
     // Gather Media Items
     const mediaItems = [];
-    if (project.videoUrl) mediaItems.push({ type: 'video', url: project.videoUrl, thumbnail: project.thumbnailUrl });
-    if (project.thumbnailUrl && !mediaItems.some(item => item.url === project.thumbnailUrl)) mediaItems.push({ type: 'image', url: project.thumbnailUrl });
+    if (project.videoUrl && project.videoUrl.trim() !== '' && project.videoUrl !== 'null') {
+        mediaItems.push({ type: 'video', url: project.videoUrl, thumbnail: project.thumbnailUrl });
+    }
+    if (project.thumbnailUrl && project.thumbnailUrl.trim() !== '' && project.thumbnailUrl !== 'null' && !mediaItems.some(item => item.url === project.thumbnailUrl)) {
+        mediaItems.push({ type: 'image', url: project.thumbnailUrl });
+    }
     if (project.canvas) {
         const canvasImages = project.canvas
             .filter(b => b.type === 'image' && b.content && b.content !== project.thumbnailUrl)
