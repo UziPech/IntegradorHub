@@ -19,10 +19,12 @@ export function DashboardLayout() {
                 {/* Mobile Header (Topbar visible only on sm/md screens) */}
                 <header className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white shrink-0">
                     <div className="flex items-center gap-3">
-                        {/* Minimalist monochrome logo */}
-                        <div className="w-8 h-8 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                            B
-                        </div>
+                        {/* Logo Icon */}
+                        <img
+                            src="/byfrost-icon.png"
+                            alt="Byfrost Logo"
+                            className="w-12 h-12 shrink-0 rounded-2xl object-cover shadow-sm border border-gray-200"
+                        />
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">Byfrost®</h1>
                     </div>
                     <button

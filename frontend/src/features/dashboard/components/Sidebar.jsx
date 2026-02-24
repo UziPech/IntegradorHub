@@ -62,12 +62,14 @@ export function Sidebar({ isOpen, onClose }) {
         `}
       >
         {/* Header / Logo Brand */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 overflow-hidden shrink-0">
+        <div className="flex items-center justify-between p-6 lg:p-4 lg:group-hover:p-6 transition-all duration-300 border-b border-gray-100 overflow-hidden shrink-0">
           <div className="flex items-center gap-3">
-            {/* B Logo always visible - Professional monochrome look */}
-            <div className="w-8 h-8 shrink-0 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-              B
-            </div>
+            {/* Logo Icon */}
+            <img
+              src="/byfrost-icon.png"
+              alt="Byfrost Logo"
+              className="w-12 h-12 shrink-0 rounded-2xl object-cover shadow-sm border border-gray-200"
+            />
             {/* Text logo (hidden when collapsed on desktop, visible on hover/mobile) */}
             <div className="transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100 whitespace-nowrap">
               <h1 className="text-xl font-bold text-gray-900 leading-tight">
