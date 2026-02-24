@@ -176,3 +176,23 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 👥 Mejoras en el Buscador y Agregado de Miembros de Proyecto (Febrero 2026)
+
+### 1. Interfaz de Autocompletado Integrada (Frontend)
+- Se reemplazó el antiguo campo de texto en `ProjectDetailsModal.jsx` por un moderno componente de autocompletado interactivo (Dropdown/Combobox).
+- Ahora, al intentar agregar un nuevo integrante, el líder del proyecto puede buscar dinámicamente a sus compañeros de clase ingresando su nombre o matrícula.
+- Los resultados se muestran en tiempo real e incluyen la foto de perfil (usando `UserAvatar`), nombre completo y matrícula para una selección visual y precisa.
+
+### 2. Sincronización Rigurosa del Grupo (Backend)
+- **El Problema:** El buscador de compañeros disponibles siempre se reportaba vacío. Esto descubrió un fallo estructural: el backend omitía el identificador del grupo (`GrupoId`) al entregar el resumen del proyecto. El Frontend al desconocer el grupo, consultaba "todos los alumnos disponibles del grupo: undefined", obteniendo cero resultados. 
+- **La Solución:** Se refactorizó la estructura base (`ProjectDetailsDto`) y sus controladores (`GetProjectDetailsHandler.cs`, `GetProjectByMemberHandler.cs`) para incluir y propagar el `GrupoId`. Ahora, el panel garantiza proponer únicamente alumnos de la misma clase (grupo).
+
+### 3. Persistencia de Asignación Bidireccional
+- Se arregló una vulnerabilidad silenciosa en `AddMemberHandler.cs`: Aunque el estudiante se unía al arreglo de "miembros" del proyecto, el perfil del usuario no registraba que ya tenía equipo (`User.ProjectId` quedaba nulo).
+- Se implementó la escritura bidireccional obligatoria. El endpoint de alumnos disponibles ahora filtra de forma infalible únicamente a aquellos compañeros sin `ProjectId`, evitando duplicidad o miembros "robados" por otros equipos.
+
+---
+*Fin del registro de esta actualización.*

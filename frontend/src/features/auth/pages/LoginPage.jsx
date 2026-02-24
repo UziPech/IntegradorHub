@@ -154,6 +154,9 @@ export function LoginPage() {
         if (rol === 'admin' || rol === 'SuperAdmin') {
             return <Navigate to="/admin" replace />;
         }
+        if (rol === 'Alumno') {
+            return <Navigate to="/projects" replace />;
+        }
         return <Navigate to="/dashboard" replace />;
     }
 

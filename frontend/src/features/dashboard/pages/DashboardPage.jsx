@@ -70,19 +70,40 @@ export function DashboardPage() {
                 try {
                     const response = await api.get(`/api/projects/my-project?userId=${userData.userId}`);
                     if (response.data) {
-                        const p = response.data;
+                        const normalize = (obj) => {
+                            if (!obj) return null;
+                            const newObj = {};
+                            Object.entries(obj).forEach(([key, value]) => {
+                                newObj[key.charAt(0).toLowerCase() + key.slice(1)] = value;
+                            });
+                            return newObj;
+                        };
+
+                        const rawProject = normalize(response.data);
+                        const rawMembers = (rawProject.members || rawProject.miembros || []).map(normalize);
+                        const rawCanvas = rawProject.canvasBlocks || rawProject.canvas || [];
+                        const liderObj = rawMembers.find(m => m.id === rawProject.liderId) || {};
+
+                        const textBlock = rawCanvas.find(b => (b.type === 'text' || b.Type === 'text') && (b.content || b.Content)?.trim());
+                        let extractedDescription = 'Sin descripción disponible. Navega a los detalles para ver más.';
+                        if (textBlock && (textBlock.content || textBlock.Content)) {
+                            extractedDescription = (textBlock.content || textBlock.Content)
+                                .replace(/<[^>]+>/g, '')
+                                .replace(/&nbsp;/g, ' ')
+                                .trim();
+                        }
+                        const imageBlock = rawCanvas.find(b => (b.type === 'image' || b.Type === 'image') && (b.content || b.Content));
+
                         const normalized = {
-                            id: p.id || p.Id,
-                            titulo: p.titulo || p.Titulo,
-                            materia: p.materia || p.Materia,
-                            estado: p.estado || p.Estado,
-                            stackTecnologico: p.stackTecnologico || p.StackTecnologico || [],
-                            liderId: p.liderId || p.LiderId,
-                            miembrosIds: p.miembrosIds || p.MiembrosIds || [],
-                            docenteId: p.docenteId || p.DocenteId,
-                            createdAt: p.createdAt || p.CreatedAt,
-                            calificacion: p.calificacion || p.Calificacion || null,
-                            puntosTotales: p.puntosTotales || p.PuntosTotales || 0
+                            ...rawProject,
+                            liderNombre: liderObj.nombre || 'Desconocido',
+                            liderFotoUrl: liderObj.fotoUrl || null,
+                            thumbnailUrl: rawProject.thumbnailUrl || (imageBlock ? (imageBlock.content || imageBlock.Content) : null),
+                            canvas: rawCanvas.map(normalize),
+                            descripcion: extractedDescription,
+                            miembros: rawMembers,
+                            puntosTotales: rawProject.puntosTotales || 0,
+                            calificacion: rawProject.calificacion || null
                         };
                         projectsData = [normalized];
                     }
@@ -200,7 +221,7 @@ export function DashboardPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh]"
+                            className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden h-[85vh] flex flex-col"
                         >
                             <ProjectDetailsModal
                                 project={selectedProject}
