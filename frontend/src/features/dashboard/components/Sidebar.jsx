@@ -47,7 +47,7 @@ export function Sidebar() {
         <h1 className="text-xl font-bold text-gray-900 leading-tight">
           Byfrost®
         </h1>
-        <p className="text-xs text-gray-500 font-medium mt-1.5">Gestión de Proyectos</p>
+        <p className="text-xs text-gray-500 font-medium mt-1.5">Repositotio de Proyectos</p>
       </div>
 
       {/* Navigation */}

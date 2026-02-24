@@ -60,6 +60,7 @@ function App() {
             </Route>
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/:userId" element={<ProfilePage />} />
           </Route>
 
           <Route

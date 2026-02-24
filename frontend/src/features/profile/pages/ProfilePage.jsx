@@ -1,31 +1,69 @@
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { Mail, Phone, MapPin, Calendar, Camera, Edit2, Shield, User as UserIcon, BookOpen, GraduationCap, Briefcase, Building, Loader2, Link as LinkIcon, Github, Linkedin, Twitter, Globe, Plus, Trash2, X, Save, Youtube } from 'lucide-react';
 import api from '../../../lib/axios';
 
 export function ProfilePage() {
-    const { userData, refreshUserData } = useAuth();
+    const { userData: authData, refreshUserData } = useAuth();
+    const { userId } = useParams();
+    const isOwnProfile = !userId || (authData && userId === authData.userId);
+
+    const [publicData, setPublicData] = useState(null);
+    const [loadingPublic, setLoadingPublic] = useState(false);
+
+    useEffect(() => {
+        if (!isOwnProfile && userId) {
+            setLoadingPublic(true);
+            api.get(`/api/users/${userId}/profile`)
+                .then(res => {
+                    const data = res.data;
+                    setPublicData({
+                        userId: data.id,
+                        email: data.email,
+                        nombre: data.nombre,
+                        apellidoPaterno: data.apellidoPaterno,
+                        apellidoMaterno: data.apellidoMaterno,
+                        fotoUrl: data.fotoUrl,
+                        rol: data.rol,
+                        matricula: data.matricula,
+                        grupoId: data.grupoId,
+                        carreraId: data.carreraId,
+                        profesion: data.profesion,
+                        especialidadDocente: data.especialidadDocente,
+                        organizacion: data.organizacion,
+                        createdAt: data.createdAt,
+                        redesSociales: data.redesSociales || {}
+                    });
+                })
+                .catch(err => {
+                    console.error("Error fetching public profile:", err);
+                    setPublicData(null);
+                })
+                .finally(() => setLoadingPublic(false));
+        }
+    }, [userId, isOwnProfile]);
+
+    const userData = isOwnProfile ? authData : publicData;
+
     const fileInputRef = useRef(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
-    if (!userData) return null;
-
     // --- Social Links State ---
     const [isEditingSocial, setIsEditingSocial] = useState(false);
-    const [socialLinks, setSocialLinks] = useState(userData.redesSociales || {});
+    const [socialLinks, setSocialLinks] = useState(userData?.redesSociales || {});
     const [savingSocial, setSavingSocial] = useState(false);
     const [newPlatform, setNewPlatform] = useState('github');
     const [newUrl, setNewUrl] = useState('');
-
-    // Higher quality name resolution for the header
-    const hasRealName = userData.nombre && userData.nombre !== 'Usuario';
-
-    const displayNombre = hasRealName ? userData.nombre.replace(/^\d+\s+/, '') : (userData.email ? userData.email.split('@')[0] : 'Usuario');
-    const fullName = `${displayNombre} ${userData.apellidoPaterno || ''} ${userData.apellidoMaterno || ''}`.trim();
-
     const [carreraNombre, setCarreraNombre] = useState('Cargando...');
+
+    useEffect(() => {
+        if (userData?.redesSociales) {
+            setSocialLinks(userData.redesSociales);
+        }
+    }, [userData]);
 
     useEffect(() => {
         if (!userData) return;
@@ -68,6 +106,29 @@ export function ProfilePage() {
             setCarreraNombre(rawId);
         }
     }, [userData?.carreraId]);
+
+    if (loadingPublic) {
+        return (
+            <div className="flex justify-center items-center py-20 min-h-[50vh]">
+                <Loader2 size={40} className="animate-spin text-blue-600" />
+            </div>
+        );
+    }
+
+    if (!userData) {
+        return (
+            <div className="flex justify-center flex-col items-center py-20 min-h-[50vh]">
+                <h2 className="text-2xl font-bold text-slate-800">Perfil no encontrado</h2>
+                <p className="text-slate-500 mt-2">El usuario que buscas no existe o no tienes permisos para verlo.</p>
+            </div>
+        );
+    }
+
+    // Higher quality name resolution for the header
+    const hasRealName = userData.nombre && userData.nombre !== 'Usuario';
+
+    const displayNombre = hasRealName ? userData.nombre.replace(/^\d+\s+/, '') : (userData.email ? userData.email.split('@')[0] : 'Usuario');
+    const fullName = `${displayNombre} ${userData.apellidoPaterno || ''} ${userData.apellidoMaterno || ''}`.trim();
 
     // --- "Miembro desde" dynamic formatting ---
     const memberSince = (() => {
@@ -262,17 +323,19 @@ export function ProfilePage() {
                                     className="shadow-inner"
                                 />
                             </div>
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={uploading}
-                                className="absolute bottom-2 right-2 rounded-full flex items-center justify-center w-10 h-10 bg-[#e0e5ec] text-slate-900 shadow-lg border border-white/40 hover:bg-white transition-all disabled:opacity-50"
-                            >
-                                {uploading ? (
-                                    <Loader2 size={18} className="animate-spin" />
-                                ) : (
-                                    <Camera size={18} />
-                                )}
-                            </button>
+                            {isOwnProfile && (
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={uploading}
+                                    className="absolute bottom-2 right-2 rounded-full flex items-center justify-center w-10 h-10 bg-[#e0e5ec] text-slate-900 shadow-lg border border-white/40 hover:bg-white transition-all disabled:opacity-50"
+                                >
+                                    {uploading ? (
+                                        <Loader2 size={18} className="animate-spin" />
+                                    ) : (
+                                        <Camera size={18} />
+                                    )}
+                                </button>
+                            )}
 
                             {/* Upload progress ring */}
                             {uploading && uploadProgress > 0 && (
@@ -306,10 +369,12 @@ export function ProfilePage() {
                             </div>
 
                             {/* Edit Button */}
-                            <button className="px-6 py-3 bg-white rounded-xl font-black text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest shrink-0">
-                                <Edit2 size={16} />
-                                <span>Configurar</span>
-                            </button>
+                            {isOwnProfile && (
+                                <button className="px-6 py-3 bg-white rounded-xl font-black text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest shrink-0">
+                                    <Edit2 size={16} />
+                                    <span>Configurar</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -328,7 +393,7 @@ export function ProfilePage() {
                                 <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
                                 Redes y Enlaces
                             </h2>
-                            {!isEditingSocial && (
+                            {!isEditingSocial && isOwnProfile && (
                                 <button onClick={() => setIsEditingSocial(true)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar enlaces">
                                     <Edit2 size={16} />
                                 </button>
@@ -436,12 +501,14 @@ export function ProfilePage() {
                                 ) : (
                                     <div className="w-full text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                                         <p className="text-slate-400 text-sm mb-2">Sin redes sociales</p>
-                                        <button
-                                            onClick={() => setIsEditingSocial(true)}
-                                            className="text-xs font-bold text-blue-600 hover:text-blue-700"
-                                        >
-                                            + Agregar Enlaces
-                                        </button>
+                                        {isOwnProfile && (
+                                            <button
+                                                onClick={() => setIsEditingSocial(true)}
+                                                className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                                            >
+                                                + Agregar Enlaces
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
