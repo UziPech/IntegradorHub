@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { UserAvatar } from '../../../components/UserAvatar';
 import api from '../../../lib/axios';
-import { FONTS } from '../../projects/components/CanvasEditor';
+import { FONTS } from '../../projects/constants/editorFonts';
 
 // Safely reads the font of the first text block in the canvas — returns undefined if none.
 function getProjectTitleFont(project) {
