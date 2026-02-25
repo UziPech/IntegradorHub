@@ -176,7 +176,7 @@ export function ProjectsPage() {
                                         src={userData?.fotoUrl}
                                         name={userData?.nombre}
                                         size="xl"
-                                        className="mb-4 ring-4 ring-gray-50 bg-white"
+                                        className="mb-4 ring-4 ring-gray-50"
                                     />
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-3">{userData?.nombre}</h3>
                                     <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">{userData?.carrera || 'Alumno'}</p>

@@ -17,6 +17,7 @@ export function EvaluationPanel({ projectId }) {
 
     const isDocente = userData?.rol === 'Docente';
     const isAdmin = userData?.rol === 'admin' || userData?.rol === 'SuperAdmin';
+    const isInvitado = userData?.rol === 'Invitado';
     const userId = userData?.userId;
     const userName = userData?.nombre;
 
@@ -49,15 +50,18 @@ export function EvaluationPanel({ projectId }) {
         e.preventDefault();
         if (!contenido.trim()) return;
 
+        // Los invitados siempre envían sugerencias
+        const tipoFinal = isInvitado ? 'sugerencia' : tipo;
+
         setSubmitting(true);
         try {
             await api.post('/api/evaluations', {
                 projectId,
                 docenteId: userId,
                 docenteNombre: userName,
-                tipo,
+                tipo: tipoFinal,
                 contenido,
-                calificacion: tipo === 'oficial' ? calificacion : null
+                calificacion: tipoFinal === 'oficial' ? calificacion : null
             });
 
             setContenido('');
@@ -180,44 +184,56 @@ export function EvaluationPanel({ projectId }) {
                 )}
             </div>
 
-            {/* Formulario para docentes */}
-            {isDocente && (
+            {/* Formulario para docentes e invitados */}
+            {(isDocente || isInvitado) && (
                 <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl p-4 space-y-4 shadow-sm">
                     {/* Header: Title and Type Switcher */}
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Nueva Evaluación</span>
+                        <span className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                            {isInvitado ? 'Dejar Comentario' : 'Nueva Evaluación'}
+                        </span>
 
-                        {canGradeOfficially ? (
-                            <div className="flex bg-gray-100 dark:bg-slate-700 p-1 rounded-lg">
-                                <button
-                                    type="button"
-                                    onClick={() => setTipo('sugerencia')}
-                                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${tipo === 'sugerencia'
-                                        ? 'bg-white dark:bg-slate-600 text-gray-900 dark:text-white shadow-sm'
-                                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
-                                        }`}
-                                >
-                                    Sugerencia
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setTipo('oficial')}
-                                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${tipo === 'oficial'
-                                        ? 'bg-blue-600 text-white shadow-sm'
-                                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
-                                        }`}
-                                >
-                                    Oficial
-                                </button>
-                            </div>
-                        ) : (
-                            <span className="text-[10px] bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-1 rounded font-medium">
-                                Solo Sugerencias (No titular)
+                        {/* Los invitados solo pueden dejar sugerencias, no se les muestra el toggle */}
+                        {isDocente && (
+                            canGradeOfficially ? (
+                                <div className="flex bg-gray-100 dark:bg-slate-700 p-1 rounded-lg">
+                                    <button
+                                        type="button"
+                                        onClick={() => setTipo('sugerencia')}
+                                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${tipo === 'sugerencia'
+                                            ? 'bg-white dark:bg-slate-600 text-gray-900 dark:text-white shadow-sm'
+                                            : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
+                                            }`}
+                                    >
+                                        Sugerencia
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTipo('oficial')}
+                                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${tipo === 'oficial'
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
+                                            }`}
+                                    >
+                                        Oficial
+                                    </button>
+                                </div>
+                            ) : (
+                                <span className="text-[10px] bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-1 rounded font-medium">
+                                    Solo Sugerencias (No titular)
+                                </span>
+                            )
+                        )}
+
+                        {isInvitado && (
+                            <span className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-1 rounded font-medium">
+                                Solo Sugerencias
                             </span>
                         )}
                     </div>
 
-                    {tipo === 'oficial' && canGradeOfficially && (
+                    {/* Slider de calificación: solo para docentes titulares */}
+                    {tipo === 'oficial' && canGradeOfficially && isDocente && (
                         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/40">
                             <label className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-bold text-blue-800 dark:text-blue-300">Calificación Final</span>
@@ -245,7 +261,11 @@ export function EvaluationPanel({ projectId }) {
                         <textarea
                             value={contenido}
                             onChange={e => setContenido(e.target.value)}
-                            placeholder={tipo === 'oficial' ? 'Justificación de la calificación...' : 'Escribe una sugerencia constructiva...'}
+                            placeholder={
+                                isInvitado
+                                    ? 'Escribe tu comentario o sugerencia para este proyecto...'
+                                    : (tipo === 'oficial' ? 'Justificación de la calificación...' : 'Escribe una sugerencia constructiva...')
+                            }
                             className="w-full p-3 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[100px]"
                         />
                     </div>
@@ -256,7 +276,7 @@ export function EvaluationPanel({ projectId }) {
                         className="w-full bg-gray-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98]"
                     >
                         <Send size={16} />
-                        {submitting ? 'Enviando...' : (tipo === 'oficial' ? 'Publicar Calificación' : 'Enviar Sugerencia')}
+                        {submitting ? 'Enviando...' : (isInvitado || tipo === 'sugerencia' ? 'Enviar Comentario' : 'Publicar Calificación')}
                     </button>
                 </form>
             )}
