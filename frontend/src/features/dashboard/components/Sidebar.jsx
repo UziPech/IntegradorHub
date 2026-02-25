@@ -67,11 +67,13 @@ export function Sidebar({ isOpen, onClose }) {
         <div className="flex items-center justify-between p-6 lg:p-4 lg:group-hover:p-6 transition-all duration-300 border-b border-gray-100 dark:border-slate-700/50 overflow-hidden shrink-0">
           <div className="flex items-center gap-3">
             {/* Logo Icon */}
-            <img
-              src="/byfrost-icon.png"
-              alt="Byfrost Logo"
-              className="w-12 h-12 shrink-0 rounded-2xl object-cover shadow-sm border border-gray-200 dark:border-slate-700"
-            />
+            <div className="w-12 h-12 bg-white rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+              <img
+                src="/byfrost-icon.png"
+                alt="Byfrost Logo"
+                className="w-full h-full object-cover rounded-xl"
+              />
+            </div>
             {/* Text logo (hidden when collapsed on desktop, visible on hover/mobile) */}
             <div className="transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100 whitespace-nowrap">
               <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">

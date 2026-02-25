@@ -20,11 +20,13 @@ export function DashboardLayout() {
                 <header className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700/50 bg-white dark:bg-[#151821] shrink-0">
                     <div className="flex items-center gap-3">
                         {/* Logo Icon */}
-                        <img
-                            src="/byfrost-icon.png"
-                            alt="Byfrost Logo"
-                            className="w-12 h-12 shrink-0 rounded-2xl object-cover shadow-sm border border-gray-200 dark:border-slate-700"
-                        />
+                        <div className="w-12 h-12 bg-white rounded-2xl p-1 shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+                            <img
+                                src="/byfrost-icon.png"
+                                alt="Byfrost Logo"
+                                className="w-full h-full object-cover rounded-xl"
+                            />
+                        </div>
                         <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">Byfrost®</h1>
                     </div>
                     <button
