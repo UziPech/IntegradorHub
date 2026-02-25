@@ -4,6 +4,19 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { UserAvatar } from '../../../components/UserAvatar';
 import api from '../../../lib/axios';
+import { FONTS } from '../../projects/components/CanvasEditor';
+
+// Safely reads the font of the first text block in the canvas — returns undefined if none.
+function getProjectTitleFont(project) {
+    try {
+        const TEXT_TYPES = ['text', 'h1', 'h2', 'h3', 'quote', 'bullet', 'todo'];
+        const firstTextBlock = (project.canvas || []).find(b => TEXT_TYPES.includes(b.type));
+        const font = firstTextBlock?.metadata?.fontFamily;
+        // Validate it's one of our known fonts
+        if (font && FONTS.some(f => f.value === font)) return font;
+    } catch (_) { }
+    return undefined;
+}
 
 export function ShowcaseCard({ project, onClick }) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -27,6 +40,9 @@ export function ShowcaseCard({ project, onClick }) {
     const [isVoting, setIsVoting] = useState(false);
 
     const isOwner = userData?.userId === project.liderId;
+
+    // Read font from first text block in canvas (safe, no layout changes)
+    const titleFont = getProjectTitleFont(project);
 
     // 2. Gather Media Items (Video + Thumbnail + Canvas Images)
     const mediaItems = [];
@@ -254,7 +270,11 @@ export function ShowcaseCard({ project, onClick }) {
 
                 {/* Title & Description */}
                 <div className="mb-4">
-                    <h3 onClick={onClick} className="text-lg font-bold text-gray-900 dark:text-white leading-snug mb-2 cursor-pointer hover:text-indigo-600 transition-colors line-clamp-1">
+                    <h3
+                        onClick={onClick}
+                        className="text-lg font-bold text-gray-900 dark:text-white leading-snug mb-2 cursor-pointer hover:text-indigo-600 transition-colors line-clamp-1"
+                        style={titleFont ? { fontFamily: titleFont } : undefined}
+                    >
                         {project.titulo || 'Sin Título'}
                     </h3>
                     <p onClick={onClick} className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed line-clamp-2 cursor-pointer">
