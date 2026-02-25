@@ -55,6 +55,17 @@ export function DashboardPage() {
         }
     }, [userData]);
 
+    // Normalize keys from PascalCase (C# backend) to camelCase
+    const normalizePascal = (obj) => {
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+        const newObj = {};
+        Object.entries(obj).forEach(([key, value]) => {
+            const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+            newObj[camelKey] = value;
+        });
+        return newObj;
+    };
+
     const fetchGroupDetails = async () => {
         try {
             const response = await api.get(`/api/admin/groups/${userData.grupoId}`);
@@ -113,10 +124,19 @@ export function DashboardPage() {
                 }
             } else if (userData?.rol === 'Docente') {
                 const response = await api.get(`/api/projects/teacher/${userData.userId}`);
-                projectsData = response.data;
+                // Normalize PascalCase keys from backend to camelCase for ShowcaseCard
+                projectsData = (response.data || []).map(p => ({
+                    ...normalizePascal(p),
+                    // Ensure canvas is normalized too (if present)
+                    canvas: (p.CanvasBlocks || p.canvasBlocks || []).map(b => normalizePascal(b)),
+                }));
             } else if (userData?.grupoId) {
                 const response = await api.get(`/api/projects/group/${userData.grupoId}`);
-                projectsData = response.data;
+                // Normalize PascalCase keys from backend to camelCase for ShowcaseCard
+                projectsData = (response.data || []).map(p => ({
+                    ...normalizePascal(p),
+                    canvas: (p.CanvasBlocks || p.canvasBlocks || []).map(b => normalizePascal(b)),
+                }));
             }
 
             setProjects(projectsData || []);
