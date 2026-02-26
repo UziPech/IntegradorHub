@@ -241,7 +241,7 @@ export function DashboardPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 10 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white dark:bg-[#1a1d27] w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden h-[85vh] flex flex-col"
+                            className="bg-black dark:bg-black w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden h-[85vh] flex flex-col"
                         >
                             <ProjectDetailsModal
                                 project={selectedProject}
