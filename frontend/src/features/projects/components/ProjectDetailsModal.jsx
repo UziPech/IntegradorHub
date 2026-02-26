@@ -253,7 +253,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     return (
         <div className="flex flex-col h-full overflow-hidden relative">
             {/* Master-Detail Layout — Immersive, no outer padding */}
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-white dark:bg-[#1a1d27] relative z-10">
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-black relative z-10">
 
                 {/* Left Column: Media Carousel */}
                 <motion.div
@@ -363,7 +363,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                 </motion.div>
 
                 {/* Right Column: Info & Content */}
-                <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white dark:bg-[#1a1d27] border-l border-gray-100 dark:border-slate-700/50 relative">
+                <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white dark:bg-[#1a1d27] border-l border-slate-200 dark:border-slate-700/50 relative">
 
                     {/* Integrated Header */}
                     <div className="px-6 pt-5 pb-0 shrink-0 border-b border-gray-100 dark:border-slate-700/50">
@@ -473,7 +473,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                     </div>{/* End Integrated Header */}
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                    <div className={`flex-1 overflow-y-auto custom-scrollbar ${readMode ? 'px-10 py-8 lg:px-20' : 'p-6'}`}>
 
                         {/* Always visible Info header when on docs tab (like Instagram caption) */}
                         {activeTab === 'docs' && (
@@ -509,7 +509,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                 </div>
 
                                 {/* Text Content from Canvas Editor */}
-                                <div className="prose prose-sm max-w-none text-gray-800 dark:text-slate-300 dark:prose-invert">
+                                <div className={`prose max-w-none text-gray-800 dark:text-slate-300 dark:prose-invert ${readMode ? 'prose-base lg:prose-lg' : 'prose-sm'}`}>
                                     <CanvasEditor
                                         key={`canvas-editor-${fetchingDetails ? 'loading' : 'loaded'}`}
                                         project={project}
