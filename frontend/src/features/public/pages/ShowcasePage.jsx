@@ -157,6 +157,7 @@ export function ShowcasePage() {
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                         <div className="bg-white dark:bg-[#1a1d27] w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden h-[85vh] flex flex-col">
                             <ProjectDetailsModal
+                                key={selectedProject.id}
                                 project={selectedProject}
                                 onClose={() => setSelectedProject(null)}
                                 onUpdate={fetchPublicProjects}

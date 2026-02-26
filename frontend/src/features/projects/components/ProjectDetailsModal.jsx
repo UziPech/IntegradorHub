@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, UserPlus, Trash2, ExternalLink, Calendar, BookOpen, Hash, Users, Activity, Image as ImageIcon, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, UserPlus, Trash2, ExternalLink, BookOpen, Hash, Users, Activity, Image as ImageIcon, ChevronLeft, ChevronRight, Play, Maximize2, Minimize2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { UserAvatar } from '../../../components/UserAvatar';
@@ -62,10 +63,22 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     // Carousel State
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [readMode, setReadMode] = useState(false);
     const videoRef = useRef(null);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
     const isLeader = userData?.userId === project?.liderId;
+
+    // Reset carousel/lightbox state when the project changes
+    useEffect(() => {
+        setCurrentSlide(0);
+        setIsPlaying(false);
+        setIsLightboxOpen(false);
+        setReadMode(false);
+        if (videoRef.current) {
+            videoRef.current.pause();
+        }
+    }, [initialProject?.id]);
 
     useEffect(() => {
         fetchDetails();
@@ -238,54 +251,17 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#F0F0F3] dark:bg-[#0f1117] p-6 lg:p-8 relative">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-8 shrink-0">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider neu-pressed dark:bg-slate-800 dark:border dark:border-slate-700 flex items-center gap-1 ${project.estado === 'Activo' ? 'text-blue-600' : 'text-gray-500 dark:text-slate-400'
-                            }`}>
-                            <Activity size={12} />
-                            {project.estado}
-                        </span>
-                        <span className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider neu-pressed dark:bg-slate-800 dark:border dark:border-slate-700 text-gray-500 dark:text-slate-400 flex items-center gap-1">
-                            <BookOpen size={12} />
-                            {project.materia}
-                        </span>
-
-                        {/* Public/Private Toggle */}
-                        {isLeader && (
-                            <button
-                                onClick={handleVisibilityToggle}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${project.esPublico
-                                    ? 'bg-green-100 text-green-700 border border-green-200'
-                                    : 'bg-gray-100 text-gray-500 border border-gray-200'
-                                    }`}
-                                title={project.esPublico ? 'Público: Visible en la galería' : 'Privado: Solo visible para el equipo'}
-                            >
-                                {project.esPublico ? '🌍 Público' : '🔒 Privado'}
-                            </button>
-                        )}
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-800 dark:text-white tracking-tight">{project.titulo}</h2>
-                </div>
-                <div className="flex items-center gap-3">
-                    <ProjectPDFExportButton project={project} creadorNombre={creadorNombre} />
-                    <button
-                        onClick={onClose}
-                        className="neu-icon-btn w-12 h-12 bg-[#F0F0F3] dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-red-500 transition-colors shadow-sm border border-gray-200 dark:border-slate-700"
-                    >
-                        <X size={24} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Master-Detail Layout (Instagram Style) */}
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-white dark:bg-[#1a1d27] rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/50 relative z-10">
+        <div className="flex flex-col h-full overflow-hidden relative">
+            {/* Master-Detail Layout — Immersive, no outer padding */}
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-white dark:bg-[#1a1d27] relative z-10">
 
                 {/* Left Column: Media Carousel */}
-                <div
-                    className="lg:w-[55%] bg-black flex flex-col relative items-center justify-center p-0 group"
+                <motion.div
+                    initial={false}
+                    animate={{ width: readMode ? '0%' : '55%', opacity: readMode ? 0 : 1 }}
+                    transition={{ duration: 0.35, ease: 'easeInOut' }}
+                    className="relative bg-black flex-col items-center justify-center p-0 group overflow-hidden hidden lg:flex shrink-0"
+                    style={{ minWidth: readMode ? 0 : undefined }}
                     onMouseEnter={() => {
                         if (currentMedia?.type === 'video') {
                             setIsPlaying(true);
@@ -342,7 +318,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                 <img
                                     src={currentMedia.url}
                                     alt={project.titulo}
-                                    className="w-full h-full object-contain transition-transform duration-700 hover:scale-105"
+                                    className="w-full h-full object-contain"
                                 />
                             </div>
                         ) : (
@@ -384,67 +360,117 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                             </>
                         )}
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Right Column: Info & Content */}
-                <div className="lg:w-[45%] flex flex-col overflow-hidden bg-white dark:bg-[#1a1d27] border-l border-gray-100 dark:border-slate-700/50 relative">
-                    {/* Tabs (Sticky Header) */}
-                    <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-slate-700/50 bg-white dark:bg-[#1a1d27] z-10 shrink-0">
-                        {/* Tabs */}
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setActiveTab('docs')}
-                                className={`text-sm font-bold transition-all relative pb-1 ${activeTab === 'docs'
-                                    ? 'text-blue-600'
-                                    : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
-                                    }`}
-                            >
-                                Info
-                                {activeTab === 'docs' && (
-                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('eval')}
-                                className={`text-sm font-bold transition-all relative pb-1 ${activeTab === 'eval'
-                                    ? 'text-blue-600'
-                                    : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
-                                    }`}
-                            >
-                                Evaluación
-                                {activeTab === 'eval' && (
-                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>
-                                )}
-                            </button>
-                            {isLeader && (
+                <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white dark:bg-[#1a1d27] border-l border-gray-100 dark:border-slate-700/50 relative">
+
+                    {/* Integrated Header */}
+                    <div className="px-6 pt-5 pb-0 shrink-0 border-b border-gray-100 dark:border-slate-700/50">
+                        {/* Title row */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight truncate leading-tight">{project.titulo}</h2>
+                                <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                                    <span className="text-[12px] font-medium text-gray-400 dark:text-slate-500 flex items-center gap-1">
+                                        <BookOpen size={11} />
+                                        {project.materia}
+                                    </span>
+                                    {isLeader && (
+                                        <button
+                                            onClick={handleVisibilityToggle}
+                                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${project.esPublico
+                                                ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100'
+                                                : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-gray-200'
+                                                }`}
+                                            title={project.esPublico ? 'Click para hacer privado' : 'Click para hacer público'}
+                                        >
+                                            {project.esPublico ? '🌍 Público' : '🔒 Privado'}
+                                        </button>
+                                    )}
+                                    {!isLeader && (
+                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${project.esPublico ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                                            {project.esPublico ? '🌍 Público' : '🔒 Privado'}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <ProjectPDFExportButton project={project} creadorNombre={creadorNombre} />
                                 <button
-                                    onClick={() => setActiveTab('settings')}
-                                    className={`text-sm font-bold transition-all relative pb-1 ${activeTab === 'settings'
+                                    onClick={() => setReadMode(r => !r)}
+                                    title={readMode ? 'Ver multimedia' : 'Modo lectura'}
+                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all"
+                                >
+                                    {readMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-all"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="flex justify-between items-center pb-0">
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setActiveTab('docs')}
+                                    className={`text-sm font-bold transition-all relative pb-1 ${activeTab === 'docs'
                                         ? 'text-blue-600'
                                         : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
                                         }`}
                                 >
-                                    Ajustes
-                                    {activeTab === 'settings' && (
+                                    Info
+                                    {activeTab === 'docs' && (
                                         <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>
                                     )}
                                 </button>
-                            )}
-                        </div>
-
-                        {/* Edit Button (only visible in docs tab for members/leader) */}
-                        <div className="flex gap-2">
-                            {(isLeader || (project.members || []).some(m => m.id === userData.userId)) && activeTab === 'docs' && (
                                 <button
-                                    onClick={() => window.open(`/project/${project.id}/editor`, '_self')}
-                                    className="px-4 py-1.5 rounded-full font-bold text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex items-center justify-center gap-1.5"
+                                    onClick={() => setActiveTab('eval')}
+                                    className={`text-sm font-bold transition-all relative pb-1 ${activeTab === 'eval'
+                                        ? 'text-blue-600'
+                                        : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
+                                        }`}
                                 >
-                                    <ExternalLink size={14} />
-                                    Editar Docs
+                                    Evaluación
+                                    {activeTab === 'eval' && (
+                                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>
+                                    )}
                                 </button>
-                            )}
+                                {isLeader && (
+                                    <button
+                                        onClick={() => setActiveTab('settings')}
+                                        className={`text-sm font-bold transition-all relative pb-1 ${activeTab === 'settings'
+                                            ? 'text-blue-600'
+                                            : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
+                                            }`}
+                                    >
+                                        Ajustes
+                                        {activeTab === 'settings' && (
+                                            <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Edit Button (only visible in docs tab for members/leader) */}
+                            <div className="flex gap-2">
+                                {(isLeader || (project.members || []).some(m => m.id === userData.userId)) && activeTab === 'docs' && (
+                                    <button
+                                        onClick={() => window.open(`/project/${project.id}/editor`, '_self')}
+                                        className="px-4 py-1.5 rounded-full font-bold text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex items-center justify-center gap-1.5"
+                                    >
+                                        <ExternalLink size={14} />
+                                        Editar Docs
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    </div>{/* End Integrated Header */}
 
                     {/* Scrollable Content */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
@@ -713,13 +739,13 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
             </div>
 
             {/* --- LIGHTBOX OVERLAY --- */}
-            {isLightboxOpen && (
+            {isLightboxOpen && createPortal(
                 <div
-                    className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-md"
+                    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center backdrop-blur-md group/lightbox"
                     onClick={() => setIsLightboxOpen(false)}
                 >
                     <button
-                        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
+                        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer opacity-0 group-hover/lightbox:opacity-100 duration-300"
                         onClick={(e) => {
                             e.stopPropagation();
                             setIsLightboxOpen(false);
@@ -751,19 +777,19 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                         </>
                     )}
 
-                    <div className="relative w-full h-full max-w-[90vw] max-h-[90vh] flex items-center justify-center pointer-events-none">
+                    <div className="relative w-[90vw] h-[90vh] flex items-center justify-center pointer-events-none">
                         {currentMedia.type === 'video' ? (
                             <video
                                 src={currentMedia.url}
                                 controls
                                 autoPlay
-                                className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
+                                className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
                             />
                         ) : currentMedia.type === 'image' ? (
                             <img
                                 src={currentMedia.url}
                                 alt="Contenido Ampliado"
-                                className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
+                                className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
                             />
                         ) : null}
                     </div>
@@ -782,7 +808,8 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                             ))}
                         </div>
                     )}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
