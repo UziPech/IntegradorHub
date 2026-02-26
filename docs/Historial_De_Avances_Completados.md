@@ -233,3 +233,22 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 🔦 Correcciones de Lightbox y Refinamiento de Interfaz (Febrero 2026)
+
+### 1. Sistema de Lightbox Robusto (React Portals)
+- **Eliminación de Conflictos de Stacking:** Se migraron los visores de medios (`Lightbox`) de `ProjectDetailsModal` y `ShowcaseCard` hacia un sistema de **React Portals**. Esto garantiza que el lightbox se monte directamente en el `document.body` con un `z-index` de 9999, eliminando bloqueos visuales o fallos de clics causados por animaciones de Framer Motion u `overflow-hidden` en contenedores ancestros.
+- **Inmersión 90/90:** Se rediseñó el layout del lightbox para ocupar exactamente el **90% del ancho y alto de la pantalla** (`90vw/90vh`) de forma fija, proporcionando una experiencia cinematográfica independientemente de la resolución original de la imagen o video.
+
+### 2. Estabilidad de Ciclo de Vida (Component Remounting)
+- Se implementó la técnica de **Keyed Remounting** en la galería pública. Al asignar `key={selectedProject.id}` al modal de detalles, se asegura un reinicio total de todos los estados internos (carruesel, video, lightbox) al navegar entre proyectos, eliminando comportamientos erráticos o persistencia de datos del proyecto anterior.
+
+### 3. Refinamiento Estético y UX "Zero Noise"
+- **Cleanup de Cabecera:** Se eliminaron los badges estáticos de "Borrador" y "Materia" para limpiar el campo visual. La materia se reubicó como un subtítulo elegante, mejorando la jerarquía tipográfica.
+- **Controles Contextuales:** El botón de cierre (`X`) del lightbox ahora es inteligente; permanece invisible para no obstruir la vista y aparece mediante un fade-in suave únicamente cuando el usuario interactúa con el cursor sobre la pantalla.
+- **Corrección de Hit-Testing:** Se eliminaron las transformaciones CSS de escala (`hover:scale-105`) en las miniaturas de los carruseles, lo que resolvió un bug donde el área visual de la imagen no coincidía con su área de clic real, causando "clicks fantasma".
+
+---
+*Fin del registro de esta actualización.*

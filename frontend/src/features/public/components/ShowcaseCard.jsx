@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Play, Users, ExternalLink, Edit, Star, ChevronLeft, ChevronRight, Image as ImageIcon, Trophy, X } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -217,7 +218,7 @@ export function ShowcaseCard({ project, onClick }) {
                         <img
                             src={currentMedia.url}
                             alt={project.titulo}
-                            className="w-full h-full object-contain transition-transform duration-700 group-hover/img:scale-105"
+                            className="w-full h-full object-contain"
                         />
                     </div>
                 ) : (
@@ -339,15 +340,14 @@ export function ShowcaseCard({ project, onClick }) {
                 </div>
             </div>
 
-            {/* --- LIGHTBOX OVERLAY --- */}
-            {isLightboxOpen && (
+            {isLightboxOpen && createPortal(
                 <div
-                    className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-md"
+                    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center backdrop-blur-md group/lightbox"
                     onClick={() => setIsLightboxOpen(false)}
                 >
                     {/* Close Button */}
                     <button
-                        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
+                        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer opacity-0 group-hover/lightbox:opacity-100 duration-300"
                         onClick={(e) => {
                             e.stopPropagation();
                             setIsLightboxOpen(false);
@@ -381,21 +381,19 @@ export function ShowcaseCard({ project, onClick }) {
                     )}
 
                     {/* Lightbox Content */}
-                    <div
-                        className="relative w-full h-full max-w-[90vw] max-h-[90vh] flex items-center justify-center pointer-events-none"
-                    >
+                    <div className="relative w-[90vw] h-[90vh] flex items-center justify-center pointer-events-none">
                         {currentMedia.type === 'video' ? (
                             <video
                                 src={currentMedia.url}
                                 controls
                                 autoPlay
-                                className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
+                                className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
                             />
                         ) : currentMedia.type === 'image' ? (
                             <img
                                 src={currentMedia.url}
                                 alt="Contenido Ampliado"
-                                className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
+                                className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
                             />
                         ) : null}
                     </div>
@@ -415,7 +413,8 @@ export function ShowcaseCard({ project, onClick }) {
                             ))}
                         </div>
                     )}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
