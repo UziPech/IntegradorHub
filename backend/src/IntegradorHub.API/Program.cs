@@ -33,12 +33,15 @@ builder.Services.AddScoped<ICarreraRepository, CarreraRepository>();
 // Storage Service (Supabase)
 builder.Services.AddSingleton<IStorageService, SupabaseStorageService>();
 
-// CORS (para React Frontend)
+// CORS (Dinámico para Producción y Desarrollo)
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+                     ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:3000")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
