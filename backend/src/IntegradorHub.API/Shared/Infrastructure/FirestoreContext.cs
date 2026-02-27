@@ -15,16 +15,27 @@ public class FirestoreContext
             {
                 if (_db is null)
                 {
-                    // Set credentials path
-                    var credentialsPath = Path.Combine(
+                    // 1. Intentar cargar desde archivo local (Desarrollo)
+                    var localCredentialsPath = Path.Combine(
                         Directory.GetCurrentDirectory(), 
                         "..", "..", "..",
                         "integradorhub-dsm-firebase-adminsdk-fbsvc-d89dd8625c.json"
                     );
                     
-                    if (File.Exists(credentialsPath))
+                    if (File.Exists(localCredentialsPath))
                     {
-                        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
+                        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", localCredentialsPath);
+                    }
+                    else 
+                    {
+                        // 2. Intentar cargar desde variable de entorno con el JSON directo (Producción - Render/Railway)
+                        var jsonCredentials = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_JSON");
+                        if (!string.IsNullOrEmpty(jsonCredentials))
+                        {
+                            var tempFile = Path.GetTempFileName();
+                            File.WriteAllText(tempFile, jsonCredentials);
+                            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", tempFile);
+                        }
                     }
                     
                     var projectId = Environment.GetEnvironmentVariable("FIREBASE_PROJECT_ID") 
