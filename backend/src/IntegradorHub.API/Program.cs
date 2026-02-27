@@ -34,14 +34,20 @@ builder.Services.AddScoped<ICarreraRepository, CarreraRepository>();
 builder.Services.AddSingleton<IStorageService, SupabaseStorageService>();
 
 // CORS (Dinámico para Producción y Desarrollo)
-var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
-                     ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "https://integradorhub-frontend.vercel.app" };
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+var allOrigins = allowedOrigins.Concat(new[] { 
+    "http://localhost:5173", 
+    "http://localhost:5174", 
+    "http://localhost:3000", 
+    "https://integradorhub-frontend.vercel.app",
+    "https://integradorhub.onrender.com" // sometimes self-referencing helps with certain proxies
+}).Distinct().ToArray();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
+        policy.WithOrigins(allOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
