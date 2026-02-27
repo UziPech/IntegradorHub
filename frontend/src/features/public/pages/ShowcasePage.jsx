@@ -99,7 +99,7 @@ export function ShowcasePage() {
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-2 pr-4 border-r border-gray-100 dark:border-slate-700 mr-2">
                             <Filter size={18} className="text-gray-400" />
-                            <span className="text-sm font-semibold text-gray-600 dark:text-slate-400 whitespace-nowrap">Tecnologías</span>
+                            <span className="text-sm font-semibold text-gray-600 dark:text-slate-400 whitespace-nowrap">Coleccíon</span>
                         </div>
                         <button
                             onClick={() => setSelectedStack(null)}
