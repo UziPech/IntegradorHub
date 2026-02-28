@@ -35,19 +35,29 @@ builder.Services.AddSingleton<IStorageService, SupabaseStorageService>();
 
 // CORS (Dinámico para Producción y Desarrollo)
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-var allOrigins = allowedOrigins.Concat(new[] { 
-    "http://localhost:5173", 
-    "http://localhost:5174", 
-    "http://localhost:3000", 
+var fixedOrigins = new[]
+{
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
     "https://integradorhub-frontend.vercel.app",
-    "https://integradorhub.onrender.com" // sometimes self-referencing helps with certain proxies
-}).Distinct().ToArray();
+    "https://integradorhub.onrender.com"
+};
+var allOrigins = allowedOrigins.Concat(fixedOrigins).Distinct().ToArray();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allOrigins)
+        policy.SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin)) return false;
+                var uri = new Uri(origin);
+                // Permitir todos los subdominios de vercel.app (preview + producción)
+                if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
+                // Permitir orígenes locales y fijos
+                return allOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
+            })
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
