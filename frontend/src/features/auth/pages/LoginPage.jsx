@@ -31,8 +31,9 @@ const checkAdminSetup = async (user) => {
     }
 };
 import api from '../../../lib/axios';
-import { GraduationCap, User, UserCheck, AlertCircle, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, User, UserCheck, AlertCircle, ArrowLeft, Check, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 import { CloudBackground } from '../../../components/ui/CloudBackground';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Regex para detectar rol
 const REGEX_ALUMNO = /^(\d{8})@alumno\.utmetropolitana\.edu\.mx$/;
@@ -53,6 +54,9 @@ const extraerMatricula = (email) => {
 
 export function LoginPage() {
     const { isAuthenticated, loading, rol, refreshUserData } = useAuth();
+    const { isDark, toggleTheme } = useTheme();
+    const styles = getStyles(isDark);
+
     const [mode, setMode] = useState('login'); // login, register, register-info
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
@@ -186,32 +190,7 @@ export function LoginPage() {
         } catch (err) {
             console.error('Login error:', err);
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-                // Firebase combina 'wrong-password' y 'user-not-found' en 'invalid-credential'
-                // Para distinguir: intentamos crear el usuario.
-                //   - Si falla con 'email-already-in-use' → el usuario EXISTE → contraseña incorrecta
-                //   - Si se crea exitosamente → es usuario NUEVO → lo eliminamos y vamos a registro
-
-                if (password.length < 6) {
-                    setError('La contraseña debe tener al menos 6 caracteres');
-                } else {
-                    try {
-                        // Intentamos crear el usuario como prueba
-                        const tempUser = await createUserWithEmailAndPassword(auth, email, password);
-                        // Si llegamos aquí, el usuario NO existía → es nuevo
-                        // Eliminamos la cuenta temporal (se re-creará en el flujo de registro con datos completos)
-                        await tempUser.user.delete();
-                        setMode('register-info');
-                        setError('');
-                    } catch (createErr) {
-                        if (createErr.code === 'auth/email-already-in-use') {
-                            // El usuario YA existe en Firebase Auth → contraseña incorrecta
-                            setError('Contraseña incorrecta. Verifica tu contraseña e intenta de nuevo.');
-                        } else {
-                            // Otro error al intentar crear
-                            setError('Credenciales inválidas. Si ya tienes cuenta, verifica tu contraseña.');
-                        }
-                    }
-                }
+                setError('Correo o contraseña incorrectos. Si eres nuevo, utiliza la opción de crear cuenta abajo.');
             } else if (err.code === 'auth/too-many-requests') {
                 setError('Demasiados intentos fallidos. Espera unos minutos antes de intentar de nuevo.');
             } else {
@@ -376,7 +355,17 @@ export function LoginPage() {
     if (mode === 'login') {
         return (
             <div style={styles.pageContainer}>
-                <CloudBackground />
+                <CloudBackground isDark={isDark} />
+
+                {/* Theme Toggle Button */}
+                <button
+                    onClick={toggleTheme}
+                    style={styles.themeToggleBtn}
+                    aria-label="Toggle theme"
+                >
+                    {isDark ? <Sun size={20} color="#facc15" /> : <Moon size={20} color="#6b7280" />}
+                </button>
+
                 <div style={styles.cardContainer}>
                     {/* Logo */}
                     <div style={styles.logoSection}>
@@ -455,10 +444,38 @@ export function LoginPage() {
                                 disabled={submitting}
                                 style={{
                                     ...styles.primaryBtn,
-                                    opacity: submitting ? 0.7 : 1
+                                    opacity: submitting ? 0.7 : 1,
+                                    marginBottom: '10px'
                                 }}
                             >
-                                {submitting ? 'Procesando...' : 'Continuar'}
+                                {submitting ? 'Procesando...' : 'Iniciar Sesión'}
+                            </button>
+
+                            {/* Go to Register */}
+                            <button
+                                type="button"
+                                onClick={handleGoToRegister}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    backgroundColor: 'transparent',
+                                    border: isDark ? '1px solid #4b5563' : '1px solid #d1d5db',
+                                    color: isDark ? '#d1d5db' : '#4b5563',
+                                    borderRadius: '12px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                }}
+                                onMouseOver={(e) => {
+                                    e.currentTarget.style.backgroundColor = isDark ? '#374151' : '#f3f4f6';
+                                    e.currentTarget.style.color = isDark ? '#f9fafb' : '#111827';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    e.currentTarget.style.color = isDark ? '#d1d5db' : '#4b5563';
+                                }}
+                            >
+                                Crear Cuenta Nueva
                             </button>
                         </form>
 
@@ -497,7 +514,14 @@ export function LoginPage() {
     if (mode === 'register-info') {
         return (
             <div style={styles.pageContainer}>
-                <CloudBackground />
+                <CloudBackground isDark={isDark} />
+                <button
+                    onClick={toggleTheme}
+                    style={styles.themeToggleBtn}
+                    aria-label="Toggle theme"
+                >
+                    {isDark ? <Sun size={20} color="#facc15" /> : <Moon size={20} color="#6b7280" />}
+                </button>
                 <div style={styles.cardContainer}>
                     {/* Logo */}
                     <div style={styles.logoSection}>
@@ -747,7 +771,7 @@ export function LoginPage() {
 }
 
 // Estilos inline para garantizar renderizado correcto
-const styles = {
+const getStyles = (isDark) => ({
     pageContainer: {
         minHeight: '100vh',
         width: '100vw',
@@ -760,7 +784,26 @@ const styles = {
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         position: 'relative',
         zIndex: 1,
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        color: isDark ? '#f9fafb' : '#111827'
+    },
+    themeToggleBtn: {
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        zIndex: 20,
+        background: isDark ? 'rgba(31, 41, 55, 0.4)' : 'rgba(255, 255, 255, 0.4)',
+        backdropFilter: 'blur(8px)',
+        border: isDark ? '1px solid rgba(75, 85, 99, 0.5)' : '1px solid rgba(255, 255, 255, 0.5)',
+        borderRadius: '50%',
+        width: '44px',
+        height: '44px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
     },
     cardContainer: {
         width: '100%',
@@ -794,32 +837,33 @@ const styles = {
     title: {
         fontSize: '28px',
         fontWeight: '700',
-        color: '#111827',
+        color: isDark ? '#f9fafb' : '#111827',
         margin: '0',
         letterSpacing: '-0.5px'
     },
     subtitle: {
         fontSize: '14px',
-        color: '#6b7280',
+        color: isDark ? '#9ca3af' : '#6b7280',
         margin: '6px 0 0 0'
     },
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: isDark ? '#1f2937' : '#fff',
         borderRadius: '20px',
-        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
-        border: '1px solid #e5e7eb',
-        padding: '32px'
+        boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.4)' : '0 4px 24px rgba(0, 0, 0, 0.06)',
+        border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
+        padding: '32px',
+        transition: 'background-color 0.3s, border-color 0.3s, box-shadow 0.3s'
     },
     cardTitle: {
         fontSize: '20px',
         fontWeight: '600',
-        color: '#111827',
+        color: isDark ? '#f9fafb' : '#111827',
         margin: '0 0 4px 0',
         textAlign: 'center'
     },
     cardSubtitle: {
         fontSize: '14px',
-        color: '#6b7280',
+        color: isDark ? '#9ca3af' : '#6b7280',
         margin: '0 0 24px 0',
         textAlign: 'center'
     },
@@ -836,29 +880,31 @@ const styles = {
     label: {
         fontSize: '14px',
         fontWeight: '500',
-        color: '#374151'
+        color: isDark ? '#d1d5db' : '#374151'
     },
     input: {
         width: '100%',
         padding: '14px 16px',
         fontSize: '15px',
-        border: '1.5px solid #e5e7eb',
+        border: isDark ? '1.5px solid #4b5563' : '1.5px solid #e5e7eb',
         borderRadius: '12px',
         outline: 'none',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
+        transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s',
         boxSizing: 'border-box',
-        backgroundColor: '#fafafa'
+        backgroundColor: isDark ? '#374151' : '#fafafa',
+        color: isDark ? '#f9fafb' : '#111827'
     },
     inputCompact: {
         width: '100%',
         padding: '10px 14px',
         fontSize: '14px',
-        border: '1.5px solid #e5e7eb',
+        border: isDark ? '1.5px solid #4b5563' : '1.5px solid #e5e7eb',
         borderRadius: '10px',
         outline: 'none',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
+        transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s',
         boxSizing: 'border-box',
-        backgroundColor: '#fafafa'
+        backgroundColor: isDark ? '#374151' : '#fafafa',
+        color: isDark ? '#f9fafb' : '#111827'
     },
     passwordWrapper: {
         position: 'relative',
@@ -884,23 +930,27 @@ const styles = {
         width: '100%',
         padding: '14px 16px',
         fontSize: '15px',
-        border: '1.5px solid #e5e7eb',
+        border: isDark ? '1.5px solid #4b5563' : '1.5px solid #e5e7eb',
         borderRadius: '12px',
         outline: 'none',
         boxSizing: 'border-box',
-        backgroundColor: '#fafafa',
-        cursor: 'pointer'
+        backgroundColor: isDark ? '#374151' : '#fafafa',
+        color: isDark ? '#f9fafb' : '#111827',
+        cursor: 'pointer',
+        transition: 'border-color 0.2s, background-color 0.3s, color 0.3s'
     },
     selectCompact: {
         width: '100%',
         padding: '10px 14px',
         fontSize: '14px',
-        border: '1.5px solid #e5e7eb',
+        border: isDark ? '1.5px solid #4b5563' : '1.5px solid #e5e7eb',
         borderRadius: '10px',
         outline: 'none',
         boxSizing: 'border-box',
-        backgroundColor: '#fafafa',
-        cursor: 'pointer'
+        backgroundColor: isDark ? '#374151' : '#fafafa',
+        color: isDark ? '#f9fafb' : '#111827',
+        cursor: 'pointer',
+        transition: 'border-color 0.2s, background-color 0.3s, color 0.3s'
     },
     rolBadge: {
         display: 'flex',
@@ -923,12 +973,12 @@ const styles = {
     },
     rolBadgeEmail: {
         fontSize: '13px',
-        color: '#374151',
+        color: isDark ? '#d1d5db' : '#374151',
         margin: '8px 0 0 0'
     },
     rolBadgeMatricula: {
         fontSize: '12px',
-        color: '#4b5563',
+        color: isDark ? '#9ca3af' : '#4b5563',
         margin: '4px 0 0 0',
         fontWeight: '500'
     },
@@ -941,7 +991,7 @@ const styles = {
     dividerLine: {
         flex: 1,
         height: '1px',
-        backgroundColor: '#e5e7eb'
+        backgroundColor: isDark ? '#374151' : '#e5e7eb'
     },
     dividerText: {
         fontSize: '13px',
@@ -953,46 +1003,46 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         padding: '12px 16px',
-        backgroundColor: '#fef2f2',
-        border: '1px solid #fecaca',
+        backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fef2f2',
+        border: isDark ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fecaca',
         borderRadius: '10px',
-        color: '#dc2626',
+        color: isDark ? '#fca5a5' : '#dc2626',
         fontSize: '14px'
     },
     primaryBtn: {
         width: '100%',
         padding: '14px',
-        backgroundColor: '#111827',
+        backgroundColor: isDark ? '#3b82f6' : '#111827',
         color: '#fff',
         fontSize: '15px',
         fontWeight: '600',
         border: 'none',
         borderRadius: '12px',
         cursor: 'pointer',
-        transition: 'transform 0.1s, box-shadow 0.2s',
-        boxShadow: '0 2px 8px rgba(17, 24, 39, 0.15)'
+        transition: 'transform 0.1s, box-shadow 0.2s, background-color 0.3s',
+        boxShadow: isDark ? '0 2px 8px rgba(59, 130, 246, 0.25)' : '0 2px 8px rgba(17, 24, 39, 0.15)'
     },
     googleBtn: {
         width: '100%',
         padding: '14px',
-        backgroundColor: '#fff',
-        color: '#374151',
+        backgroundColor: isDark ? '#374151' : '#fff',
+        color: isDark ? '#f9fafb' : '#374151',
         fontSize: '15px',
         fontWeight: '500',
-        border: '1.5px solid #e5e7eb',
+        border: isDark ? '1.5px solid #4b5563' : '1.5px solid #e5e7eb',
         borderRadius: '12px',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'background-color 0.2s'
+        transition: 'background-color 0.2s, border-color 0.3s, color 0.3s'
     },
     backBtn: {
         display: 'flex',
         alignItems: 'center',
         padding: '8px 0',
         marginBottom: '16px',
-        color: '#6b7280',
+        color: isDark ? '#d1d5db' : '#6b7280',
         fontSize: '14px',
         background: 'none',
         border: 'none',
@@ -1001,7 +1051,7 @@ const styles = {
     footer: {
         textAlign: 'center',
         fontSize: '12px',
-        color: '#9ca3af',
+        color: isDark ? '#6b7280' : '#9ca3af',
         marginTop: '24px'
     },
     loadingContainer: {
@@ -1027,7 +1077,7 @@ const styles = {
     },
     helperText: {
         fontSize: '13px',
-        color: '#9ca3af',
+        color: isDark ? '#9ca3af' : '#9ca3af',
         margin: '0 0 8px 0'
     },
     gruposGrid: {
@@ -1047,4 +1097,4 @@ const styles = {
         cursor: 'pointer',
         transition: 'all 0.15s'
     }
-};
+});

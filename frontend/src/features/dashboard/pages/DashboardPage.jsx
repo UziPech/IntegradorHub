@@ -10,6 +10,7 @@ import { ProjectCard } from '../../projects/components/ProjectCard';
 import { ProjectDetailsModal } from '../../projects/components/ProjectDetailsModal';
 import { StudentDashboard } from '../components/StudentDashboard';
 import { TeacherDashboard } from '../components/TeacherDashboard';
+import { GuestDashboard } from '../components/GuestDashboard';
 
 export function DashboardPage() {
     const { userData } = useAuth();
@@ -189,7 +190,7 @@ export function DashboardPage() {
                         onShowCreateModal={() => setShowCreateModal(true)}
                         onProjectClick={() => setSelectedProject(projects[0])}
                     />
-                ) : (
+                ) : userData?.rol === 'Docente' ? (
                     <TeacherDashboard
                         userData={userData}
                         projects={projects}
@@ -197,6 +198,8 @@ export function DashboardPage() {
                         searchQuery={searchQuery}
                         onProjectClick={(project) => setSelectedProject(project)}
                     />
+                ) : (
+                    <GuestDashboard userData={userData} />
                 )}
             </main>
 
