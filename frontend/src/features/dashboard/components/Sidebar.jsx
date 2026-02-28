@@ -30,8 +30,6 @@ export function Sidebar({ isOpen, onClose }) {
         ...(userData?.rol === 'Docente' ? [
           { label: 'Evaluaciones', path: '/evaluations', icon: FolderOpen },
         ] : []),
-
-        { label: 'Agenda', path: '/calendar', icon: Calendar },
       ]
     },
     ...(userData?.rol === 'admin' || userData?.rol === 'SuperAdmin' ? [{
