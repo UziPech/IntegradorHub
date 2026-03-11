@@ -30,9 +30,13 @@ public class SupabaseStorageService : IStorageService
 
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string folder = "projects")
     {
-        // Generar nombre único para evitar colisiones
-        var uniqueFileName = $"{folder}/{Guid.NewGuid()}_{fileName}";
+        // Generar nombre único para evitar colisiones.
+        // Reemplazar espacios o caracteres especiales en el fileName principal
+        var safeFileName = fileName.Replace(" ", "_");
+        var uniqueFileName = $"{folder}/{Guid.NewGuid()}_{safeFileName}";
         
+        // Supabase requiere que la ruta del objeto (que incluye carpetas) se pase
+        // en la URL pero separada limpiamente (bucket/folder/file)
         var url = $"{_supabaseUrl}/storage/v1/object/{_bucketName}/{uniqueFileName}";
 
         using var content = new StreamContent(fileStream);
