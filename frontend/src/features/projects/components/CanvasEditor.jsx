@@ -207,7 +207,7 @@ export function CanvasEditor({ project, readOnly = false, mode = 'all', onSaveSt
     const handleVideoPitchUpload = async (file) => {
         if (!file) return;
         if (file.type && !file.type.startsWith('video/')) return alert('Por favor sube un video válido (MP4, WebM, MOV).');
-        if (file.size > 100 * 1024 * 1024) return alert('El video no puede pesar más de 100MB');
+        if (file.size > 500 * 1024 * 1024) return alert('El video no puede pesar más de 500MB');
         try {
             setVideoUploadProgress(1);
             const url = await uploadFile(file, 'project-promos', setVideoUploadProgress);
@@ -225,7 +225,7 @@ export function CanvasEditor({ project, readOnly = false, mode = 'all', onSaveSt
         if (!file) return;
         if (type === 'image' && file.type.startsWith('video/')) return alert('Este bloque es para IMÁGENES.');
         if (type === 'video' && file.type.startsWith('image/')) return alert('Este bloque es para VIDEOS.');
-        if (file.size > 100 * 1024 * 1024) return alert('El archivo no puede superar los 100MB');
+        if (file.size > 500 * 1024 * 1024) return alert('El archivo no puede superar los 500MB');
         handleBlockMetadataChange(blockId, { uploading: true, progress: 0, error: null });
         try {
             const folder = type === 'video' ? 'videos' : 'images';
@@ -336,7 +336,7 @@ export function CanvasEditor({ project, readOnly = false, mode = 'all', onSaveSt
                                     </div>
                                     <div>
                                         <p className="font-semibold text-gray-900 dark:text-white">Haz clic para subir tu Video Pitch</p>
-                                        <p className="text-sm text-gray-500 dark:text-slate-400">MP4, WebM hasta 100MB</p>
+                                        <p className="text-sm text-gray-500 dark:text-slate-400">MP4, WebM hasta 500MB</p>
                                     </div>
                                 </div>
                                 {videoUploadProgress > 0 && (
