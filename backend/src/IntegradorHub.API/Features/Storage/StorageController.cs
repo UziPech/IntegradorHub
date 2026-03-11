@@ -20,6 +20,8 @@ public class StorageController : ControllerBase
     /// Sube un archivo al storage de Supabase
     /// </summary>
     [HttpPost("upload")]
+    [RequestSizeLimit(524288000)] // 500 MB
+    [RequestFormLimits(MultipartBodyLengthLimit = 524288000)] // 500 MB
     public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] string folder = "projects")
     {
         if (file == null || file.Length == 0)
@@ -27,10 +29,10 @@ public class StorageController : ControllerBase
             return BadRequest(new { error = "No file provided" });
         }
 
-        // Validar tamaño (máximo 100MB)
-        if (file.Length > 100 * 1024 * 1024)
+        // Validar tamaño (máximo 500MB)
+        if (file.Length > 500L * 1024 * 1024)
         {
-            return BadRequest(new { error = "File size exceeds 100MB limit" });
+            return BadRequest(new { error = "File size exceeds 500MB limit" });
         }
 
         // Validar tipo de archivo
