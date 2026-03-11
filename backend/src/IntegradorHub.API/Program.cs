@@ -6,10 +6,24 @@ using IntegradorHub.API.Shared.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// === KESTREL: Aumentar límite global a 500MB para subida de videos ===
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 524288000; // 500 MB
+});
+
 // === SERVICES ===
 
 // Controllers
 builder.Services.AddControllers();
+
+// Form options globales para multipart (500MB)
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 524288000; // 500 MB
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+});
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
