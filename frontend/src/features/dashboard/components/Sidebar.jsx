@@ -138,7 +138,7 @@ export function Sidebar({ isOpen, onClose }) {
                             ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-slate-500 group-hover/navitem:text-gray-700 dark:group-hover/navitem:text-white'}
                           `}>
                             <Icon
-                              className="transition-all duration-300 w-[18px] h-[18px] lg:w-[22px] lg:h-[22px] lg:group-hover:w-5 lg:group-hover:h-5"
+                              className="transition-all duration-300 w-[18px] h-[18px] lg:w-[22px] lg:h-[22px] lg:group-hover:w-5 lg:group-hover:h-5 group-hover/navitem:scale-125 group-hover/navitem:animate-[icon-shake_0.4s_ease-out]"
                               strokeWidth={isActive ? 2.5 : 2}
                             />
                           </div>
@@ -173,7 +173,7 @@ export function Sidebar({ isOpen, onClose }) {
           <button
             onClick={toggleTheme}
             title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            className="w-full flex items-center transition-all duration-300 rounded-xl text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700/40 mb-2
+            className="w-full flex items-center transition-all duration-300 group/theme rounded-xl text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700/40 mb-2
               /* Mobile Padding */
               p-3
               /* Desktop Collapsed */
@@ -191,8 +191,8 @@ export function Sidebar({ isOpen, onClose }) {
               lg:group-hover:w-6 lg:group-hover:h-6
             ">
               {isDark
-                ? <Sun className="transition-transform w-[18px] h-[18px] lg:w-5 lg:h-5 lg:group-hover:w-[18px] lg:group-hover:h-[18px] text-amber-400" strokeWidth={2} />
-                : <Moon className="transition-transform w-[18px] h-[18px] lg:w-5 lg:h-5 lg:group-hover:w-[18px] lg:group-hover:h-[18px]" strokeWidth={2} />
+                ? <Sun className="transition-all duration-300 group-hover/theme:scale-125 group-hover/theme:animate-[icon-shake_0.4s_ease-out] w-[18px] h-[18px] lg:w-5 lg:h-5 lg:group-hover:w-[18px] lg:group-hover:h-[18px] text-amber-400" strokeWidth={2} />
+                : <Moon className="transition-all duration-300 group-hover/theme:scale-125 group-hover/theme:animate-[icon-shake_0.4s_ease-out] w-[18px] h-[18px] lg:w-5 lg:h-5 lg:group-hover:w-[18px] lg:group-hover:h-[18px]" strokeWidth={2} />
               }
             </div>
             <div className={`
@@ -269,7 +269,7 @@ export function Sidebar({ isOpen, onClose }) {
                 /* Desktop Expanded */
                 lg:group-hover:w-6 lg:group-hover:h-6
               ">
-                <LogOut className="group-hover/logout:-translate-x-0.5 transition-transform w-[18px] h-[18px] lg:w-5 lg:h-5 lg:group-hover:w-[18px] lg:group-hover:h-[18px]" strokeWidth={2} />
+                <LogOut className="group-hover/logout:scale-125 group-hover/logout:animate-[icon-shake_0.4s_ease-out] transition-all duration-300 w-[18px] h-[18px] lg:w-5 lg:h-5 lg:group-hover:w-[18px] lg:group-hover:h-[18px]" strokeWidth={2} />
               </div>
               <div className={`
                 transition-all duration-300 overflow-hidden flex items-center

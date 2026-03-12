@@ -28,3 +28,13 @@
     width: 100%;
   }
 }
+
+@layer utilities {
+  @keyframes icon-shake {
+    0%   { transform: scale(1) rotate(0deg); }
+    25%  { transform: scale(1.25) rotate(-12deg); }
+    50%  { transform: scale(1.25) rotate(10deg); }
+    75%  { transform: scale(1.25) rotate(-8deg); }
+    100% { transform: scale(1.25) rotate(0deg); }
+  }
+}

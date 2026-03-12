@@ -258,7 +258,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                 {/* Left Column: Media Carousel */}
                 <motion.div
                     initial={false}
-                    animate={{ width: readMode ? '0%' : '55%', opacity: readMode ? 0 : 1 }}
+                    animate={{ width: readMode ? '0%' : '66%', opacity: readMode ? 0 : 1 }}
                     transition={{ duration: 0.35, ease: 'easeInOut' }}
                     className="relative bg-black flex-col items-center justify-center p-0 group overflow-hidden hidden lg:flex shrink-0"
                     style={{ minWidth: readMode ? 0 : undefined }}
@@ -276,57 +276,78 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                     }}
                 >
                     <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+                        {/* 🌟 EFECTO CINE BACKGROUND 🌟 */}
                         {currentMedia.type === 'video' ? (
-                            <div
-                                className="w-full h-full relative flex items-center justify-center cursor-pointer bg-black"
-                                title="Clic para ampliar"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsLightboxOpen(true);
-                                }}
-                            >
-                                <video
-                                    ref={videoRef}
-                                    src={currentMedia.url}
-                                    loop
-                                    muted
-                                    playsInline
-                                    className={`w-full h-full object-contain transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-60'}`}
-                                />
-
-                                {!isPlaying && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="w-20 h-20 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-xl transition-all duration-300 group-hover:scale-110">
-                                            <Play fill="white" className="text-white ml-2" size={40} />
-                                        </div>
-                                    </div>
-                                )}
-
-                                <span className="absolute bottom-6 left-6 px-3 py-1.5 bg-black/70 backdrop-blur-md rounded-md text-white text-xs font-bold uppercase tracking-wider border border-white/20 shadow-lg pointer-events-none z-10">
-                                    Video Pitch
-                                </span>
-                            </div>
+                            <video
+                                src={currentMedia.url}
+                                muted
+                                loop
+                                playsInline
+                                autoPlay
+                                className="absolute inset-0 w-full h-full object-cover scale-150 opacity-40 blur-[60px] z-0 pointer-events-none"
+                            />
                         ) : currentMedia.type === 'image' ? (
-                            <div
-                                className="w-full h-full bg-black flex items-center justify-center cursor-pointer"
-                                title="Clic para ampliar"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsLightboxOpen(true);
-                                }}
-                            >
-                                <img
-                                    src={currentMedia.url}
-                                    alt={project.titulo}
-                                    className="w-full h-full object-contain"
-                                />
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center text-gray-500">
-                                <ImageIcon size={64} className="mb-4 opacity-50" />
-                                <span className="text-sm font-medium">Sin contenido visual</span>
-                            </div>
-                        )}
+                            <img
+                                src={currentMedia.url}
+                                alt=""
+                                className="absolute inset-0 w-full h-full object-cover scale-150 opacity-40 blur-[60px] z-0 pointer-events-none"
+                            />
+                        ) : null}
+
+                        {/* FOREGROUND MEDIA - Mantiene object-contain sin recortar */}
+                        <div className="relative z-10 w-full h-full flex items-center justify-center">
+                            {currentMedia.type === 'video' ? (
+                                <div
+                                    className="w-full h-full relative flex items-center justify-center cursor-pointer"
+                                    title="Clic para ampliar"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsLightboxOpen(true);
+                                    }}
+                                >
+                                    <video
+                                        ref={videoRef}
+                                        src={currentMedia.url}
+                                        loop
+                                        muted
+                                        playsInline
+                                        className={`w-full h-full object-contain transition-opacity duration-500 drop-shadow-2xl ${isPlaying ? 'opacity-100' : 'opacity-80'}`}
+                                    />
+
+                                    {!isPlaying && (
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="w-20 h-20 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-xl transition-all duration-300 group-hover:scale-110">
+                                                <Play fill="white" className="text-white ml-2" size={40} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <span className="absolute bottom-6 left-6 px-3 py-1.5 bg-black/70 backdrop-blur-md rounded-md text-white text-xs font-bold uppercase tracking-wider border border-white/20 shadow-lg pointer-events-none z-10">
+                                        Video Pitch
+                                    </span>
+                                </div>
+                            ) : currentMedia.type === 'image' ? (
+                                <div
+                                    className="w-full h-full flex items-center justify-center cursor-pointer p-4"
+                                    title="Clic para ampliar"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsLightboxOpen(true);
+                                    }}
+                                >
+                                    <img
+                                        src={currentMedia.url}
+                                        alt={project.titulo}
+                                        className="w-full h-full object-contain drop-shadow-2xl"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-gray-500 bg-black/50 backdrop-blur-md w-full h-full">
+                                    <ImageIcon size={64} className="mb-4 opacity-50" />
+                                    <span className="text-sm font-medium">Sin contenido visual</span>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Carousel Controls */}
                         {mediaItems.length > 1 && (

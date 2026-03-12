@@ -133,7 +133,7 @@ export function ShowcasePage() {
                         ))}
                     </div>
                 ) : filteredProjects.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-16 max-w-4xl mx-auto px-4">
+                    <div className="grid grid-cols-1 gap-16 w-[95%] md:w-[90%] lg:w-[85%] xl:w-[80%] max-w-5xl mx-auto">
                         {filteredProjects.map(project => (
                             <ShowcaseCard
                                 key={project.id}
@@ -155,7 +155,7 @@ export function ShowcasePage() {
                 {/* Details Modal */}
                 {selectedProject && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-black dark:bg-black w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden h-[85vh] flex flex-col">
+                        <div className="bg-black dark:bg-black w-[95vw] md:w-[95vw] lg:w-[95vw] xl:w-[95vw] 2xl:w-[95vw] max-w-none rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700/50 overflow-hidden h-[95vh] flex flex-col">
                             <ProjectDetailsModal
                                 key={selectedProject.id}
                                 project={selectedProject}

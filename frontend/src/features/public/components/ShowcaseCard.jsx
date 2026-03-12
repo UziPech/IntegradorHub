@@ -158,9 +158,9 @@ export function ShowcaseCard({ project, onClick }) {
                 </div>
             </div>
 
-            {/* --- 2. Media Area (Landscape 16:9 for Web/Mobile Systems) --- */}
+            {/* --- 2. Media Area (Adapted with Efecto Cine) --- */}
             <div
-                className="w-full aspect-video bg-black relative flex items-center justify-center overflow-hidden"
+                className="w-full bg-black relative flex items-center justify-center overflow-hidden min-h-[300px] max-h-[85vh] group/media"
                 onMouseEnter={() => {
                     if (currentMedia.type === 'video') {
                         setIsPlaying(true);
@@ -174,10 +174,30 @@ export function ShowcaseCard({ project, onClick }) {
                     }
                 }}
             >
+                {/* Fondo Difuminado (Efecto Cine) */}
+                {currentMedia.url && currentMedia.type !== 'placeholder' && (
+                    currentMedia.type === 'video' ? (
+                        <video
+                            src={currentMedia.url}
+                            className="absolute inset-0 w-full h-full object-cover scale-[1.2] opacity-40 blur-[50px] z-0 pointer-events-none"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                        />
+                    ) : (
+                        <img
+                            src={currentMedia.url}
+                            className="absolute inset-0 w-full h-full object-cover scale-[1.2] opacity-40 blur-[50px] z-0 pointer-events-none filter"
+                            alt=""
+                        />
+                    )
+                )}
+
                 {/* Media Content */}
                 {currentMedia.type === 'video' ? (
                     <div
-                        className="w-full h-full relative flex items-center justify-center cursor-pointer bg-black"
+                        className="w-full relative z-10 flex items-center justify-center cursor-pointer bg-transparent"
                         title="Clic para ampliar"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -190,7 +210,7 @@ export function ShowcaseCard({ project, onClick }) {
                             loop
                             muted
                             playsInline
-                            className={`w-full h-full object-contain transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-40'}`}
+                            className={`w-full max-h-[85vh] object-contain transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-70'}`}
                         />
 
                         {/* Play Overlay (Only visible when paused) */}
@@ -208,7 +228,7 @@ export function ShowcaseCard({ project, onClick }) {
                     </div>
                 ) : currentMedia.type === 'image' ? (
                     <div
-                        className="w-full h-full bg-black flex items-center justify-center cursor-pointer group/img"
+                        className="w-full relative z-10 flex items-center justify-center cursor-pointer group/img bg-transparent"
                         title="Clic para ampliar"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -218,7 +238,7 @@ export function ShowcaseCard({ project, onClick }) {
                         <img
                             src={currentMedia.url}
                             alt={project.titulo}
-                            className="w-full h-full object-contain"
+                            className="w-full max-h-[85vh] object-contain drop-shadow-xl"
                         />
                     </div>
                 ) : (

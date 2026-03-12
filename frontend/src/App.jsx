@@ -17,6 +17,7 @@ import StudentsPanel from './features/admin/pages/StudentsPanel';
 import TeachersPanel from './features/admin/pages/TeachersPanel';
 import CarrerasPanel from './features/admin/pages/CarrerasPanel';
 import { LoginPage } from './features/auth/pages/LoginPage';
+import { RegisterPage } from './features/auth/pages/RegisterPage';
 import { RoleGuard } from './features/auth/components/RoleGuard';
 import { EvaluationsPage } from './features/evaluations/pages/EvaluationsPage';
 import './index.css';
@@ -45,6 +46,7 @@ function App() {
             {/* Landing page es el Login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
             {/* Layout Principal con Sidebar */}
             <Route element={
