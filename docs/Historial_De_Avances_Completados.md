@@ -252,3 +252,65 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 🔌 Corrección de Conexión de API (Frontend Local vs Producción) (Febrero 2026)
+
+### 1. Resolución de Sobrescritura de Variables de Entorno
+- **El Problema:** El frontend ejecutándose en un entorno local (`localhost:5173`) intentaba forzosamente conectarse al backend local (`http://localhost:5093`), resultando en errores `ERR_CONNECTION_REFUSED` a pesar de haber modificado el archivo `.env` para apuntar a la API productiva en Render (`https://integradorhub.onrender.com`).
+- **El Diagnóstico:** La persistencia del error se debía a la existencia de un archivo `.env.local` generado automáticamente por la vinculación del proyecto con Vercel CLI. En Vite, el archivo `.env.local` tiene estricta **mayor prioridad** sobre `.env`, sobrescribiendo cualquier variable que compartan el mismo nombre.
+- **La Solución:** Se homologó el valor de la variable `VITE_API_URL` en el archivo `.env.local`, apuntando explícitamente a la infraestructura de producción (`https://integradorhub.onrender.com`).
+- **Impacto:** Con esta configuración unificada, el entorno de desarrollo local puede ahora consumir de manera fluida y exitosa los recursos, catálogos y sistemas de autenticación que operan en el entorno en la nube de Render, permitiendo debugear el frontend con datos reales sin tener que ejecutar paralelamente el servidor .NET.
+
+
+---
+*Fin del registro de esta actualización.*
+
+---
+
+## 🌐 Despliegue Frontend a Vercel & Estabilización de CORS (Febrero 2026)
+
+### 1. Solución al Build de Vite (`vite: command not found`)
+- **El Problema:** Al intentar desplegar a Vercel, el proceso fallaba inmediatamente al no encontrar el comando `vite build`. Esto ocurría porque GitHub aloja el proyecto completo (monorepo con frontend y backend), y Vercel por defecto intentaba ejecutar el build desde la raíz (`/`), donde no existe el `package.json` de React.
+- **La Solución:** Se reconfiguró el proyecto en el dashboard de Vercel estableciendo el _Root Directory_ explícitamente a `frontend`. Además, se introdujo un archivo `vercel.json` con _rewrites_ para soportar la navegación SPA (Single Page Application) de React Router, evitando los errores 404 al recargar páginas o utilizar enlaces directos.
+
+### 2. Configuración Segura de Variables de Entorno
+- **El Problema:** Tras lograr que compilara, la aplicación productiva arrojaba un "Pantallazo Blanco" y errores de `auth/invalid-api-key`. Vercel no inyecta los archivos `.env` automáticamente por seguridad.
+- **La Solución:** Se inyectaron manualmente (vía interfaz gráfica de Vercel) todas las credenciales maestras omitidas de Firebase (`VITE_FIREBASE_API_KEY`, etc.) y la ruta del backend (`VITE_API_URL` apuntando a Render). Se homologaron estos valores en los perfiles `Production`, `Preview` y `Development`. Para las **Preview URLs** dinámicas de Vercel, también se configuró Firebase Auth para admitir dichos dominios como orígenes autorizados.
+
+### 3. Flexibilidad Total de CORS en .NET Backend
+- **El Problema:** Aunque el frontend ya operaba bajo el dominio de `vercel.app`, el backend alojado en Render rechazaba las peticiones por políticas estrictas de CORS, bloqueando la comunicación.
+- **La Solución (Backend):** Se refactorizó la política de CORS en `Program.cs`. Sustituyendo la declaración rígida `WithOrigins` por el método de evaluación predictiva estática `SetIsOriginAllowed()`. El nuevo algoritmo acepta cualquier origen que provenga de `localhost`, de `https://integradorhub.onrender.com` o que termine matemáticamente en `.vercel.app`, dotando de flexibilidad impecable a todas las implementaciones sin sacrificar la seguridad básica.
+
+---
+*Fin del registro de esta actualización.*
+
+---
+
+## 🧹 Limpieza Masiva y Purga de Testing en Producción (Febrero 2026)
+
+### 1. Borrado Asistido de Cuentas de Prueba (Auth & DB)
+- **El Contexto:** Durante los meses de desarrollo, la base de datos se saturó de aproximadamente >50 cuentas de prueba y sus respectivos "proyectos fantasmas", desordenando las métricas de la plataforma antes del pase oficial a Producción.
+- **La Ejecución Automática:** Dada la naturaleza interconectada del sistema, se codificó un script automatizado local en Node.js, conectado a las llaves administrativas de `firebase-admin`. El script escaneó e iteró a través de todos los usuarios.
+- **Resultados de la Purga:** Se extirparon fulminantemente 27 documentos de la colección de Firestore (`usuarios`/`users`) y 6 cuentas residuales activas de los registros del servidor cerrado de Firebase Authentication.
+- **Protección Garantizada:** El script protegió expresamente el UID asociado a la cuenta principal del sistema (`uzielisaac28@gmail.com`) y mantuvo completamente intactas las entidades de configuración académica (`carreras`, `materias` y `grupos`). 
+
+---
+*Fin del registro de esta actualización.*
+
+---
+
+## 🔐 Rediseño del Flujo de Autenticación y Correcciones de Registro (Marzo 2026)
+
+### 1. Unificación Estética del Acceso
+- **Shared Branding:** Se implementó una cabecera de marca idéntica para `LoginPage` y `RegisterPage`, situando el logo oficial de Byfrost® por fuera de la tarjeta de login para una transición visual simétrica.
+- **Navegación por Tabs:** Se sustituyeron los enlaces de texto inferiores por un selector de pestañas (`Login | Registrarse`) integrado en la parte superior de la tarjeta principal, mejorando la usabilidad y la percepción de "aplicación única".
+
+### 2. Optimización del Flujo de Registro
+- **Navegación Proactiva:** Se eliminó el bug del "Doble Clic". Ahora la aplicación detecta el éxito del registro y redirige al usuario forzosamente a su área de trabajo (Dashboard, Projects o Admin) de manera inmediata mediante `useNavigate`.
+- **Blindaje de Errores:** Se corrigieron excepciones por importaciones faltantes (`ArrowLeft`) y errores de desestructuración en el hook `useAuth`, garantizando que la sincronización con el Backend de C# ocurra sin interrupciones tras la creación de la cuenta en Firebase.
+- **Mensajería Adaptativa:** Se actualizaron las validaciones y avisos de error para guiar al usuario a través del nuevo sistema de pestañas ante credenciales inválidas.
+
+---
+*Fin del registro de esta actualización.*

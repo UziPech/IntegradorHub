@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
     signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
     signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -30,8 +29,7 @@ const checkAdminSetup = async (user) => {
         }
     }
 };
-import api from '../../../lib/axios';
-import { GraduationCap, User, UserCheck, AlertCircle, ArrowLeft, Check, Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { GraduationCap, User, UserCheck, AlertCircle, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 import { CloudBackground } from '../../../components/ui/CloudBackground';
 import { useTheme } from '../../../context/ThemeContext';
 
@@ -46,115 +44,25 @@ const detectarRol = (email) => {
     return 'Invitado';
 };
 
-// Extraer matrícula del correo de alumno
-const extraerMatricula = (email) => {
-    const match = email.match(REGEX_ALUMNO);
-    return match ? match[1] : null;
-};
-
 export function LoginPage() {
-    const { isAuthenticated, loading, rol, refreshUserData } = useAuth();
+    const { isAuthenticated, loading, rol } = useAuth();
     const { isDark, toggleTheme } = useTheme();
     const styles = getStyles(isDark);
+    const navigate = useNavigate();
 
-    const [mode, setMode] = useState('login'); // login, register, register-info
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [nombre, setNombre] = useState('');
-    const [apellidoPaterno, setApellidoPaterno] = useState('');
-    const [apellidoMaterno, setApellidoMaterno] = useState('');
-    // Alumno
-    const [grupo, setGrupo] = useState('');
-    const [carrera, setCarrera] = useState('');
-    // Docente
-    const [carreraDocente, setCarreraDocente] = useState('');
-    const [materiaDocente, setMateriaDocente] = useState('');
-    const [gruposDocente, setGruposDocente] = useState([]);
-    const [profesion, setProfesion] = useState('');
-
-    // Opciones en cascadas Docente
-    const [materiasDisponiblesDocente, setMateriasDisponiblesDocente] = useState([]);
-    const [gruposDisponiblesDocente, setGruposDisponiblesDocente] = useState([]);
-    const [loadingMaterias, setLoadingMaterias] = useState(false);
-    // Invitado
-    const [organizacion, setOrganizacion] = useState('');
 
     const [detectedRole, setDetectedRole] = useState(null);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
-    // Catálogos dinámicos
-    const [gruposDisponibles, setGruposDisponibles] = useState([]);
-    const [carrerasDisponibles, setCarrerasDisponibles] = useState([]);
-
-    // Cargar catálogos
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [groupsRes, carrerasRes] = await Promise.all([
-                    api.get('/api/admin/groups'),
-                    api.get('/api/admin/carreras')
-                ]);
-
-                setGruposDisponibles(groupsRes.data || []);
-                setCarrerasDisponibles(carrerasRes.data || []);
-
-            } catch (err) {
-                console.error('Error loading catalogs:', err);
-                // Fallbacks mejorados para desarrollo
-                setGruposDisponibles([
-                    { id: '5A', nombre: '5A' },
-                    { id: '5B', nombre: '5B' },
-                    { id: '5C', nombre: '5C' },
-                    { id: '6A', nombre: '6A' },
-                    { id: '6B', nombre: '6B' },
-                    { id: '6C', nombre: '6C' }
-                ]);
-                setCarrerasDisponibles([
-                    { id: 'dsm', nombre: 'Desarrollo de Software Multiplataforma' },
-                    { id: 'evn', nombre: 'Entornos Virtuales y Negocios Digitales' },
-                    { id: 'ric', nombre: 'Redes Inteligentes y Ciberseguridad' }
-                ]);
-            }
-        };
-        fetchData();
-    }, []);
-
-    // Cargar Materias Disponibles cuando el Docente selecciona una Carrera
-    useEffect(() => {
-        if (detectedRole === 'Docente' && carreraDocente) {
-            setLoadingMaterias(true);
-            api.get(`/api/admin/materias/available?carreraId=${carreraDocente}`)
-                .then(res => {
-                    setMateriasDisponiblesDocente(res.data || []);
-                    setMateriaDocente('');
-                    setGruposDocente([]);
-                    setGruposDisponiblesDocente([]);
-                })
-                .catch(err => console.error("Error fetching materias", err))
-                .finally(() => setLoadingMaterias(false));
-        }
-    }, [carreraDocente, detectedRole]);
-
-    // Filtrar Grupos Libres cuando el Docente selecciona una Materia
-    useEffect(() => {
-        if (materiaDocente) {
-            const mat = materiasDisponiblesDocente.find(m => m.materia.id === materiaDocente);
-            if (mat) {
-                setGruposDisponiblesDocente(mat.gruposDisponibles || []);
-            } else {
-                setGruposDisponiblesDocente([]);
-            }
-            setGruposDocente([]); // Reset grupos seleccionados si cambia la materia
-        }
-    }, [materiaDocente, materiasDisponiblesDocente]);
-
     if (loading) return <div style={styles.loadingContainer}><div style={styles.spinner}></div></div>;
 
     // Redirect based on role
-    // Only redirect if authenticated AND NOT currently in the middle of filling profile info
-    if (isAuthenticated && mode !== 'register-info') {
+    // Only redirect if authenticated
+    if (isAuthenticated) {
         if (rol === 'admin' || rol === 'SuperAdmin') {
             return <Navigate to="/admin" replace />;
         }
@@ -190,7 +98,7 @@ export function LoginPage() {
         } catch (err) {
             console.error('Login error:', err);
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-                setError('Correo o contraseña incorrectos. Si eres nuevo, utiliza la opción de crear cuenta abajo.');
+                setError('Correo o contraseña incorrectos. Si eres nuevo, utiliza la pestaña de Registrarse arriba.');
             } else if (err.code === 'auth/too-many-requests') {
                 setError('Demasiados intentos fallidos. Espera unos minutos antes de intentar de nuevo.');
             } else {
@@ -201,25 +109,7 @@ export function LoginPage() {
         }
     };
 
-    // Ir al paso de registro (Manual, por si acaso)
-    const handleGoToRegister = () => {
-        setError('');
 
-        if (!email || !email.includes('@')) {
-            setError('Ingresa un correo válido');
-            return;
-        }
-
-        const rol = detectarRol(email);
-        setDetectedRole(rol);
-
-        if (!password || password.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres');
-            return;
-        }
-
-        setMode('register-info');
-    };
 
     // Login con Google
     const handleGoogleLogin = async () => {
@@ -245,104 +135,7 @@ export function LoginPage() {
         }
     };
 
-    // Completar registro (Se mantiene igual, la lógica de roles es la clave)
-    const handleRegistro = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSubmitting(true);
 
-        // Validaciones generales
-        if (!nombre.trim()) { setError('Nombre requerido'); setSubmitting(false); return; }
-
-        // Validaciones por rol
-        if (detectedRole === 'Alumno') {
-            if (!grupo) { setError('Selecciona tu grupo'); setSubmitting(false); return; }
-            if (!carrera) { setError('Selecciona tu carrera'); setSubmitting(false); return; }
-        }
-
-        if (detectedRole === 'Docente') {
-            if (!profesion) { setError('Indica tu profesión'); setSubmitting(false); return; }
-            if (!carreraDocente) { setError('Selecciona una carrera impartida'); setSubmitting(false); return; }
-            if (!materiaDocente) { setError('Selecciona la materia que impartes'); setSubmitting(false); return; }
-            if (gruposDocente.length === 0) { setError('Selecciona al menos un grupo'); setSubmitting(false); return; }
-        }
-
-        if (detectedRole === 'Invitado') {
-            if (!organizacion) { setError('Indica tu organización o empresa'); setSubmitting(false); return; }
-        }
-
-        try {
-            // 1. Firebase Auth - Crear Usuario
-            // Si el usuario ya existe (porque venimos de un login fallido por pass incorrecta), esto fallará
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-            // Transformar nombres a formato Título (Ej: Uziel Isaac)
-            const toTitleCase = (str) => {
-                if (!str) return '';
-                return str.toLowerCase().split(' ').map(word => {
-                    return word.charAt(0).toUpperCase() + word.slice(1);
-                }).join(' ');
-            };
-
-            const nombreFinal = toTitleCase(nombre.trim());
-            const apellidoPaternoFinal = toTitleCase(apellidoPaterno.trim());
-            const apellidoMaternoFinal = toTitleCase(apellidoMaterno.trim());
-
-            // 2. Backend Register
-            const payload = {
-                firebaseUid: userCredential.user.uid,
-                email: email,
-                nombre: nombreFinal,
-                apellidoPaterno: apellidoPaternoFinal,
-                apellidoMaterno: apellidoMaternoFinal,
-                rol: detectedRole,
-                // Alumno
-                matricula: detectedRole === 'Alumno' ? extraerMatricula(email) : null,
-                grupoId: grupo || null,
-                carreraId: carrera || null,
-                // Docente
-                profesion: profesion || null,
-                asignaciones: detectedRole === 'Docente' ? [{
-                    carreraId: carreraDocente,
-                    materiaId: materiaDocente,
-                    gruposIds: gruposDocente
-                }] : null,
-                // Invitado
-                organizacion: organizacion || null
-            };
-
-            await api.post('/api/auth/register', payload);
-
-            // 3. RECUPERAR DATOS FINALES
-            // Forzamos actualización del estado global con los datos recién guardados
-            await refreshUserData();
-
-            // Regresamos el modo a login para que el efecto superior detecte la autenticación
-            // y haga la redirección basada en el rol de forma automática sin recargar
-            setMode('login');
-
-        } catch (err) {
-            console.error('Registro error:', err);
-            if (err.code === 'auth/email-already-in-use') {
-                // Si falla la creación porque existe, significa que el intento original de login
-                // falló por contraseña incorrecta (o algo similar).
-                // Regresamos al login y avisamos.
-                setMode('login');
-                setError('Este correo ya está registrado. Verifica tu contraseña.');
-            } else {
-                setError(err.message || 'Error al registrar usuario');
-            }
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // Toggle grupo para docente
-    const toggleGrupoDocente = (g) => {
-        setGruposDocente(prev =>
-            prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
-        );
-    };
 
     // Icono de rol
     const RoleIcon = ({ role, size = 20 }) => {
@@ -351,9 +144,7 @@ export function LoginPage() {
         return <User size={size} />;
     };
 
-    // Vista de Login
-    if (mode === 'login') {
-        return (
+    return (
             <div style={styles.pageContainer}>
                 <CloudBackground isDark={isDark} />
 
@@ -378,8 +169,15 @@ export function LoginPage() {
 
                     {/* Card */}
                     <div style={styles.card}>
-                        <h2 style={styles.cardTitle}>Bienvenido</h2>
-                        <p style={styles.cardSubtitle}>Ingresa tu correo institucional para continuar</p>
+                        {/* Auth Tabs */}
+                        <div style={styles.tabBar}>
+                            <button style={styles.tabActive} disabled>
+                                Iniciar Sesión
+                            </button>
+                            <button style={styles.tabInactive} onClick={() => navigate('/register')}>
+                                Registrarse
+                            </button>
+                        </div>
 
                         <form onSubmit={handleLogin} style={styles.form}>
                             {/* Email */}
@@ -445,37 +243,9 @@ export function LoginPage() {
                                 style={{
                                     ...styles.primaryBtn,
                                     opacity: submitting ? 0.7 : 1,
-                                    marginBottom: '10px'
                                 }}
                             >
                                 {submitting ? 'Procesando...' : 'Iniciar Sesión'}
-                            </button>
-
-                            {/* Go to Register */}
-                            <button
-                                type="button"
-                                onClick={handleGoToRegister}
-                                style={{
-                                    width: '100%',
-                                    padding: '12px',
-                                    backgroundColor: 'transparent',
-                                    border: isDark ? '1px solid #4b5563' : '1px solid #d1d5db',
-                                    color: isDark ? '#d1d5db' : '#4b5563',
-                                    borderRadius: '12px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                }}
-                                onMouseOver={(e) => {
-                                    e.currentTarget.style.backgroundColor = isDark ? '#374151' : '#f3f4f6';
-                                    e.currentTarget.style.color = isDark ? '#f9fafb' : '#111827';
-                                }}
-                                onMouseOut={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                    e.currentTarget.style.color = isDark ? '#d1d5db' : '#4b5563';
-                                }}
-                            >
-                                Crear Cuenta Nueva
                             </button>
                         </form>
 
@@ -508,266 +278,6 @@ export function LoginPage() {
                 <p style={styles.footer}>Universidad Tecnológica Metropolitana</p>
             </div>
         );
-    }
-
-    // Vista de Registro - Información adicional
-    if (mode === 'register-info') {
-        return (
-            <div style={styles.pageContainer}>
-                <CloudBackground isDark={isDark} />
-                <button
-                    onClick={toggleTheme}
-                    style={styles.themeToggleBtn}
-                    aria-label="Toggle theme"
-                >
-                    {isDark ? <Sun size={20} color="#facc15" /> : <Moon size={20} color="#6b7280" />}
-                </button>
-                <div style={styles.cardContainer}>
-                    {/* Logo */}
-                    <div style={styles.logoSection}>
-                        <div style={styles.logoIcon}>
-                            <img src="/byfrost-icon.png" alt="Byfrost" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }} />
-                        </div>
-                        <h1 style={styles.title}>Byfrost®</h1>
-                        <p style={styles.subtitle}>DSM Edition</p>
-                    </div>
-
-                    {/* Card */}
-                    <div style={{ ...styles.card, padding: '24px' }}>
-                        {/* Header con botón atrás */}
-                        <button
-                            type="button"
-                            onClick={() => setMode('login')}
-                            style={styles.backBtn}
-                        >
-                            <ArrowLeft size={18} />
-                            <span style={{ marginLeft: '6px' }}>Volver</span>
-                        </button>
-
-                        <h2 style={styles.cardTitle}>Completa tu Perfil</h2>
-                        <p style={styles.cardSubtitle}>
-                            {detectedRole === 'Alumno'
-                                ? 'Verifica y completa tus datos para continuar'
-                                : 'Completa tus datos y selecciona tus grupos'}
-                        </p>
-
-                        {/* Rol detectado */}
-                        <div style={{
-                            ...styles.rolBadgeLarge,
-                            backgroundColor: detectedRole === 'Alumno' ? '#eff6ff' : '#f0fdf4',
-                            borderColor: detectedRole === 'Alumno' ? '#bfdbfe' : '#bbf7d0'
-                        }}>
-                            <div style={styles.rolBadgeHeader}>
-                                <RoleIcon role={detectedRole} size={24} />
-                                <span style={{
-                                    marginLeft: '10px',
-                                    fontWeight: '600',
-                                    color: detectedRole === 'Alumno' ? '#1d4ed8' : '#15803d'
-                                }}>
-                                    {detectedRole}
-                                </span>
-                            </div>
-                            <p style={styles.rolBadgeEmail}>{email}</p>
-                            {detectedRole === 'Alumno' && (
-                                <p style={styles.rolBadgeMatricula}>Matrícula: {extraerMatricula(email)}</p>
-                            )}
-                        </div>
-
-                        <form onSubmit={handleRegistro} style={{ ...styles.form, gap: '12px' }}>
-                            {/* Nombre, Apellido Paterno, Apellido Materno */}
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>Nombre(s) <span style={{ color: '#ef4444' }}>*</span></label>
-                                <input
-                                    type="text"
-                                    value={nombre}
-                                    onChange={(e) => setNombre(e.target.value)}
-                                    placeholder="Juan Carlos"
-                                    style={styles.inputCompact}
-                                    required
-                                />
-                            </div>
-
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>Apellido Paterno <span style={{ color: '#ef4444' }}>*</span></label>
-                                <input
-                                    type="text"
-                                    value={apellidoPaterno}
-                                    onChange={(e) => setApellidoPaterno(e.target.value)}
-                                    placeholder="Pérez"
-                                    style={styles.inputCompact}
-                                    required
-                                />
-                            </div>
-
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>Apellido Materno <span style={{ color: '#ef4444' }}>*</span></label>
-                                <input
-                                    type="text"
-                                    value={apellidoMaterno}
-                                    onChange={(e) => setApellidoMaterno(e.target.value)}
-                                    placeholder="García"
-                                    style={styles.inputCompact}
-                                    required
-                                />
-                            </div>
-
-                            {/* Carrera para Alumno */}
-                            {detectedRole === 'Alumno' && (
-                                <>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Tu Carrera</label>
-                                        <select
-                                            value={carrera}
-                                            onChange={(e) => setCarrera(e.target.value)}
-                                            style={styles.selectCompact}
-                                            required
-                                        >
-                                            <option value="">Selecciona tu carrera...</option>
-                                            {carrerasDisponibles.map(c => (
-                                                <option key={c.id} value={c.id}>{c.nombre}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Tu Grupo</label>
-                                        <select
-                                            value={grupo}
-                                            onChange={(e) => setGrupo(e.target.value)}
-                                            style={styles.selectCompact}
-                                            required
-                                        >
-                                            <option value="">Selecciona tu grupo...</option>
-                                            {gruposDisponibles.map(g => (
-                                                <option key={g.id} value={g.id}>{g.nombre}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Campos para Docente */}
-                            {detectedRole === 'Docente' && (
-                                <>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Profesión / Título</label>
-                                        <input
-                                            type="text"
-                                            value={profesion}
-                                            onChange={(e) => setProfesion(e.target.value)}
-                                            placeholder="Ej. Ing. en Sistemas Computacionales"
-                                            style={styles.inputCompact}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Carrera en la que impartes</label>
-                                        <select
-                                            value={carreraDocente}
-                                            onChange={(e) => setCarreraDocente(e.target.value)}
-                                            style={styles.selectCompact}
-                                            required
-                                        >
-                                            <option value="">Selecciona tu carrera...</option>
-                                            {carrerasDisponibles.map(c => (
-                                                <option key={c.id} value={c.id}>{c.nombre}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {carreraDocente && (
-                                        <div style={styles.inputGroup}>
-                                            <label style={styles.label}>Materia Asignada {loadingMaterias && "(Cargando...)"}</label>
-                                            <select
-                                                value={materiaDocente}
-                                                onChange={(e) => setMateriaDocente(e.target.value)}
-                                                style={styles.selectCompact}
-                                                required
-                                                disabled={loadingMaterias || materiasDisponiblesDocente.length === 0}
-                                            >
-                                                <option value="">Selecciona una materia disponible...</option>
-                                                {materiasDisponiblesDocente.map(item => (
-                                                    <option key={item.materia.id} value={item.materia.id}>
-                                                        {item.materia.nombre} ({item.materia.clave}) - Cuatri {item.materia.cuatrimestre}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            {!loadingMaterias && materiasDisponiblesDocente.length === 0 && (
-                                                <p style={{ ...styles.helperText, color: '#ef4444' }}>No hay materias con grupos libres en esta carrera.</p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {materiaDocente && gruposDisponiblesDocente.length > 0 && (
-                                        <div style={styles.inputGroup}>
-                                            <label style={styles.label}>Grupos Disponibles (Selecciona uno o varios)</label>
-                                            <div style={styles.gruposGrid}>
-                                                {gruposDisponiblesDocente.map(g => (
-                                                    <button
-                                                        key={g.id}
-                                                        type="button"
-                                                        onClick={() => toggleGrupoDocente(g.id)}
-                                                        style={{
-                                                            ...styles.grupoChip,
-                                                            backgroundColor: gruposDocente.includes(g.id) ? '#111827' : '#f3f4f6',
-                                                            color: gruposDocente.includes(g.id) ? '#fff' : '#374151',
-                                                            borderColor: gruposDocente.includes(g.id) ? '#111827' : '#d1d5db'
-                                                        }}
-                                                    >
-                                                        {g.nombre}
-                                                        {gruposDocente.includes(g.id) && <Check size={14} style={{ marginLeft: '4px' }} />}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {/* Campos para Invitado */}
-                            {detectedRole === 'Invitado' && (
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Organización / Empresa</label>
-                                    <input
-                                        type="text"
-                                        value={organizacion}
-                                        onChange={(e) => setOrganizacion(e.target.value)}
-                                        placeholder="Ej. Google, Freelance, etc."
-                                        style={styles.input}
-                                        required
-                                    />
-                                </div>
-                            )}
-
-                            {/* Error */}
-                            {error && (
-                                <div style={styles.error}>
-                                    <AlertCircle size={16} style={{ flexShrink: 0 }} />
-                                    <span style={{ marginLeft: '8px' }}>{error}</span>
-                                </div>
-                            )}
-
-                            {/* Submit */}
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                style={{
-                                    ...styles.primaryBtn,
-                                    opacity: submitting ? 0.7 : 1
-                                }}
-                            >
-                                {submitting ? 'Registrando...' : 'Crear Cuenta'}
-                            </button>
-                        </form>
-                    </div>
-
-                    {/* Footer */}
-                    <p style={styles.footer}>Universidad Tecnológica Metropolitana</p>
-                </div>
-            </div>
-        );
-    }
 }
 
 // Estilos inline para garantizar renderizado correcto
@@ -866,6 +376,38 @@ const getStyles = (isDark) => ({
         color: isDark ? '#9ca3af' : '#6b7280',
         margin: '0 0 24px 0',
         textAlign: 'center'
+    },
+    tabBar: {
+        display: 'flex',
+        borderBottom: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
+        marginBottom: '24px',
+        gap: '0px',
+    },
+    tabActive: {
+        flex: 1,
+        background: 'none',
+        border: 'none',
+        borderBottom: isDark ? '2.5px solid #f9fafb' : '2.5px solid #111827',
+        padding: '12px 8px',
+        fontSize: '15px',
+        fontWeight: '600',
+        color: isDark ? '#f9fafb' : '#111827',
+        cursor: 'default',
+        transition: 'all 0.2s',
+        marginBottom: '-1px',
+    },
+    tabInactive: {
+        flex: 1,
+        background: 'none',
+        border: 'none',
+        borderBottom: '2.5px solid transparent',
+        padding: '12px 8px',
+        fontSize: '15px',
+        fontWeight: '500',
+        color: isDark ? '#6b7280' : '#9ca3af',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        marginBottom: '-1px',
     },
     form: {
         display: 'flex',
