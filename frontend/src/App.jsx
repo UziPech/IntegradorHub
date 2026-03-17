@@ -18,6 +18,7 @@ import TeachersPanel from './features/admin/pages/TeachersPanel';
 import CarrerasPanel from './features/admin/pages/CarrerasPanel';
 import { LoginPage } from './features/auth/pages/LoginPage';
 import { RegisterPage } from './features/auth/pages/RegisterPage';
+import { AuthLayout } from './features/auth/components/AuthLayout';
 import { RoleGuard } from './features/auth/components/RoleGuard';
 import { EvaluationsPage } from './features/evaluations/pages/EvaluationsPage';
 import './index.css';
@@ -43,10 +44,12 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Landing page es el Login */}
+            {/* Rutas de Autenticación con fondo 3D persistente */}
             <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+            </Route>
 
             {/* Layout Principal con Sidebar */}
             <Route element={

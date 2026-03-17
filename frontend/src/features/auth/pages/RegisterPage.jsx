@@ -8,7 +8,6 @@ import { useAuth } from '../hooks/useAuth';
 
 import api from '../../../lib/axios';
 import { GraduationCap, User, UserCheck, AlertCircle, Check, Eye, EyeOff, Sun, Moon, ArrowRight, ArrowLeft } from 'lucide-react';
-import { CloudBackground } from '../../../components/ui/CloudBackground';
 import { useTheme } from '../../../context/ThemeContext';
 
 // Regex para detectar rol
@@ -112,7 +111,7 @@ export function RegisterPage() {
                 })
                 .catch(err => console.error("Error fetching materias", err))
                 .finally(() => setLoadingMaterias(false));
-         }
+        }
     }, [carreraDocente, detectedRole]);
 
     // Filtrar Grupos Libres cuando el Docente selecciona una Materia
@@ -232,7 +231,7 @@ export function RegisterPage() {
 
             // 3. RECUPERAR DATOS FINALES
             const finalUser = await refreshUserData();
-            
+
             // Navegación explícita al completar la creación
             if (finalUser?.rol === 'admin' || finalUser?.rol === 'SuperAdmin') {
                 navigate('/admin', { replace: true });
@@ -269,7 +268,6 @@ export function RegisterPage() {
 
     return (
         <div style={styles.pageContainer}>
-            <CloudBackground isDark={isDark} />
 
             <button
                 onClick={toggleTheme}
@@ -360,7 +358,7 @@ export function RegisterPage() {
                                 Continuar
                                 <ArrowRight size={18} style={{ marginLeft: '8px' }} />
                             </button>
-                            
+
                             <p style={styles.loginHint}>
                                 ¿Ya tienes cuenta? <Link to="/login" style={styles.loginLink}>Inicia Sesión aquí</Link>
                             </p>
@@ -407,7 +405,7 @@ export function RegisterPage() {
                             )}
                         </div>
 
-                         <form onSubmit={handleRegistroFinal} style={{ ...styles.form, gap: '12px' }}>
+                        <form onSubmit={handleRegistroFinal} style={{ ...styles.form, gap: '12px' }}>
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Nombre(s) <span style={{ color: '#ef4444' }}>*</span></label>
                                 <input
@@ -587,7 +585,7 @@ export function RegisterPage() {
                         </form>
                     </div>
                 )}
-                
+
                 <p style={styles.footer}>Universidad Tecnológica Metropolitana</p>
             </div>
         </div>
@@ -660,14 +658,16 @@ const getStyles = (isDark) => ({
     title: {
         fontSize: '28px',
         fontWeight: '700',
-        color: isDark ? '#f9fafb' : '#111827',
+        color: '#ffffff',  // Siempre blanco — legible sobre el edificio oscuro
         margin: '0',
-        letterSpacing: '-0.5px'
+        letterSpacing: '-0.5px',
+        textShadow: '0 2px 12px rgba(0,0,0,0.5)'
     },
     subtitle: {
         fontSize: '14px',
-        color: isDark ? '#9ca3af' : '#6b7280',
-        margin: '6px 0 0 0'
+        color: 'rgba(255,255,255,0.75)',
+        margin: '6px 0 0 0',
+        textShadow: '0 1px 8px rgba(0,0,0,0.4)'
     },
     card: {
         backgroundColor: isDark ? '#1f2937' : '#fff',
