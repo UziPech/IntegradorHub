@@ -313,4 +313,26 @@ Este documento sirve como bitácora y registro de las características, módulos
 - **Mensajería Adaptativa:** Se actualizaron las validaciones y avisos de error para guiar al usuario a través del nuevo sistema de pestañas ante credenciales inválidas.
 
 ---
+
+## 🏙️ Fondo 3D Skyscraper 4K y Persistencia de Auth (Marzo 2026)
+
+### 1. Integración de Modelo High-End (4K)
+- **Impacto Visual Premium:** Se sustituyó el modelo 3D básico por una versión de alta resolución (`modern_office_building_4k.glb` de 78MB). Este cambio eleva la percepción de calidad de la plataforma, dotándola de una estética corporativa moderna y detallada.
+- **Renderizado Optimizado:** Se recalcularon los valores de iluminación y materiales para que el edificio luzca nítido tanto en modo claro como oscuro, manteniendo la estabilidad del framerate.
+
+### 2. Persistencia de Interfaz (`AuthLayout.jsx`)
+- **Navegación sin Parpadeos:** Se implementó un `AuthLayout` envolvente para las rutas de `/login` y `/register`. Esto permite que el componente `CityBackground` se mantenga vivo durante la navegación entre pestañas, evitando que el modelo 3D se descargue y vuelva a cargar, lo cual antes causaba desapariciones momentáneas del fondo.
+- **Estado Compartido:** El layout detecta proactivamente en qué página se encuentra el usuario y sincroniza la configuración del fondo 3D en milisegundos.
+
+### 3. Animación de Cámara y Perspectiva Dinámica
+- **Transiciones de "Vuelo":** Se desarrolló una lógica de animación suave que rota y desplaza el edificio dependiendo de si el usuario está iniciando sesión o registrándose. 
+    - En **Login**, se muestra una vista más frontal y equilibrada.
+    - En **Registro**, el edificio realiza un giro cinemático hacia una perspectiva lateral más profunda, guiando visualmente al usuario a través del cambio de contexto.
+- **Calibración Final:** Mediante herramientas de ajuste en tiempo real (Leva), se fijaron las coordenadas definitivas (`posY: -3.1`, `baseRotY: -1.4`, `scale: 14.3`) para asegurar que la torre sea la protagonista visual detrás del formulario.
+
+### 4. Refinamiento en Legibilidad (Contrastes UI)
+- **Título Blindado:** El nombre oficial "Byfrost®" y sus subtítulos fueron reforzados con sombras de texto (`text-shadow`) y colores blancos sólidos fijos. Esto garantiza que el branding sea 100% legible sobre las texturas oscuras o claras del edificio 3D en cualquier resolución.
+- **Degradados de Integración:** Se suavizaron los gradientes inferiores y laterales del fondo para que la base del edificio se funda orgánicamente con la Interfaz de Usuario, eliminando cortes bruscos.
+
+---
 *Fin del registro de esta actualización.*
