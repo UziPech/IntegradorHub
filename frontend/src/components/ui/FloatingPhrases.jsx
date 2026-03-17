@@ -50,16 +50,19 @@ export function FloatingPhrases({ isDark }) {
     }, []);
 
     useEffect(() => {
-        // Change left phrase every 9 seconds
+        // Change left phrase every 5 seconds
         const changeLeft = setInterval(() => {
             setLeftVisible(false);
             setTimeout(() => {
                 setLeftIndex(prev => (prev + 2) % TESTIMONIALS.length);
-                setLeftVisible(true);
-            }, 1000); // 1s fade out duration
-        }, 9000);
+                // Esperamos un momento breve antes de volver a mostrar para asegurar que el DOM actualizó el texto invisible
+                setTimeout(() => {
+                    setLeftVisible(true);
+                }, 50); 
+            }, 500); // 0.5s fade out duration coincidiendo con la transición CSS
+        }, 5000);
 
-        // Change right phrase every 12 seconds
+        // Change right phrase every 7 seconds
         const changeRight = setInterval(() => {
             setRightVisible(false);
             setTimeout(() => {
@@ -68,9 +71,11 @@ export function FloatingPhrases({ isDark }) {
                     if (next === leftIndex) next = (next + 1) % TESTIMONIALS.length; // avoid duplicates
                     return next;
                 });
-                setRightVisible(true);
-            }, 1000);
-        }, 12000);
+                setTimeout(() => {
+                    setRightVisible(true);
+                }, 50);
+            }, 500); // 0.5s fade out duration
+        }, 7000);
 
         return () => {
             clearInterval(changeLeft);
@@ -97,8 +102,8 @@ export function FloatingPhrases({ isDark }) {
                 width: '320px',
                 opacity: isVisible ? 1 : 0,
                 // Combine a slight vertical float with the fade
-                transform: isVisible ? 'translateY(0)' : 'translateY(10px)',
-                transition: 'opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: isVisible ? 'translateY(0)' : 'translateY(15px)',
+                transition: 'opacity 0.5s ease-in-out, transform 0.5s ease-in-out',
                 pointerEvents: 'none',
                 zIndex: 5,
                 display: 'flex',
