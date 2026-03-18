@@ -55,10 +55,24 @@ public class Project
     public List<CanvasBlock> CanvasBlocks { get; set; } = new();
     
     [FirestoreProperty("created_at")]
-    public Timestamp CreatedAt { get; set; }
+    public object? CreatedAt { get; set; }
     
     [FirestoreProperty("updated_at")]
-    public Timestamp UpdatedAt { get; set; }
+    public object? UpdatedAt { get; set; }
+
+    public DateTime GetCreatedAtAsDateTime()
+    {
+        if (CreatedAt is Timestamp ts) return ts.ToDateTime();
+        if (CreatedAt is string s && DateTime.TryParse(s, out var dt)) return dt;
+        return DateTime.MinValue;
+    }
+
+    public DateTime GetUpdatedAtAsDateTime()
+    {
+        if (UpdatedAt is Timestamp ts) return ts.ToDateTime();
+        if (UpdatedAt is string s && DateTime.TryParse(s, out var dt)) return dt;
+        return DateTime.MinValue;
+    }
 
     // --- Nuevos Campos Requeridos ---
     [FirestoreProperty("calificacion")]

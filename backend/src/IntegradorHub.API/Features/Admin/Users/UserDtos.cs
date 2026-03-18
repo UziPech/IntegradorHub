@@ -24,7 +24,7 @@ public record StudentDto
             GrupoId = user.GrupoId ?? string.Empty,
             CarreraId = user.CarreraId ?? string.Empty,
             IsFirstLogin = user.IsFirstLogin,
-            CreatedAt = user.CreatedAt ?? DateTime.UtcNow.ToString("o")
+            CreatedAt = user.GetCreatedAtAsString() ?? DateTime.UtcNow.ToString("o")
         };
     }
 }
@@ -47,7 +47,7 @@ public record TeacherDto
             Nombre = user.Nombre,
             Profesion = user.Profesion ?? string.Empty,
             Asignaciones = user.Asignaciones ?? new List<AsignacionDocente>(),
-            CreatedAt = user.CreatedAt ?? DateTime.UtcNow.ToString("o")
+            CreatedAt = user.GetCreatedAtAsString() ?? DateTime.UtcNow.ToString("o")
         };
     }
 }

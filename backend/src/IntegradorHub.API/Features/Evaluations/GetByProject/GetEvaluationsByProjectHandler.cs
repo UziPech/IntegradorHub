@@ -31,7 +31,7 @@ public class GetEvaluationsByProjectHandler : IRequestHandler<GetEvaluationsByPr
             e.Tipo,
             e.Contenido,
             e.Calificacion,
-            e.CreatedAt.ToDateTime(),
+            e.GetCreatedAtAsDateTime(),
             e.EsPublico,
             e.PuntosOtorgados
         ));
@@ -45,7 +45,7 @@ public record EvaluationDto(
     string DocenteNombre,
     string Tipo,
     string Contenido,
-    int? Calificacion,
+    double? Calificacion,
     DateTime CreatedAt,
     bool EsPublico,
     object? PuntosOtorgados = null

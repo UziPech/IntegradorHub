@@ -35,7 +35,7 @@ public class GetPublicProfileHandler : IRequestHandler<GetPublicProfileQuery, Pu
             Profesion: user.Profesion,
             EspecialidadDocente: user.EspecialidadDocente,
             Organizacion: user.Organizacion,
-            CreatedAt: user.CreatedAt,
+            CreatedAt: user.GetCreatedAtAsString(),
             RedesSociales: user.RedesSociales
         );
     }
