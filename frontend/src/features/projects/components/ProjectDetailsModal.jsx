@@ -438,29 +438,10 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                         {/* Title row */}
                         <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex-1 min-w-0">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight truncate leading-tight">{project.titulo}</h2>
-                                <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                                    <span className="text-[12px] font-medium text-gray-400 dark:text-slate-500 flex items-center gap-1">
-                                        <BookOpen size={11} />
-                                        {project.materia}
-                                    </span>
-                                    {isLeader && (
-                                        <button
-                                            onClick={handleVisibilityToggle}
-                                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${project.esPublico
-                                                ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100'
-                                                : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-gray-200'
-                                                }`}
-                                            title={project.esPublico ? 'Click para hacer privado' : 'Click para hacer público'}
-                                        >
-                                            {project.esPublico ? '🌍 Público' : '🔒 Privado'}
-                                        </button>
-                                    )}
-                                    {!isLeader && (
-                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${project.esPublico ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
-                                            {project.esPublico ? '🌍 Público' : '🔒 Privado'}
-                                        </span>
-                                    )}
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight truncate leading-tight">
+                                        {project.titulo}
+                                    </h2>
                                 </div>
                             </div>
                             {/* Action buttons */}
@@ -547,7 +528,6 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                         {activeTab === 'docs' && (
                             <div className="mb-8 space-y-6">
                                 {/* Leader/Team Meta */}
-                                <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
                                         <Link to={`/profile/${project.liderId}`} className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center border-2 border-white shadow-sm text-white overflow-hidden hover:ring-2 hover:ring-blue-500 transition-all shrink-0" title="Ver perfil">
                                             <UserAvatar src={leader?.fotoUrl || leader?.FotoUrl} name={creadorNombre} size="md" className="w-full h-full" />
@@ -558,23 +538,30 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                     {creadorNombre}
                                                 </p>
                                             </Link>
-                                            <p className="text-[11px] font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                                                Ciclo {project.ciclo} • {project.materia}
-                                            </p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <p className="text-[11px] font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-2">
+                                                    <span>Ciclo {project.ciclo} • {project.materia}</span>
+                                                </p>
+                                                <span className="text-gray-300 dark:text-slate-600">•</span>
+                                                {isLeader ? (
+                                                    <button
+                                                        onClick={handleVisibilityToggle}
+                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${project.esPublico
+                                                            ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100'
+                                                            : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-gray-200'
+                                                            }`}
+                                                        title={project.esPublico ? 'Click para hacer privado' : 'Click para hacer público'}
+                                                    >
+                                                        {project.esPublico ? '🌍 Público' : '🔒 Privado'}
+                                                    </button>
+                                                ) : (
+                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${project.esPublico ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                                                        {project.esPublico ? '🌍 Público' : '🔒 Privado'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-xs font-bold text-gray-400 dark:text-slate-500">
-                                        {(() => {
-                                            if (!project.createdAt) return 'N/A';
-                                            if (typeof project.createdAt === 'object' && project.createdAt.seconds) {
-                                                const d = new Date(project.createdAt.seconds * 1000);
-                                                return `${d.getDate()} ${d.toLocaleString('es-ES', { month: 'short' }).toUpperCase()}`;
-                                            }
-                                            const date = new Date(project.createdAt);
-                                            return isNaN(date.getTime()) ? 'Pendiente' : `${date.getDate()} ${date.toLocaleString('es-ES', { month: 'short' }).toUpperCase()}`;
-                                        })()}
-                                    </div>
-                                </div>
 
                                 {/* Text Content from Canvas Editor */}
                                 <div className={`prose max-w-none text-gray-800 dark:text-slate-300 dark:prose-invert ${readMode ? 'prose-base lg:prose-lg' : 'prose-sm'}`}>
@@ -734,6 +721,13 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                             )
                                         )}
                                     </div>
+                                    <p className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-8 pt-4 border-t border-gray-50 dark:border-slate-800/30">
+                                        {(() => {
+                                            if (!project.createdAt) return null;
+                                            const date = project.createdAt.seconds ? new Date(project.createdAt.seconds * 1000) : new Date(project.createdAt);
+                                            return isNaN(date.getTime()) ? null : date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+                                        })()}
+                                    </p>
                                 </div>
                             </div>
                         )}
