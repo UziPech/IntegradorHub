@@ -1,70 +1,168 @@
 using MediatR;
 using IntegradorHub.API.Shared.Domain.Interfaces;
+using Google.Cloud.Firestore;
 
 namespace IntegradorHub.API.Features.Projects.Rate;
 
+// === VALUE OBJECTS ===
+
+[FirestoreData]
+public class RubricVote
+{
+    [FirestoreProperty("ui_ux")]
+    public int UIUX { get; set; }
+
+    [FirestoreProperty("inovacion")]
+    public int Inovacion { get; set; }
+
+    [FirestoreProperty("presentacion")]
+    public int Presentacion { get; set; }
+
+    [FirestoreProperty("impacto")]
+    public int Impacto { get; set; }
+
+    // Total de puntos de este voto (cada criterio 1-5, cada punto = 2.5 pts)
+    public double TotalPoints => (UIUX + Inovacion + Presentacion + Impacto) * 2.5;
+}
+
 // === COMMAND ===
+
 public record RateProjectCommand(
     string ProjectId,
     string UserId,
-    int Stars // 1 to 5
+    int UIUX,       // 1-5
+    int Inovacion,  // 1-5
+    int Presentacion, // 1-5
+    int Impacto     // 1-5
 ) : IRequest<RateProjectResponse>;
 
-public record RateProjectResponse(bool Success, string Message, double NewTotalPoints);
+public record RateProjectResponse(
+    bool Success,
+    string Message,
+    double NewTotalPoints,
+    double PuntosUIUX,
+    double PuntosInovacion,
+    double PuntosPresentacion,
+    double PuntosImpacto
+);
 
 // === HANDLER ===
+
 public class RateProjectHandler : IRequestHandler<RateProjectCommand, RateProjectResponse>
 {
     private readonly IProjectRepository _projectRepository;
-    private readonly IUserRepository _userRepository;
 
-    public RateProjectHandler(IProjectRepository projectRepository, IUserRepository userRepository)
+    public RateProjectHandler(IProjectRepository projectRepository)
     {
         _projectRepository = projectRepository;
-        _userRepository = userRepository;
     }
 
     public async Task<RateProjectResponse> Handle(RateProjectCommand request, CancellationToken cancellationToken)
     {
-        // 1. Get Project
+        // 1. Obtener el Proyecto
         var project = await _projectRepository.GetByIdAsync(request.ProjectId);
         if (project == null)
             throw new KeyNotFoundException("Proyecto no encontrado");
 
-        // 2. Validate User
-        // Leader cannot vote for their own project (conflict of interest / spam prevention)
+        // 2. El líder no puede votar por su propio proyecto
         if (project.LiderId == request.UserId)
             throw new InvalidOperationException("El líder del proyecto no puede votar por su propio proyecto.");
 
-        // 3. Validate Stars
-        if (request.Stars < 1 || request.Stars > 5)
-            throw new ArgumentException("La calificación debe ser entre 1 y 5 estrellas.");
+        // 3. Validar rúbrica (cada criterio debe ser entre 1 y 5)
+        Validate(request.UIUX, "UI/UX");
+        Validate(request.Inovacion, "Innovación");
+        Validate(request.Presentacion, "Presentación");
+        Validate(request.Impacto, "Impacto");
 
-        // 4. Calculate Points (1 Star = 10 Points)
-        int newPoints = request.Stars * 10;
-        int previousPoints = 0;
+        // 4. Crear el nuevo voto de rúbrica
+        var newVote = new RubricVote
+        {
+            UIUX = request.UIUX,
+            Inovacion = request.Inovacion,
+            Presentacion = request.Presentacion,
+            Impacto = request.Impacto
+        };
 
-        // 5. Check if User already voted
+        // 5. Si el usuario ya votó anteriormente, restar sus puntos anteriores antes de sumar los nuevos
         if (project.Votantes.ContainsKey(request.UserId))
         {
-            // User is changing their vote
-            previousPoints = project.Votantes[request.UserId] * 10; // Convert old stars to points
-            project.Votantes[request.UserId] = request.Stars; // Update map
+            var oldVoteObj = project.Votantes[request.UserId];
+            RubricVote? oldRubric = TryParseRubricVote(oldVoteObj);
+            if (oldRubric != null)
+            {
+                // Restar puntos del voto anterior (acumuladores desglosados)
+                project.PuntosTotales    -= oldRubric.TotalPoints;
+                project.PuntosUIUX       -= oldRubric.UIUX * 2.5;
+                project.PuntosInovacion  -= oldRubric.Inovacion * 2.5;
+                project.PuntosPresentacion -= oldRubric.Presentacion * 2.5;
+                project.PuntosImpacto    -= oldRubric.Impacto * 2.5;
+            }
+            else
+            {
+                // Voto antiguo con formato int (estrellas simples), sólo resta del total
+                if (oldVoteObj is long oldStars)
+                    project.PuntosTotales -= oldStars * 10;
+            }
+
+            // Actualizar voto existente
+            project.Votantes[request.UserId] = newVote;
         }
         else
         {
-            // New Vote
-            project.Votantes.Add(request.UserId, request.Stars);
+            // Voto nuevo
+            project.Votantes.Add(request.UserId, newVote);
             project.ConteoVotos++;
         }
 
-        // 6. Update Total Score
-        // Formula: CurrentTotal - OldUserPoints + NewUserPoints
-        project.PuntosTotales = project.PuntosTotales - previousPoints + newPoints;
+        // 6. Sumar puntos del nuevo voto a los acumuladores
+        project.PuntosTotales      += newVote.TotalPoints;
+        project.PuntosUIUX         += newVote.UIUX * 2.5;
+        project.PuntosInovacion    += newVote.Inovacion * 2.5;
+        project.PuntosPresentacion += newVote.Presentacion * 2.5;
+        project.PuntosImpacto      += newVote.Impacto * 2.5;
 
-        // 7. Save Changes
+        // 7. Guardar cambios
         await _projectRepository.UpdateAsync(project);
 
-        return new RateProjectResponse(true, "Voto registrado correctamente", project.PuntosTotales);
+        return new RateProjectResponse(
+            true,
+            "Voto registrado correctamente",
+            project.PuntosTotales,
+            project.PuntosUIUX,
+            project.PuntosInovacion,
+            project.PuntosPresentacion,
+            project.PuntosImpacto
+        );
     }
+
+    // === Helpers ===
+
+    private static void Validate(int value, string criterio)
+    {
+        if (value < 1 || value > 5)
+            throw new ArgumentException($"La calificación de '{criterio}' debe ser entre 1 y 5.");
+    }
+
+    /// <summary>
+    /// Intenta convertir un valor genérico de Firestore a RubricVote.
+    /// Firestore devuelve mapas anidados como Dictionary<string, object>.
+    /// </summary>
+    private static RubricVote? TryParseRubricVote(object obj)
+    {
+        if (obj is RubricVote rv) return rv;
+        if (obj is Dictionary<string, object> dict)
+        {
+            return new RubricVote
+            {
+                UIUX         = GetInt(dict, "ui_ux"),
+                Inovacion    = GetInt(dict, "inovacion"),
+                Presentacion = GetInt(dict, "presentacion"),
+                Impacto      = GetInt(dict, "impacto")
+            };
+        }
+        return null;
+    }
+
+    private static int GetInt(Dictionary<string, object> dict, string key)
+        => dict.TryGetValue(key, out var v) && v is long l ? (int)l : 0;
 }

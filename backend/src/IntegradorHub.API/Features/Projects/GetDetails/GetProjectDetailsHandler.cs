@@ -63,7 +63,7 @@ public class GetProjectDetailsHandler : IRequestHandler<GetProjectDetailsQuery, 
             project.EsPublico,
             project.PuntosTotales,
             project.ConteoVotos,
-            project.Votantes ?? new Dictionary<string, int>(),
+            project.Votantes ?? new Dictionary<string, object>(),
             project.Calificacion
         );
     }
@@ -89,7 +89,7 @@ public record ProjectDetailsDto(
     bool EsPublico,
     double PuntosTotales,
     int ConteoVotos,
-    Dictionary<string, int> Votantes,
+    Dictionary<string, object> Votantes,
     double? Calificacion
 );
 

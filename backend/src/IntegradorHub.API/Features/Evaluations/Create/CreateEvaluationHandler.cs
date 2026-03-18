@@ -92,18 +92,8 @@ public class CreateEvaluationHandler : IRequestHandler<CreateEvaluationCommand, 
 
         if (request.Tipo == "oficial" && request.Calificacion.HasValue)
         {
-            // Update Project Grade
+            // Actualizar la calificación oficial del proyecto
             project.Calificacion = request.Calificacion.Value;
-
-            // Recalculate Total Points
-            // Formula: OfficialGrade (0-100) + GuestVotesPoints (Stars * 10)
-            double guestPoints = 0;
-            if (project.Votantes != null)
-            {
-                 guestPoints = project.Votantes.Values.Sum() * 10;
-            }
-            
-            project.PuntosTotales = project.Calificacion.Value + guestPoints;
 
             // Update Project in DB
             await _projectRepository.UpdateAsync(project);

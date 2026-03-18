@@ -217,12 +217,12 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Califica un proyecto con estrellas (1-5).
+    /// Califica un proyecto con rúbrica (UI/UX, Innovación, Presentación, Impacto).
     /// </summary>
     [HttpPost("{id}/rate")]
     public async Task<ActionResult<RateProjectResponse>> RateProject(string id, [FromBody] RateProjectRequest request)
     {
-        var command = new RateProjectCommand(id, request.UserId, request.Stars);
+        var command = new RateProjectCommand(id, request.UserId, request.UIUX, request.Inovacion, request.Presentacion, request.Impacto);
         try
         {
             var response = await _mediator.Send(command);
@@ -234,7 +234,7 @@ public class ProjectsController : ControllerBase
     }
 }
 
-public record RateProjectRequest(string UserId, int Stars);
+public record RateProjectRequest(string UserId, int UIUX, int Inovacion, int Presentacion, int Impacto);
 
 public record UpdateProjectRequest(
     string Titulo,

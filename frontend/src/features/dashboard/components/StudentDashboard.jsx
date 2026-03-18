@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Users, Star, Clock, CheckCircle, ExternalLink, Plus } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { ProjectTimelineChart } from './ProjectTimelineChart';
+import { RubricRadarChart } from './RubricRadarChart';
 import { TeamSuggestions } from './TeamSuggestions';
 import { ShowcaseCard } from '../../public/components/ShowcaseCard';
 
@@ -118,7 +119,7 @@ export function StudentDashboard({
                         />
                         <StatCard
                             title="Evaluación"
-                            value={project.calificacion ? `${project.calificacion}%` : "S/N"}
+                            value={project.calificacion ? `${project.calificacion.toFixed(1)}%` : "S/N"}
                             subtitle={project.calificacion ? "Puntaje oficial" : "Aún sin calificar"}
                             icon={Star}
                             color={project.calificacion && project.calificacion >= 70 ? "green" : "amber"}
@@ -132,8 +133,11 @@ export function StudentDashboard({
                         />
                     </div>
 
-                    {/* Timeline Chart */}
-                    <ProjectTimelineChart project={project} />
+                    {/* Timeline and Radar Chart Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <ProjectTimelineChart project={project} />
+                        <RubricRadarChart project={project} />
+                    </div>
 
                 </div>
 

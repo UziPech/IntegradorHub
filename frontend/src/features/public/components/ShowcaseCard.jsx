@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Play, Users, ExternalLink, Edit, Star, ChevronLeft, ChevronRight, Image as ImageIcon, Trophy, X } from 'lucide-react';
+import { Play, Users, ExternalLink, Edit, Star, ChevronLeft, ChevronRight, Image as ImageIcon, Trophy, X, Palette, Zap, Airplay, Target } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { UserAvatar } from '../../../components/UserAvatar';
@@ -28,17 +28,27 @@ export function ShowcaseCard({ project, onClick }) {
     const lightboxVideoRef = useRef(null);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-    // Voting State
-    // Voting State
-    const [hoverRating, setHoverRating] = useState(0);
-    const [userRating, setUserRating] = useState(() => {
-        // Init rating from the server payload if user already voted
-        if (userData && userData.userId && project.votantes && project.votantes[userData.userId]) {
-            return project.votantes[userData.userId];
+    // Rubric Voting State
+    const CRITERIA = [
+        { key: 'uiux',        label: 'UI/UX',       Icon: Palette,  color: 'indigo',  activeColor: '#6366f1', hoverBg: 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20' },
+        { key: 'inovacion',   label: 'Innovación',  Icon: Zap,      color: 'amber',   activeColor: '#f59e0b', hoverBg: 'hover:bg-amber-50 dark:hover:bg-amber-900/20' },
+        { key: 'presentacion',label: 'Presentación',Icon: Airplay,  color: 'sky',     activeColor: '#0ea5e9', hoverBg: 'hover:bg-sky-50 dark:hover:bg-sky-900/20' },
+        { key: 'impacto',     label: 'Impacto',     Icon: Target,   color: 'emerald', activeColor: '#10b981', hoverBg: 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20' },
+    ];
+
+    const getInitialRubric = () => {
+        if (userData?.userId && project.votantes?.[userData.userId] && typeof project.votantes[userData.userId] === 'object') {
+            const v = project.votantes[userData.userId];
+            return { uiux: v.ui_ux || 0, inovacion: v.inovacion || 0, presentacion: v.presentacion || 0, impacto: v.impacto || 0 };
         }
-        return 0;
-    });
-    const [isVoting, setIsVoting] = useState(false);
+        return { uiux: 0, inovacion: 0, presentacion: 0, impacto: 0 };
+    };
+
+    const [rubric, setRubric]           = useState(getInitialRubric);
+    const [hoverRubric, setHoverRubric] = useState({ uiux: 0, inovacion: 0, presentacion: 0, impacto: 0 });
+    const [isVoting, setIsVoting]       = useState(false);
+    const [voteSuccess, setVoteSuccess] = useState(false);
+    const [activeCriteria, setActiveCriteria] = useState(null);
 
     const isOwner = userData?.userId === project.liderId;
 
@@ -86,22 +96,30 @@ export function ShowcaseCard({ project, onClick }) {
         setIsPlaying(false);
     };
 
-    // Handle Rating
-    const handleRate = async (e, stars) => {
+    // Handle Rubric Vote
+    const handleRubricVote = async (e, criteriaKey, stars) => {
         e.stopPropagation();
-        if (!userData) return; // Should handle login prompt if needed, but for now silent return or redirect
-        if (isOwner) return; // Prevent owner voting
-        if (isVoting) return;
+        if (!userData) return;
+        if (isOwner) return;
+
+        const newRubric = { ...rubric, [criteriaKey]: stars };
+        setRubric(newRubric);
+
+        // Only submit if all criteria have been rated
+        const allRated = Object.values(newRubric).every(v => v > 0);
+        if (!allRated || isVoting) return;
 
         setIsVoting(true);
         try {
             await api.post(`/api/projects/${project.id}/rate`, {
                 userId: userData.userId,
-                stars: stars
+                uIUX: newRubric.uiux,
+                inovacion: newRubric.inovacion,
+                presentacion: newRubric.presentacion,
+                impacto: newRubric.impacto,
             });
-            setUserRating(stars);
-            // Optimistically update points could be complex/risky without full reload, 
-            // so we just show the user's vote state for now.
+            setVoteSuccess(true);
+            setTimeout(() => setVoteSuccess(false), 2000);
         } catch (error) {
             console.error('Error rating project:', error);
         } finally {
@@ -320,34 +338,90 @@ export function ShowcaseCard({ project, onClick }) {
                 {/* Bottom Action Row */}
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50 dark:border-slate-700/50">
 
-                    {/* Interactive Rating for Guests / Official Rating for Owner */}
+                    {/* Rubric Voting Panel - Only if NOT owner */}
                     <div className="flex items-center gap-3">
-                        {/* Show Official Grade if exists */}
+                        {/* Calificación oficial */}
                         {project.calificacion !== null && project.calificacion !== undefined && (
                             <div className="flex items-center gap-1.5 text-indigo-700 font-bold text-xs bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100" title="Calificación Oficial">
                                 <span>Calificación: {project.calificacion}</span>
                             </div>
                         )}
 
-                        {/* Star Voting - Only if NOT owner */}
                         {!isOwner && (
-                            <div className="flex items-center" onMouseLeave={() => setHoverRating(0)}>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
-                                        key={star}
-                                        onMouseEnter={() => setHoverRating(star)}
-                                        onClick={(e) => handleRate(e, star)}
-                                        disabled={isVoting}
-                                        className={`p-0.5 transition-all duration-200 hover:scale-125 ${(hoverRating || userRating) >= star
-                                            ? 'text-yellow-400 drop-shadow-sm'
-                                            : 'text-gray-200 dark:text-slate-600 hover:text-yellow-300'
+                            <div className="flex items-center gap-1.5 flex-wrap" onMouseLeave={() => setHoverRubric({ uiux: 0, inovacion: 0, presentacion: 0, impacto: 0 })}>
+                                {CRITERIA.map(({ key, label, Icon, activeColor, hoverBg }) => {
+                                    const current = hoverRubric[key] || rubric[key];
+                                    const isRated = rubric[key] > 0;
+                                    const isActive = activeCriteria === key;
+                                    
+                                    return (
+                                        <div 
+                                            key={key} 
+                                            className={`flex items-center transition-all duration-300 rounded-full ${
+                                                isActive 
+                                                    ? 'bg-white dark:bg-slate-800 shadow-sm border border-gray-200 dark:border-slate-700 pr-3 py-1 pl-1' 
+                                                    : 'border border-transparent'
                                             }`}
-                                    >
-                                        <Star size={18} fill={(hoverRating || userRating) >= star ? "currentColor" : "none"} />
-                                    </button>
-                                ))}
+                                        >
+                                            {/* Trigger Icon */}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setActiveCriteria(isActive ? null : key); }}
+                                                className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 flex items-center gap-1.5 ${hoverBg} ${isRated && !isActive ? 'scale-110' : ''}`}
+                                                title={label}
+                                                style={isRated || isActive ? { color: activeColor } : {}}
+                                            >
+                                                <Icon
+                                                    size={18}
+                                                    fill={isRated ? activeColor : 'none'}
+                                                    stroke={isRated || isActive ? activeColor : 'currentColor'}
+                                                    className={isRated || isActive ? '' : 'text-gray-400 dark:text-slate-500'}
+                                                />
+                                                {isActive && (
+                                                    <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: activeColor }}>
+                                                        {label}
+                                                    </span>
+                                                )}
+                                            </button>
+
+                                            {/* Estrellas Inline */}
+                                            {isActive && (
+                                                <div className="flex gap-0.5 items-center ml-1 border-l border-gray-100 dark:border-slate-700 pl-2 animate-fade-in">
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <button
+                                                            key={star}
+                                                            onMouseEnter={() => setHoverRubric(h => ({ ...h, [key]: star }))}
+                                                            onMouseLeave={() => setHoverRubric(h => ({ ...h, [key]: 0 }))}
+                                                            onClick={(e) => {
+                                                                handleRubricVote(e, key, star);
+                                                                // Opcional: colapsar después de votar
+                                                                // setTimeout(() => setActiveCriteria(null), 500); 
+                                                            }}
+                                                            disabled={isVoting}
+                                                            className="transition-all duration-150 hover:scale-125 p-0.5"
+                                                        >
+                                                            <Star
+                                                                size={16}
+                                                                fill={current >= star ? activeColor : 'none'}
+                                                                stroke={current >= star ? activeColor : '#cbd5e1'}
+                                                                className="opacity-90 hover:opacity-100"
+                                                            />
+                                                        </button>
+                                                    ))}
+                                                    {rubric[key] > 0 && (
+                                                        <span className="text-[10px] font-bold ml-1.5" style={{ color: activeColor }}>{rubric[key]}/5</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                {/* Éxito de voto */}
+                                {voteSuccess && (
+                                    <span className="text-[10px] font-bold text-emerald-500 animate-pulse ml-1">Votado ✓</span>
+                                )}
                             </div>
                         )}
+
                     </div>
 
                     <button
