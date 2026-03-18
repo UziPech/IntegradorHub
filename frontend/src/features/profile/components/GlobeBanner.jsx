@@ -1,10 +1,14 @@
 import createGlobe from "cobe";
 import { useEffect, useRef } from "react";
+import { usePerformance } from "../../../hooks/usePerformance";
 
 export function GlobeBanner() {
     const canvasRef = useRef();
+    const { isLowEnd } = usePerformance();
 
     useEffect(() => {
+        if (isLowEnd || !canvasRef.current) return;
+        
         let phi = 0;
         const size = 260;
 
@@ -35,7 +39,7 @@ export function GlobeBanner() {
         return () => {
             globe.destroy();
         };
-    }, []);
+    }, [isLowEnd]);
 
     return (
         // Posicionado en la mitad derecha del banner, centrado verticalmente
