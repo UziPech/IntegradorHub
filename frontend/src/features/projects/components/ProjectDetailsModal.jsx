@@ -54,6 +54,11 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     const [error, setError] = useState('');
     const [editTitle, setEditTitle] = useState(initialProject.titulo || '');
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Custom Confirmation States (to avoid window.confirm/prompt blocking)
+    const [deleteStep, setDeleteStep] = useState(0); // 0: none, 1: first confirm, 2: final input
+    const [deleteInput, setDeleteInput] = useState('');
+    const [memberToRemove, setMemberToRemove] = useState(null); // stores memberId
 
     // Autocomplete State
     const [availableStudents, setAvailableStudents] = useState([]);
@@ -121,22 +126,25 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     };
 
     const handleAddMember = async (e) => {
-        e.preventDefault();
-        if (!newMemberEmail) return;
-
+        if (e) e.preventDefault(); // IMPORTANTE: Evitar recarga de página al usar con un form
+        
+        if (!newMemberEmail.trim()) return;
         setLoading(true);
         setError('');
-
+        console.log('[MEMBER-DEBUG] handleAddMember triggered for:', newMemberEmail);
+        
         try {
-            await api.post(`/api/projects/${project.id}/members`, {
-                leaderId: userData.userId,
-                emailOrMatricula: newMemberEmail
+            const response = await api.post(`/api/Projects/${project.id}/members`, {
+                emailOrMatricula: newMemberEmail,
+                leaderId: userData.userId
             });
-            setNewMemberEmail('');
+            console.log('[MEMBER-DEBUG] Member added response:', response.data);
             await fetchDetails();
+            setNewMemberEmail('');
+            setShowSuggestions(false);
             onUpdate?.();
         } catch (err) {
-            console.error('Error adding member:', err);
+            console.error('[MEMBER-DEBUG] Error adding member:', err);
             setError(err.response?.data?.message || 'Error al agregar miembro');
         } finally {
             setLoading(false);
@@ -144,18 +152,30 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     };
 
     const handleRemoveMember = async (memberId) => {
-        if (!confirm('¿Estás seguro de eliminar a este miembro?')) return;
+        console.log('[MEMBER-DEBUG] handleRemoveMember triggered for:', memberId);
+        // Instead of confirm, we set the state to show the inline UI
+        setMemberToRemove(memberId);
+    };
+
+    const confirmRemoveMember = async () => {
+        if (!memberToRemove) return;
+        const memberId = memberToRemove;
+        console.log('[MEMBER-DEBUG] confirmRemoveMember ACCEPTED for:', memberId);
 
         setLoading(true);
         try {
-            await api.delete(`/api/projects/${project.id}/members/${memberId}?requestingUserId=${userData.userId}`);
+            const url = `/api/Projects/${project.id}/members/${memberId}?requestingUserId=${userData.userId}`;
+            console.log('[MEMBER-DEBUG] Sending DELETE request to:', url);
+            const response = await api.delete(url);
+            console.log('[MEMBER-DEBUG] Remove member response:', response.data);
             await fetchDetails();
             onUpdate?.();
         } catch (err) {
-            console.error('Error removing member:', err);
+            console.error('[MEMBER-DEBUG] Error removing member:', err);
             setError(err.response?.data?.message || 'Error al eliminar miembro');
         } finally {
             setLoading(false);
+            setMemberToRemove(null);
         }
     };
 
@@ -198,21 +218,44 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
             alert('Error al actualizar el título');
         }
     };
-
     const handleDeleteProject = async () => {
-        if (!confirm('PELIGRO: ¿Estás seguro de eliminar este proyecto permanentemente? Esta acción es irreversible y liberará a todos los miembros.')) return;
-        if (!confirm('CONFIRMACIÓN FINAL: Escribe "ELIMINAR" para confirmar.')) return; // Simplified double confirm for now
+        console.log('[DELETE-DEBUG] handleDeleteProject triggered - Using Custom Modal UI');
+        setDeleteStep(1); // Show first confirmation
+    };
+
+    const proceedToDeleteStep2 = () => {
+        console.log('[DELETE-DEBUG] First confirmation ACCEPTED (via UI)');
+        setDeleteStep(2); // Show input confirmation
+    };
+
+    const executeFinalDelete = async () => {
+        if (deleteInput !== 'ELIMINAR') {
+            console.log('[DELETE-DEBUG] Execution blocked: Input was', deleteInput);
+            if (deleteInput !== null) alert('Para eliminar el proyecto debes escribir exactamente "ELIMINAR"');
+            return;
+        }
+        console.log('[DELETE-DEBUG] Final confirmation ACCEPTED. Proceeding with deletion...');
 
         setIsDeleting(true);
         try {
-            await api.delete(`/api/projects/${project.id}?requestingUserId=${userData.userId}`);
+            const url = `/api/Projects/${project.id}?requestingUserId=${userData.userId}`;
+            console.log('[DELETE-DEBUG] Sending DELETE request to:', url);
+            
+            const response = await api.delete(url);
+            console.log('[DELETE-DEBUG] Delete response received:', response.data);
+            
+            alert('Proyecto eliminado exitosamente');
             onUpdate?.();
-            onClose(); // Close modal on success
+            onClose(); 
         } catch (err) {
-            console.error('Error deleting project:', err);
-            alert('Error al eliminar el proyecto: ' + (err.response?.data?.message || err.message));
+            console.error('[DELETE-DEBUG] Error deleting project:', err);
+            const errorMsg = err.response?.data?.message || err.response?.data || err.message;
+            alert('Error al eliminar el proyecto: ' + errorMsg);
         } finally {
             setIsDeleting(false);
+            setDeleteStep(0);
+            setDeleteInput('');
+            console.log('[DELETE-DEBUG] Deletion process finished');
         }
     };
 
@@ -656,12 +699,32 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                             <span className="text-[10px] font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-md">Líder</span>
                                                         ) : (
                                                             (isLeader || userData?.userId === member.id) && (
-                                                                <button
-                                                                    onClick={() => handleRemoveMember(member.id)}
-                                                                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {memberToRemove === member.id ? (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => confirmRemoveMember()}
+                                                                                disabled={loading}
+                                                                                className="px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded hover:bg-red-600 transition-colors"
+                                                                            >
+                                                                                Confirmar
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setMemberToRemove(null)}
+                                                                                className="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-bold rounded hover:bg-gray-300 transition-colors"
+                                                                            >
+                                                                                X
+                                                                            </button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => handleRemoveMember(member.id)}
+                                                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                                                        >
+                                                                            <Trash2 size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             )
                                                         )}
                                                     </motion.div>
@@ -752,13 +815,71 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                 Acción irreversible. Eliminará contenido y liberará al equipo.
                                             </p>
                                         </div>
-                                        <button
-                                            onClick={handleDeleteProject}
-                                            disabled={isDeleting}
-                                            className="w-full py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-bold hover:bg-red-600 hover:text-white hover:border-red-600 transition-all disabled:opacity-50"
-                                        >
-                                            {isDeleting ? 'Eliminando...' : 'Eliminar Definitivamente'}
-                                        </button>
+
+                                        {deleteStep === 0 && (
+                                            <button
+                                                onClick={handleDeleteProject}
+                                                className="w-full py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-bold hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
+                                            >
+                                                Eliminar Definitivamente
+                                            </button>
+                                        )}
+
+                                        {deleteStep === 1 && (
+                                            <div className="space-y-3 animate-fadeIn">
+                                                <p className="text-xs font-bold text-red-600 bg-red-100 p-2 rounded-lg text-center">
+                                                    ⚠️ ¿ESTÁS SEGURO? Esta acción no se puede deshacer.
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={proceedToDeleteStep2}
+                                                        className="flex-1 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all"
+                                                    >
+                                                        Sí, continuar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteStep(0)}
+                                                        className="flex-1 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-all"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {deleteStep === 2 && (
+                                            <div className="space-y-3 animate-fadeIn">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-red-600 uppercase">Escribe "ELIMINAR" para confirmar</label>
+                                                    <input
+                                                        type="text"
+                                                        value={deleteInput}
+                                                        onChange={(e) => setDeleteInput(e.target.value)}
+                                                        placeholder="ELIMINAR"
+                                                        className="w-full px-3 py-2 bg-white border border-red-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                                                    />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={executeFinalDelete}
+                                                        disabled={deleteInput !== 'ELIMINAR' || isDeleting}
+                                                        className="flex-1 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all disabled:opacity-50 disabled:bg-gray-400"
+                                                    >
+                                                        {isDeleting ? 'Eliminando...' : 'CONFIRMAR ELIMINACIÓN'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setDeleteStep(0);
+                                                            setDeleteInput('');
+                                                        }}
+                                                        disabled={isDeleting}
+                                                        className="flex-1 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-all"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
