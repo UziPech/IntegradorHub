@@ -6,7 +6,7 @@ namespace IntegradorHub.API.Features.Projects.Delete;
 // === COMMAND ===
 public record DeleteProjectCommand(
     string ProjectId,
-    string RequestingUserId // ID del usuario que solicita eliminar (Debe ser el líder)
+    string RequestingUserId // ID del usuario que solicita eliminar
 ) : IRequest<DeleteProjectResponse>;
 
 public record DeleteProjectResponse(bool Success, string Message);
@@ -30,52 +30,77 @@ public class DeleteProjectHandler : IRequestHandler<DeleteProjectCommand, Delete
 
     public async Task<DeleteProjectResponse> Handle(DeleteProjectCommand request, CancellationToken cancellationToken)
     {
-        var project = await _projectRepository.GetByIdAsync(request.ProjectId);
-        if (project == null) 
-            return new DeleteProjectResponse(false, "Proyecto no encontrado");
-
-        // Validar que sea el líder, un docente asignado o un administrador
-        var requestingUser = await _userRepository.GetByIdAsync(request.RequestingUserId);
+        Console.WriteLine($"[DELETE-DEBUG] Starting deletion for project: {request.ProjectId} (Requested by: {request.RequestingUserId})");
         
-        bool isLeader = project.LiderId == request.RequestingUserId;
-        bool isAdmin = requestingUser?.Rol == "Admin" || requestingUser?.Rol == "SuperAdmin";
-        bool isAssignedTeacher = requestingUser?.Rol == "Docente" && project.DocenteId == request.RequestingUserId;
-
-        if (!isLeader && !isAdmin && !isAssignedTeacher)
-            throw new UnauthorizedAccessException("No tienes permisos suficientes para eliminar este proyecto. Solo el líder, el docente asignado o un administrador pueden hacerlo.");
-
-        // === CRITICAL: Liberar a los miembros ===
-        // Si borramos el proyecto sin limpiar ProjectId en los usuarios, quedan "zombies".
-        
-        // 1. Obtener lista completa de usuarios afectados (Líder + Miembros)
-        var usersToRelease = new List<string>(project.MiembrosIds);
-        if (!usersToRelease.Contains(project.LiderId)) 
-            usersToRelease.Add(project.LiderId);
-
-        foreach (var userId in usersToRelease)
+        try 
         {
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user != null)
+            var project = await _projectRepository.GetByIdAsync(request.ProjectId);
+            if (project == null) 
             {
-                // Solo limpiar si efectivamente tienen este ProjectId (defensive coding)
-                if (user.ProjectId == request.ProjectId)
+                Console.WriteLine($"[DELETE-DEBUG] Project not found: {request.ProjectId}");
+                return new DeleteProjectResponse(false, "Proyecto no encontrado");
+            }
+
+            // Validar que sea el líder, un docente asignado o un administrador
+            var requestingUser = await _userRepository.GetByIdAsync(request.RequestingUserId);
+            
+            bool isLeader = project.LiderId == request.RequestingUserId;
+            bool isAdmin = requestingUser?.Rol == "Admin" || requestingUser?.Rol == "SuperAdmin";
+            bool isAssignedTeacher = (requestingUser?.Rol == "Docente" && project.DocenteId == request.RequestingUserId);
+
+            Console.WriteLine($"[DELETE-DEBUG] Auth Check: isLeader={isLeader}, isAdmin={isAdmin}, isAssignedTeacher={isAssignedTeacher}");
+
+            if (!isLeader && !isAdmin && !isAssignedTeacher)
+            {
+                Console.WriteLine($"[DELETE-DEBUG] Unauthorized attempt by: {request.RequestingUserId}");
+                return new DeleteProjectResponse(false, "No tienes permisos suficientes para eliminar este proyecto.");
+            }
+
+            // 1. Eliminar evaluaciones (Cascade Delete)
+            Console.WriteLine($"[DELETE-DEBUG] Step 1: Fetching evaluations for project: {request.ProjectId}");
+            var evaluations = await _evaluationRepository.GetByProjectIdAsync(request.ProjectId);
+            int evalCount = 0;
+            foreach (var evaluation in evaluations)
+            {
+                Console.WriteLine($"[DELETE-DEBUG] Deleting evaluation: {evaluation.Id}");
+                await _evaluationRepository.DeleteAsync(evaluation.Id);
+                evalCount++;
+            }
+            Console.WriteLine($"[DELETE-DEBUG] Step 1 complete. Deleted {evalCount} evaluations.");
+
+            // 2. Liberar a los miembros (User.ProjectId = null)
+            // Usamos project.MiembrosIds y project.LiderId para asegurar limpieza
+            Console.WriteLine("[DELETE-DEBUG] Step 2: Releasing members...");
+            var usersToRelease = new List<string>(project.MiembrosIds);
+            if (!usersToRelease.Contains(project.LiderId)) 
+                usersToRelease.Add(project.LiderId);
+
+            int releasedCount = 0;
+            foreach (var userId in usersToRelease)
+            {
+                var member = await _userRepository.GetByIdAsync(userId);
+                if (member != null && member.ProjectId == request.ProjectId)
                 {
-                    user.ProjectId = null;
-                    await _userRepository.UpdateAsync(user);
+                    Console.WriteLine($"[DELETE-DEBUG] Releasing member: {member.Id}");
+                    member.ProjectId = null;
+                    await _userRepository.UpdateAsync(member);
+                    releasedCount++;
                 }
             }
-        }
+            Console.WriteLine($"[DELETE-DEBUG] Step 2 complete. Released {releasedCount} members.");
 
-        // 2. Eliminar Evaluaciones relacionadas (Casca de borrado manual)
-        var evaluations = await _evaluationRepository.GetByProjectIdAsync(request.ProjectId);
-        foreach (var evaluation in evaluations)
+            // 3. Eliminar el proyecto
+            Console.WriteLine($"[DELETE-DEBUG] Step 3: Deleting project document: {request.ProjectId}");
+            await _projectRepository.DeleteAsync(request.ProjectId);
+            
+            Console.WriteLine("[DELETE-DEBUG] All steps completed successfully.");
+            return new DeleteProjectResponse(true, "Proyecto eliminado y equipo disuelto exitosamente.");
+        }
+        catch (Exception ex)
         {
-            await _evaluationRepository.DeleteAsync(evaluation.Id);
+            Console.WriteLine($"[DELETE-DEBUG] CRITICAL ERROR during deletion: {ex.Message}");
+            Console.WriteLine($"[DELETE-DEBUG] StackTrace: {ex.StackTrace}");
+            return new DeleteProjectResponse(false, $"Error interno al eliminar el proyecto: {ex.Message}");
         }
-
-        // 3. Eliminar Proyecto
-        await _projectRepository.DeleteAsync(request.ProjectId);
-
-        return new DeleteProjectResponse(true, "Proyecto eliminado y equipo disuelto exitosamente.");
     }
 }

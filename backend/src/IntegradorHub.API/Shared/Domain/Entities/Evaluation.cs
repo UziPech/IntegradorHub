@@ -24,7 +24,7 @@ public class Evaluation
     public string Contenido { get; set; } = string.Empty;
     
     [FirestoreProperty("calificacion")]
-    public int? Calificacion { get; set; } // Solo para tipo "oficial", 0-100
+    public double? Calificacion { get; set; } // Solo para tipo "oficial", 0-100
 
     [FirestoreProperty("es_publico")]
     public bool EsPublico { get; set; } = false; // Control de privacidad por el líder
@@ -33,8 +33,8 @@ public class Evaluation
     public object? PuntosOtorgados { get; set; } // Puede ser int o un objeto de rúbrica
     
     [FirestoreProperty("created_at")]
-    public Timestamp CreatedAt { get; set; }
+    public object? CreatedAt { get; set; }
     
     [FirestoreProperty("updated_at")]
-    public Timestamp UpdatedAt { get; set; }
+    public object? UpdatedAt { get; set; }
 }

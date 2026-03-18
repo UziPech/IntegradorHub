@@ -54,10 +54,10 @@ public class User
     public string? Organizacion { get; set; } // Ej: "Google", "Freelance"
     
     [FirestoreProperty("created_at")]
-    public string? CreatedAt { get; set; }
+    public object? CreatedAt { get; set; }
     
     [FirestoreProperty("updated_at")]
-    public string? UpdatedAt { get; set; }
+    public object? UpdatedAt { get; set; }
     
     [FirestoreProperty("is_first_login")]
     public bool IsFirstLogin { get; set; } = true;
