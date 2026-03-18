@@ -577,11 +577,11 @@ export function ProfilePage() {
                         </div>
 
                         {/* Premium Status Inside Academic */}
-                        <div className="mt-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-3xl p-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl opacity-50 -translate-y-10 translate-x-10 pointer-events-none"></div>
-                            <div className="w-20 h-20 shrink-0 relative flex items-center justify-center bg-white rounded-full shadow-sm z-10 p-1">
+                        <div className="mt-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-slate-50 dark:bg-[#1e2230] border border-slate-100 dark:border-slate-700/50 rounded-3xl p-6 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 dark:bg-blue-600/10 rounded-full blur-3xl opacity-50 -translate-y-10 translate-x-10 pointer-events-none"></div>
+                            <div className="w-20 h-20 shrink-0 relative flex items-center justify-center bg-white dark:bg-[#0f111a] rounded-full shadow-sm z-10 p-1 transition-colors">
                                 <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 36 36">
-                                    <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                                    <circle cx="18" cy="18" r="16" fill="none" className="stroke-slate-100 dark:stroke-slate-800" strokeWidth="3" />
                                     <circle cx="18" cy="18" r="16" fill="none" stroke="#2563eb" strokeWidth="3" strokeDasharray="95, 100" strokeLinecap="round" />
                                 </svg>
                                 <span className="absolute text-base font-black text-slate-900 dark:text-white">95%</span>
