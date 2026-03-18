@@ -808,7 +808,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                     <h4 className="text-xs font-bold text-red-500 uppercase mb-3 flex items-center gap-1.5">
                                         <Trash2 size={14} /> Zona de Peligro
                                     </h4>
-                                    <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex flex-col gap-3">
+                                    <div className="p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20 flex flex-col gap-3">
                                         <div>
                                             <p className="text-sm font-bold text-red-700">Eliminar Proyecto</p>
                                             <p className="text-[11px] text-red-500/80 mt-0.5">
@@ -819,7 +819,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                         {deleteStep === 0 && (
                                             <button
                                                 onClick={handleDeleteProject}
-                                                className="w-full py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-bold hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
+                                                className="w-full py-2 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/30 text-red-600 rounded-lg text-sm font-bold hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm"
                                             >
                                                 Eliminar Definitivamente
                                             </button>
@@ -839,7 +839,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                     </button>
                                                     <button
                                                         onClick={() => setDeleteStep(0)}
-                                                        className="flex-1 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-all"
+                                                        className="flex-1 py-1.5 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-300 dark:hover:bg-slate-600 transition-all"
                                                     >
                                                         Cancelar
                                                     </button>
@@ -856,7 +856,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                         value={deleteInput}
                                                         onChange={(e) => setDeleteInput(e.target.value)}
                                                         placeholder="ELIMINAR"
-                                                        className="w-full px-3 py-2 bg-white border border-red-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                                                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-red-200 dark:border-slate-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none placeholder-gray-400 dark:placeholder-slate-500"
                                                     />
                                                 </div>
                                                 <div className="flex gap-2">
@@ -873,7 +873,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                             setDeleteInput('');
                                                         }}
                                                         disabled={isDeleting}
-                                                        className="flex-1 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-all"
+                                                        className="flex-1 py-1.5 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-300 dark:hover:bg-slate-600 transition-all"
                                                     >
                                                         Cancelar
                                                     </button>
