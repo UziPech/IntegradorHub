@@ -16,11 +16,16 @@ public class DeleteProjectHandler : IRequestHandler<DeleteProjectCommand, Delete
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IEvaluationRepository _evaluationRepository;
 
-    public DeleteProjectHandler(IProjectRepository projectRepository, IUserRepository userRepository)
+    public DeleteProjectHandler(
+        IProjectRepository projectRepository, 
+        IUserRepository userRepository,
+        IEvaluationRepository evaluationRepository)
     {
         _projectRepository = projectRepository;
         _userRepository = userRepository;
+        _evaluationRepository = evaluationRepository;
     }
 
     public async Task<DeleteProjectResponse> Handle(DeleteProjectCommand request, CancellationToken cancellationToken)
@@ -61,7 +66,14 @@ public class DeleteProjectHandler : IRequestHandler<DeleteProjectCommand, Delete
             }
         }
 
-        // 2. Eliminar Proyecto
+        // 2. Eliminar Evaluaciones relacionadas (Casca de borrado manual)
+        var evaluations = await _evaluationRepository.GetByProjectIdAsync(request.ProjectId);
+        foreach (var evaluation in evaluations)
+        {
+            await _evaluationRepository.DeleteAsync(evaluation.Id);
+        }
+
+        // 3. Eliminar Proyecto
         await _projectRepository.DeleteAsync(request.ProjectId);
 
         return new DeleteProjectResponse(true, "Proyecto eliminado y equipo disuelto exitosamente.");

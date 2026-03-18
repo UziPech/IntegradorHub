@@ -68,6 +68,10 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
     const isLeader = userData?.userId === project?.liderId;
+    const isAdmin = userData?.rol === 'Admin' || userData?.rol === 'SuperAdmin';
+    const isAssignedTeacher = userData?.rol === 'Docente' && project?.docenteId === userData?.userId;
+    const canDelete = isLeader || isAdmin || isAssignedTeacher;
+    const canSeeSettings = canDelete;
 
     // Reset carousel/lightbox state when the project changes
     useEffect(() => {
@@ -462,7 +466,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                         <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>
                                     )}
                                 </button>
-                                {isLeader && (
+                                {canSeeSettings && (
                                     <button
                                         onClick={() => setActiveTab('settings')}
                                         className={`text-sm font-bold transition-all relative pb-1 ${activeTab === 'settings'
@@ -681,56 +685,60 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                             </div>
                         )}
 
-                        {activeTab === 'settings' && isLeader && (
+                        {activeTab === 'settings' && canSeeSettings && (
                             <div className="space-y-6 animate-fadeIn">
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                     <Hash size={20} className="text-blue-500" />
                                     Ajustes del Proyecto
                                 </h3>
 
-                                {/* Edit Title */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">Título del Proyecto</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={editTitle}
-                                            onChange={(e) => setEditTitle(e.target.value)}
-                                            className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-slate-600 focus:border-blue-400 dark:focus:border-slate-500 outline-none transition-all"
-                                        />
-                                        <button
-                                            onClick={handleUpdateTitle}
-                                            disabled={!editTitle || editTitle === project.titulo}
-                                            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                        >
-                                            Guardar
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Visibility Toggle */}
-                                <div className="space-y-2 pt-4 border-t border-gray-100 dark:border-slate-700/50">
-                                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">Visibilidad</label>
-                                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-900 dark:text-white">{project.esPublico ? 'Público' : 'Privado'}</p>
-                                            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 max-w-[200px]">
-                                                {project.esPublico
-                                                    ? 'Visible en la galería general.'
-                                                    : 'Solo visible para el equipo y profesores.'}
-                                            </p>
+                                {/* Edit Title - Solo para el líder */}
+                                {isLeader && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">Título del Proyecto</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editTitle}
+                                                    onChange={(e) => setEditTitle(e.target.value)}
+                                                    className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-slate-600 focus:border-blue-400 dark:focus:border-slate-500 outline-none transition-all"
+                                                />
+                                                <button
+                                                    onClick={handleUpdateTitle}
+                                                    disabled={!editTitle || editTitle === project.titulo}
+                                                    className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                                >
+                                                    Guardar
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button
-                                            onClick={handleVisibilityToggle}
-                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${project.esPublico
-                                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                : 'bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600'
-                                                }`}
-                                        >
-                                            {project.esPublico ? 'Hacer Privado' : 'Hacer Público'}
-                                        </button>
-                                    </div>
-                                </div>
+
+                                        {/* Visibility Toggle */}
+                                        <div className="space-y-2 pt-4 border-t border-gray-100 dark:border-slate-700/50">
+                                            <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">Visibilidad</label>
+                                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-900 dark:text-white">{project.esPublico ? 'Público' : 'Privado'}</p>
+                                                    <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 max-w-[200px]">
+                                                        {project.esPublico
+                                                            ? 'Visible en la galería general.'
+                                                            : 'Solo visible para el equipo y profesores.'}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={handleVisibilityToggle}
+                                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${project.esPublico
+                                                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                        : 'bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600'
+                                                        }`}
+                                                >
+                                                    {project.esPublico ? 'Hacer Privado' : 'Hacer Público'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
 
                                 {/* Danger Zone */}
                                 <div className="pt-6 mt-6 border-t border-red-100">

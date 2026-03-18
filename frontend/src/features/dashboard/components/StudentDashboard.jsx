@@ -133,10 +133,8 @@ export function StudentDashboard({
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        <ProjectTimelineChart project={project} />
-                        <RubricRadarChart project={project} />
-                    </div>
+                    <ProjectTimelineChart project={project} />
+                    <RubricRadarChart project={project} />
 
                 </div>
 
