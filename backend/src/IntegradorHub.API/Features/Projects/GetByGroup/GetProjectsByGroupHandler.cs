@@ -24,6 +24,10 @@ public record ProjectDto(
     DateTime CreatedAt,
     double? Calificacion,
     double? PuntosTotales,
+    double? PuntosUIUX,
+    double? PuntosInovacion,
+    double? PuntosPresentacion,
+    double? PuntosImpacto,
     string? Descripcion,
     Dictionary<string, object>? Votantes
 );
@@ -92,6 +96,10 @@ public class GetProjectsByGroupHandler : IRequestHandler<GetProjectsByGroupQuery
                 p.CreatedAt.ToDateTime(),
                 p.Calificacion,
                 p.PuntosTotales,
+                p.PuntosUIUX,
+                p.PuntosInovacion,
+                p.PuntosPresentacion,
+                p.PuntosImpacto,
                 descripcion,
                 p.Votantes
             ));

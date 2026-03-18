@@ -75,12 +75,21 @@ public class RateProjectHandler : IRequestHandler<RateProjectCommand, RateProjec
         Validate(request.Impacto, "Impacto");
 
         // 4. Crear el nuevo voto de rúbrica
-        var newVote = new RubricVote
+        var newVoteObj = new RubricVote
         {
             UIUX = request.UIUX,
             Inovacion = request.Inovacion,
             Presentacion = request.Presentacion,
             Impacto = request.Impacto
+        };
+
+        // Convertir explícitamente a Dictionary para que Firestore serialice correctamente
+        var newVoteDict = new Dictionary<string, object>
+        {
+            { "ui_ux", request.UIUX },
+            { "inovacion", request.Inovacion },
+            { "presentacion", request.Presentacion },
+            { "impacto", request.Impacto }
         };
 
         // 5. Si el usuario ya votó anteriormente, restar sus puntos anteriores antes de sumar los nuevos
@@ -105,21 +114,21 @@ public class RateProjectHandler : IRequestHandler<RateProjectCommand, RateProjec
             }
 
             // Actualizar voto existente
-            project.Votantes[request.UserId] = newVote;
+            project.Votantes[request.UserId] = newVoteDict;
         }
         else
         {
             // Voto nuevo
-            project.Votantes.Add(request.UserId, newVote);
+            project.Votantes.Add(request.UserId, newVoteDict);
             project.ConteoVotos++;
         }
 
         // 6. Sumar puntos del nuevo voto a los acumuladores
-        project.PuntosTotales      += newVote.TotalPoints;
-        project.PuntosUIUX         += newVote.UIUX * 2.5;
-        project.PuntosInovacion    += newVote.Inovacion * 2.5;
-        project.PuntosPresentacion += newVote.Presentacion * 2.5;
-        project.PuntosImpacto      += newVote.Impacto * 2.5;
+        project.PuntosTotales      += newVoteObj.TotalPoints;
+        project.PuntosUIUX         += newVoteObj.UIUX * 2.5;
+        project.PuntosInovacion    += newVoteObj.Inovacion * 2.5;
+        project.PuntosPresentacion += newVoteObj.Presentacion * 2.5;
+        project.PuntosImpacto      += newVoteObj.Impacto * 2.5;
 
         // 7. Guardar cambios
         await _projectRepository.UpdateAsync(project);

@@ -22,6 +22,10 @@ public record ProjectDto(
     DateTime CreatedAt,
     double? Calificacion,
     double? PuntosTotales,
+    double? PuntosUIUX,
+    double? PuntosInovacion,
+    double? PuntosPresentacion,
+    double? PuntosImpacto,
     List<string> StackTecnologico,
     string? Descripcion,
     Dictionary<string, object>? Votantes
@@ -90,6 +94,10 @@ public class GetProjectsByTeacherHandler : IRequestHandler<GetProjectsByTeacherQ
                 p.CreatedAt.ToDateTime(),
                 p.Calificacion,
                 p.PuntosTotales,
+                p.PuntosUIUX,
+                p.PuntosInovacion,
+                p.PuntosPresentacion,
+                p.PuntosImpacto,
                 p.StackTecnologico ?? new List<string>(),
                 descripcion,
                 p.Votantes
