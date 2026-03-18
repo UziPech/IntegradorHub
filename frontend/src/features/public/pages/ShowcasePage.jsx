@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Rocket } from 'lucide-react';
+import { Search, Filter, Rocket, MoreHorizontal } from 'lucide-react';
 import api from '../../../lib/axios';
 
 // Import Shared Component
@@ -15,6 +15,7 @@ export function ShowcasePage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStack, setSelectedStack] = useState(null);
     const [allStacks, setAllStacks] = useState([]);
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
     useEffect(() => {
         fetchPublicProjects();
@@ -76,16 +77,38 @@ export function ShowcasePage() {
                             </p>
                         </div>
 
-                        {/* Search Input */}
-                        <div className="w-full md:w-96 relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-gray-900 dark:group-focus-within:text-white transition-colors" size={20} />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Buscar proyecto..."
-                                className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-slate-700/50 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-slate-500/30 focus:border-gray-400 dark:focus:border-slate-600 transition-all font-medium placeholder-gray-400 dark:placeholder-slate-500 dark:text-white"
-                            />
+                        {/* Search Input - Spherical "Thinking Bubble" Design */}
+                        <div className={`flex items-center gap-1.5 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchExpanded ? 'w-full md:w-96' : 'w-fit'}`}>
+                            {/* Thinking Dots */}
+                            {!isSearchExpanded && (
+                                <div className="flex items-end gap-1 mb-1 animate-in fade-in duration-700">
+                                    <div className="w-1.5 h-1.5 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-slate-700/50 rounded-full shadow-sm"></div>
+                                    <div className="w-2.5 h-2.5 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-slate-700/50 rounded-full shadow-sm"></div>
+                                </div>
+                            )}
+
+                            <div 
+                                onClick={() => !isSearchExpanded && setIsSearchExpanded(true)}
+                                className={`flex items-center bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-slate-700/50 shadow-md cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${
+                                    isSearchExpanded ? 'rounded-2xl w-full px-5 py-3 h-12' : 'rounded-full w-14 h-14 justify-center hover:scale-110 active:scale-95'
+                                }`}
+                            >
+                                <Search 
+                                    className={`text-gray-400 transition-colors ${isSearchExpanded ? 'mr-3' : 'scale-125'}`} 
+                                    size={isSearchExpanded ? 20 : 24} 
+                                />
+                                {isSearchExpanded && (
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onBlur={() => !searchTerm && setIsSearchExpanded(false)}
+                                        placeholder="Buscar proyecto..."
+                                        className="w-full bg-transparent border-none focus:outline-none text-base font-semibold placeholder-gray-400 dark:placeholder-slate-500 dark:text-white"
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,10 +119,14 @@ export function ShowcasePage() {
 
                 {/* Filters */}
                 <div className="mb-10 overflow-x-auto pb-4 scrollbar-hide">
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 pr-4 border-r border-gray-100 dark:border-slate-700 mr-2">
-                            <Filter size={18} className="text-gray-400" />
-                            <span className="text-sm font-semibold text-gray-600 dark:text-slate-400 whitespace-nowrap">Coleccíon</span>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 dark:bg-[#1a1d27] rounded-2xl border border-gray-100 dark:border-slate-700/50 mr-2 shadow-sm">
+                            <div className="p-1.5 bg-white dark:bg-[#0f1117] rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                                <Filter size={16} className="text-gray-400 dark:text-slate-500" />
+                            </div>
+                            <span className="text-sm font-bold tracking-tight text-gray-700 dark:text-slate-300 whitespace-nowrap">
+                                Colección
+                            </span>
                         </div>
                         <button
                             onClick={() => setSelectedStack(null)}

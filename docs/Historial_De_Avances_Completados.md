@@ -336,3 +336,18 @@ Este documento sirve como bitácora y registro de las características, módulos
 
 ---
 *Fin del registro de esta actualización.*
+
+---
+
+## 🎨 Rediseño de Galería y Buscador "Thinking Bubble" (Marzo 2026)
+
+### 1. Buscador Conceptual "Thinking Bubble"
+- **Filosofía de Diseño:** Se transformó el buscador de una barra estática a un elemento interactivo que simula un "burbuja de pensamiento".
+- **Estructura Estética:** Incluye dos puntos suspensivos externos ubicados a la izquierda de la esfera principal, creando un efecto visual de nube de ideas.
+- **Micro-interacciones:** La esfera se expande suavemente hacia un campo de texto redondeado (`rounded-2xl`) mediante una animación `cubic-bezier`, optimizando el espacio y la limpieza visual.
+
+### 2. Pulido de Sección "Colección"
+- **Identidad de Filtros:** Se rediseñó la cabecera de la sección de filtros, otorgándole a la etiqueta "Colección" un fondo propio y un icono de filtro enmarcado, mejorando la jerarquía visual de la página.
+
+---
+*Fin del registro de esta actualización.*
