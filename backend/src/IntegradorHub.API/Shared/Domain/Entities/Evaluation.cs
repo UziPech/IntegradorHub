@@ -30,7 +30,7 @@ public class Evaluation
     public bool EsPublico { get; set; } = false; // Control de privacidad por el líder
 
     [FirestoreProperty("puntos_otorgados")]
-    public int PuntosOtorgados { get; set; } = 0; // Valor numérico para sumas (10-100 o 10-50)
+    public object? PuntosOtorgados { get; set; } // Puede ser int o un objeto de rúbrica
     
     [FirestoreProperty("created_at")]
     public Timestamp CreatedAt { get; set; }
