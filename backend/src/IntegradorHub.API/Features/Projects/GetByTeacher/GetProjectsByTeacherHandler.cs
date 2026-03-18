@@ -24,7 +24,7 @@ public record ProjectDto(
     double? PuntosTotales,
     List<string> StackTecnologico,
     string? Descripcion,
-    Dictionary<string, int>? Votantes
+    Dictionary<string, object>? Votantes
 );
 
 // === HANDLER ===

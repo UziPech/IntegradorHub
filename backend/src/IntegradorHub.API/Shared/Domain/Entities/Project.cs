@@ -72,13 +72,27 @@ public class Project
 
     // --- Ranking System Fields ---
     [FirestoreProperty("puntos_totales")]
-    public double PuntosTotales { get; set; } = 0; // Sum of all points (Official + Guest Votes)
+    public double PuntosTotales { get; set; } = 0;
 
     [FirestoreProperty("conteo_votos")]
-    public int ConteoVotos { get; set; } = 0; // Number of people who voted (Stars)
+    public int ConteoVotos { get; set; } = 0;
 
+    // --- Acumuladores por Criterio (para Dashboard) ---
+    [FirestoreProperty("puntos_uiux")]
+    public double PuntosUIUX { get; set; } = 0;
+
+    [FirestoreProperty("puntos_inovacion")]
+    public double PuntosInovacion { get; set; } = 0;
+
+    [FirestoreProperty("puntos_presentacion")]
+    public double PuntosPresentacion { get; set; } = 0;
+
+    [FirestoreProperty("puntos_impacto")]
+    public double PuntosImpacto { get; set; } = 0;
+
+    // Votantes: userId -> RubricVote (objeto). Lectura híbrida en el handler.
     [FirestoreProperty("votantes")]
-    public Dictionary<string, int> Votantes { get; set; } = new(); // UserId -> Stars (1-5) 
+    public Dictionary<string, object> Votantes { get; set; } = new();
 }
 
 [FirestoreData]
