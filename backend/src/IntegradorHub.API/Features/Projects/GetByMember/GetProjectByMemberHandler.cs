@@ -69,6 +69,10 @@ public class GetProjectByMemberHandler : IRequestHandler<GetProjectByMemberQuery
             project.CreatedAt.ToDateTime(),
             project.EsPublico,
             project.PuntosTotales,
+            project.PuntosUIUX,
+            project.PuntosInovacion,
+            project.PuntosPresentacion,
+            project.PuntosImpacto,
             project.ConteoVotos,
             project.Votantes ?? new Dictionary<string, object>(),
             project.Calificacion

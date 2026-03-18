@@ -79,6 +79,10 @@ public class GetPublicProjectsHandler : IRequestHandler<GetPublicProjectsQuery, 
                 project.Calificacion,
                 project.LiderId,
                 project.PuntosTotales,
+                project.PuntosUIUX,
+                project.PuntosInovacion,
+                project.PuntosPresentacion,
+                project.PuntosImpacto,
                 project.ConteoVotos,
                 project.Votantes ?? new Dictionary<string, object>()
             ));
@@ -109,6 +113,10 @@ public record PublicProjectDto(
     double? Calificacion,
     string LiderId,
     double PuntosTotales,
+    double PuntosUIUX,
+    double PuntosInovacion,
+    double PuntosPresentacion,
+    double PuntosImpacto,
     int ConteoVotos,
     Dictionary<string, object> Votantes
 );
