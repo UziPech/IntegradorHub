@@ -364,7 +364,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                     {!isPlaying && (
                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                             <div className="w-20 h-20 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-xl transition-all duration-300 group-hover:scale-110">
-                                                <Play fill="white" className="text-white ml-2" size={40} />
+                                                <Play fill="white" className="text-white ml-1" size={40} />
                                             </div>
                                         </div>
                                     )}
@@ -432,6 +432,14 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
 
                 {/* Right Column: Info & Content */}
                 <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white dark:bg-[#1a1d27] border-l border-slate-200 dark:border-slate-700/50 relative">
+                    {/* --- Botón Cerrar Minimalista (Estilo Instagram) --- */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-[100] w-10 h-10 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-white transition-all rounded-full hover:bg-gray-100/50 dark:hover:bg-slate-800/50 group/close"
+                        title="Cerrar"
+                    >
+                        <X size={24} strokeWidth={2.2} className="group-hover/close:rotate-90 transition-transform duration-300" />
+                    </button>
 
                     {/* Integrated Header */}
                     <div className="px-6 pt-5 pb-0 shrink-0 border-b border-gray-100 dark:border-slate-700/50">
@@ -445,20 +453,14 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                 </div>
                             </div>
                             {/* Action buttons */}
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0 pr-10">
                                 <ProjectPDFExportButton project={project} creadorNombre={creadorNombre} />
                                 <button
                                     onClick={() => setReadMode(r => !r)}
                                     title={readMode ? 'Ver multimedia' : 'Modo lectura'}
-                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all"
+                                    className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                                 >
-                                    {readMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-all"
-                                >
-                                    <X size={16} />
+                                    {readMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                                 </button>
                             </div>
                         </div>
@@ -733,7 +735,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                         )}
 
                         {activeTab === 'eval' && (
-                            <div className="animate-fadeIn">
+                            <div className="p-6 max-w-4xl mx-auto pb-20 animate-fadeIn">
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                     <Activity size={20} className="text-blue-500" />
                                     Evaluación y Rúbrica
@@ -743,7 +745,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                         )}
 
                         {activeTab === 'settings' && canSeeSettings && (
-                            <div className="space-y-6 animate-fadeIn">
+                            <div className="p-6 max-w-4xl mx-auto pb-20 space-y-6 animate-fadeIn">
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                     <Hash size={20} className="text-blue-500" />
                                     Ajustes del Proyecto
@@ -880,81 +882,81 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                         )}
                     </div>
                 </div>
-            </div>
 
-            {/* --- LIGHTBOX OVERLAY --- */}
-            {isLightboxOpen && createPortal(
-                <div
-                    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center backdrop-blur-md group/lightbox"
-                    onClick={() => setIsLightboxOpen(false)}
-                >
-                    <button
-                        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer opacity-0 group-hover/lightbox:opacity-100 duration-300"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsLightboxOpen(false);
-                        }}
+                {/* --- LIGHTBOX OVERLAY --- */}
+                {isLightboxOpen && createPortal(
+                    <div
+                        className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center backdrop-blur-md group/lightbox"
+                        onClick={() => setIsLightboxOpen(false)}
                     >
-                        <X size={32} />
-                    </button>
+                        <button
+                            className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer opacity-0 group-hover/lightbox:opacity-100 duration-300"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsLightboxOpen(false);
+                            }}
+                        >
+                            <X size={32} />
+                        </button>
 
-                    {mediaItems.length > 1 && (
-                        <>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCurrentSlide((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
-                                }}
-                                className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
-                            >
-                                <ChevronLeft size={36} />
-                            </button>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCurrentSlide((prev) => (prev + 1) % mediaItems.length);
-                                }}
-                                className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
-                            >
-                                <ChevronRight size={36} />
-                            </button>
-                        </>
-                    )}
-
-                    <div className="relative w-[90vw] h-[90vh] flex items-center justify-center pointer-events-none">
-                        {currentMedia.type === 'video' ? (
-                            <video
-                                src={currentMedia.url}
-                                controls
-                                autoPlay
-                                className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
-                            />
-                        ) : currentMedia.type === 'image' ? (
-                            <img
-                                src={currentMedia.url}
-                                alt="Contenido Ampliado"
-                                className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
-                            />
-                        ) : null}
-                    </div>
-
-                    {mediaItems.length > 1 && (
-                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-50 bg-black/50 px-4 py-2 rounded-full border border-white/10">
-                            {mediaItems.map((_, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentSlide ? 'bg-white scale-125' : 'bg-white/30 cursor-pointer hover:bg-white/60'}`}
+                        {mediaItems.length > 1 && (
+                            <>
+                                <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        setCurrentSlide(idx);
+                                        setCurrentSlide((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
                                     }}
+                                    className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
+                                >
+                                    <ChevronLeft size={36} />
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCurrentSlide((prev) => (prev + 1) % mediaItems.length);
+                                    }}
+                                    className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-50 cursor-pointer"
+                                >
+                                    <ChevronRight size={36} />
+                                </button>
+                            </>
+                        )}
+
+                        <div className="relative w-[90vw] h-[90vh] flex items-center justify-center pointer-events-none">
+                            {currentMedia.type === 'video' ? (
+                                <video
+                                    src={currentMedia.url}
+                                    controls
+                                    autoPlay
+                                    className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
                                 />
-                            ))}
+                            ) : currentMedia.type === 'image' ? (
+                                <img
+                                    src={currentMedia.url}
+                                    alt="Contenido Ampliado"
+                                    className="w-full h-full object-contain drop-shadow-2xl rounded-lg pointer-events-auto"
+                                />
+                            ) : null}
                         </div>
-                    )}
-                </div>,
-                document.body
-            )}
+
+                        {mediaItems.length > 1 && (
+                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-50 bg-black/50 px-4 py-2 rounded-full border border-white/10">
+                                {mediaItems.map((_, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentSlide ? 'bg-white scale-125' : 'bg-white/30 cursor-pointer hover:bg-white/60'}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCurrentSlide(idx);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>,
+                    document.body
+                )}
+            </div>
         </div>
     );
 }

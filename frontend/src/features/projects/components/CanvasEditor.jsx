@@ -741,7 +741,7 @@ function MediaItem({ item, className }) {
     if (item.type === BLOCK_TYPES.VIDEO) return (
         <div className={`relative ${className} bg-black flex items-center justify-center group`}>
             <video src={item.content} className="w-full h-full object-contain pointer-events-none" />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors"><div className="w-12 h-12 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white"><Play fill="white" size={20} /></div></div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors"><div className="w-12 h-12 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white"><Play fill="white" size={20} className="ml-0.5" /></div></div>
         </div>
     );
     return <img src={item.content} alt="" className={className} />;

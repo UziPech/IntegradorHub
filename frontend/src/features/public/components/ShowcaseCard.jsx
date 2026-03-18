@@ -235,7 +235,7 @@ export function ShowcaseCard({ project, onClick }) {
                         {!isPlaying && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <div className="w-16 h-16 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-xl transition-all duration-300">
-                                    <Play fill="white" className="text-white ml-2" size={32} />
+                                    <Play fill="white" className="text-white ml-1" size={32} />
                                 </div>
                             </div>
                         )}
