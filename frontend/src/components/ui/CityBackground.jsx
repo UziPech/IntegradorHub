@@ -1,8 +1,9 @@
-import { Suspense, useEffect, useState, useRef, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, Environment, Stars, PerspectiveCamera } from '@react-three/drei';
+import { Suspense, useEffect, useState, useRef } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { useGLTF, Environment, Stars, PerspectiveCamera, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { FloatingPhrases } from './FloatingPhrases';
+import { usePerformance } from '../../hooks/usePerformance';
 
 // ─── Responsive config (valores calibrados con el modelo 4K) ───────────────
 function getConfig(width) {
@@ -30,28 +31,25 @@ function useResponsiveConfig() {
 
 // ─── Niebla atmosférica que oculta la base ─────────────────────────────────
 function SceneFog({ isDark }) {
-    const { scene } = useThree();
-    useEffect(() => {
-        // FogExp2 crea niebla exponencial que se acumula en la distancia/parte baja
-        const fogColor = isDark ? '#020617' : '#dbeafe';
-        scene.fog = new THREE.Fog(fogColor, 8, 22);
-        return () => { scene.fog = null; };
-    }, [isDark, scene]);
-    return null;
+    const fogColor = isDark ? '#020617' : '#dbeafe';
+    return <fog attach="fog" args={[fogColor, 8, 22]} />;
 }
 
 // ─── Partículas flotantes (polvo de ciudad) ────────────────────────────────
 function FloatingParticles({ isDark, count = 120 }) {
     const points = useRef();
-    const positions = useMemo(() => {
+    
+    // Usamos useState con inicializador para asegurar que el random solo se ejecute una vez
+    // y sea estable (evita errores de pureza/idempotencia en el renderizado)
+    const [positions] = useState(() => {
         const arr = new Float32Array(count * 3);
         for (let i = 0; i < count; i++) {
             arr[i * 3]     = (Math.random() - 0.5) * 20;  // x
-            arr[i * 3 + 1] = (Math.random() - 0.5) * 12;  // y
-            arr[i * 3 + 2] = (Math.random() - 0.5) * 10;  // z
+            arr[i * 3 + 1] = (Math.random() - 0.5) * 20;  // y
+            arr[i * 3 + 2] = (Math.random() - 0.5) * 20;  // z
         }
         return arr;
-    }, [count]);
+    });
 
     useFrame((state) => {
         if (!points.current) return;
@@ -136,7 +134,9 @@ function Model({ config, isRegister }) {
 useGLTF.preload('/models/modern_office_building_4k.glb');
 
 // ─── Escena con iluminación cinematográfica ────────────────────────────────
-function Scene({ isDark, config, isRegister }) {
+function Scene({ isDark, config, isRegister, performanceTier }) {
+    const isMedium = performanceTier === 'medium';
+    
     return (
         <>
             <PerspectiveCamera makeDefault position={[0, config.cameraY, config.cameraZ]} fov={42} />
@@ -146,13 +146,13 @@ function Scene({ isDark, config, isRegister }) {
             {/* Luz ambiente base */}
             <ambientLight intensity={isDark ? 0.3 : 0.75} />
 
-            {/* Luz principal direccional */}
+            {/* Luz principal direccional - Solo con sombras en High */}
             <directionalLight
                 position={[8, 15, 12]}
                 intensity={isDark ? 1.1 : 2.0}
                 color={isDark ? '#e2e8f0' : '#ffffff'}
-                castShadow
-                shadow-mapSize={[2048, 2048]}
+                castShadow={!isMedium}
+                shadow-mapSize={isMedium ? [512, 512] : [2048, 2048]}
             />
 
             {/* Luz de relleno lateral izquierda — ilumina lado contrario */}
@@ -199,15 +199,23 @@ function Scene({ isDark, config, isRegister }) {
                 distance={40}
             />
 
-            {/* Partículas flotantes */}
-            <FloatingParticles isDark={isDark} count={100} />
+            {/* Partículas flotantes - Menos en Medium */}
+            <FloatingParticles isDark={isDark} count={isMedium ? 40 : 100} />
 
             {/* Plano de suelo invisible (recibe sombras, se integra con la niebla) */}
             <ReflectiveGround isDark={isDark} />
 
-            {/* Estrellas solo en dark */}
+            {/* Estrellas solo en dark - Menos en Medium */}
             {isDark && (
-                <Stars radius={140} depth={60} count={7000} factor={5} saturation={0.3} fade speed={0.4} />
+                <Stars 
+                    radius={140} 
+                    depth={60} 
+                    count={isMedium ? 2000 : 7000} 
+                    factor={5} 
+                    saturation={0.3} 
+                    fade 
+                    speed={0.4} 
+                />
             )}
 
             <Suspense fallback={null}>
@@ -219,19 +227,26 @@ function Scene({ isDark, config, isRegister }) {
     );
 }
 
-// ─── Loader esférico mientras carga el GLB ────────────────────────────────
+// ─── Loader premium mientras carga el GLB ────────────────────────────────
 function Loader() {
     return (
-        <mesh>
-            <sphereGeometry args={[0.4, 32, 32]} />
-            <meshBasicMaterial color="#3b82f6" wireframe />
-        </mesh>
+        <Float speed={2} rotationIntensity={1} floatIntensity={2}>
+            <mesh>
+                <icosahedronGeometry args={[0.5, 2]} />
+                <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.6} />
+            </mesh>
+            <mesh scale={0.8}>
+                <icosahedronGeometry args={[0.5, 1]} />
+                <meshBasicMaterial color="#60a5fa" wireframe transparent opacity={0.3} />
+            </mesh>
+        </Float>
     );
 }
 
 // ─── Componente exportado ──────────────────────────────────────────────────
 export function CityBackground({ isDark = false, isRegister = false }) {
     const config = useResponsiveConfig();
+    const { performanceTier, isLowEnd } = usePerformance();
 
     return (
         <>
@@ -247,11 +262,22 @@ export function CityBackground({ isDark = false, isRegister = false }) {
                 : 'linear-gradient(160deg, #e8f0fe 0%, #dbeafe 40%, #eff6ff 75%, #f0f4ff 100%)',
             transition: 'background 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
-            <Canvas shadows dpr={[1, 2]} style={{ pointerEvents: 'none' }}>
-                <Suspense fallback={<Loader />}>
-                    <Scene isDark={isDark} config={config} isRegister={isRegister} />
-                </Suspense>
-            </Canvas>
+            {!isLowEnd && (
+                <Canvas 
+                    shadows={performanceTier === 'high'} 
+                    dpr={performanceTier === 'high' ? [1, 2] : 1} 
+                    style={{ pointerEvents: 'none' }}
+                >
+                    <Suspense fallback={<Loader />}>
+                        <Scene 
+                            isDark={isDark} 
+                            config={config} 
+                            isRegister={isRegister} 
+                            performanceTier={performanceTier}
+                        />
+                    </Suspense>
+                </Canvas>
+            )}
 
             {/* ── Gradiente inferior reforzado: oculta la base del edificio ── */}
             <div style={{
