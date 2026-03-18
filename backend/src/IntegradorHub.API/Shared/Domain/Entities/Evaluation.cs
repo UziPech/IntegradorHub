@@ -37,4 +37,10 @@ public class Evaluation
     
     [FirestoreProperty("updated_at")]
     public object? UpdatedAt { get; set; }
+
+    public DateTime GetCreatedAtAsDateTime() => CreatedAt switch {
+        Timestamp t => t.ToDateTime(),
+        string s when DateTime.TryParse(s, out var dt) => dt,
+        _ => DateTime.UtcNow
+    };
 }

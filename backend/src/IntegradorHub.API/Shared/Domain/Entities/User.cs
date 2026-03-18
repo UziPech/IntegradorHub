@@ -58,6 +58,18 @@ public class User
     
     [FirestoreProperty("updated_at")]
     public object? UpdatedAt { get; set; }
+
+    public string? GetCreatedAtAsString() => CreatedAt switch {
+        Timestamp t => t.ToDateTime().ToString("o"),
+        string s => s,
+        _ => null
+    };
+
+    public string? GetUpdatedAtAsString() => UpdatedAt switch {
+        Timestamp t => t.ToDateTime().ToString("o"),
+        string s => s,
+        _ => null
+    };
     
     [FirestoreProperty("is_first_login")]
     public bool IsFirstLogin { get; set; } = true;

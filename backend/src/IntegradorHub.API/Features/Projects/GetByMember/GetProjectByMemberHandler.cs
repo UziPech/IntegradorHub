@@ -66,7 +66,7 @@ public class GetProjectByMemberHandler : IRequestHandler<GetProjectByMemberQuery
             project.VideoUrl,
             project.CanvasBlocks,
             members,
-            project.CreatedAt.ToDateTime(),
+            project.GetCreatedAtAsDateTime(),
             project.EsPublico,
             project.PuntosTotales,
             project.PuntosUIUX,

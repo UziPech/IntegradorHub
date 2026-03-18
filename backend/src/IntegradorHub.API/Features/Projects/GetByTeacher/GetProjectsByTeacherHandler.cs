@@ -91,7 +91,7 @@ public class GetProjectsByTeacherHandler : IRequestHandler<GetProjectsByTeacherQ
                 p.VideoUrl,
                 p.DocenteId,
                 p.EsPublico,
-                p.CreatedAt.ToDateTime(),
+                p.GetCreatedAtAsDateTime(),
                 p.Calificacion,
                 p.PuntosTotales,
                 p.PuntosUIUX,

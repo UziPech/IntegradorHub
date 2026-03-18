@@ -140,7 +140,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                     existingUser.Profesion,
                     existingUser.EspecialidadDocente,
                     existingUser.Organizacion,
-                    existingUser.CreatedAt,
+                    existingUser.GetCreatedAtAsString(),
                     existingUser.RedesSociales
                 );
             }
@@ -188,7 +188,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
                 newUser.Profesion,
                 newUser.EspecialidadDocente,
                 newUser.Organizacion,
-                newUser.CreatedAt,
+                newUser.GetCreatedAtAsString(),
                 newUser.RedesSociales
             );
         }

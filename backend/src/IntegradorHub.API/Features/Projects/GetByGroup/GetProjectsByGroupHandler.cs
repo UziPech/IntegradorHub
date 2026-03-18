@@ -93,7 +93,7 @@ public class GetProjectsByGroupHandler : IRequestHandler<GetProjectsByGroupQuery
                 p.VideoUrl,
                 p.DocenteId,
                 p.EsPublico,
-                p.CreatedAt.ToDateTime(),
+                p.GetCreatedAtAsDateTime(),
                 p.Calificacion,
                 p.PuntosTotales,
                 p.PuntosUIUX,
