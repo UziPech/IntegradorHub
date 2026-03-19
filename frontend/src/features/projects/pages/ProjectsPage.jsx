@@ -252,7 +252,7 @@ export function ProjectsPage() {
                                     </div>
                                     <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">Aún no tienes un proyecto</h3>
                                     <p className="text-gray-500 dark:text-slate-400 mb-10 max-w-md text-lg leading-relaxed">
-                                        El proyecto integrador es tu oportunidad para brillar. Agrega a tu equipo, documenta tu progreso y logra una calificación de excelencia.
+                                        El proyecto integrador es tu oportunidad para brillar. Agrega a tu equipo, documenta tu progreso y ¡logra una calificación de excelencia!.
                                     </p>
                                     <button
                                         onClick={() => setShowCreateModal(true)}
