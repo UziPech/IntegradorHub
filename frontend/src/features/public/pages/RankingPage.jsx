@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Medal, Star, Crown } from 'lucide-react';
+import { Trophy, Medal, Star, Crown, ChevronRight, Users, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../lib/axios';
+import { ProjectDetailsModal } from '../../projects/components/ProjectDetailsModal';
 
 export function RankingPage() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [filter, setFilter] = useState('all'); // 'all' (placeholder for daily/monthly structure)
 
     useEffect(() => {
         fetchRanking();
@@ -24,139 +28,235 @@ export function RankingPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
+        <div className="min-h-screen flex items-center justify-center bg-black">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-white/10 border-t-white rounded-full animate-spin"></div>
+                <p className="text-white/50 font-medium tracking-widest text-xs uppercase italic">Cargando Ranking</p>
+            </div>
         </div>
     );
 
     const top3 = projects.slice(0, 3);
-    const rest = projects.slice(3, 20); // Top 20
+    // Determine the position of the projects in the podium: [2nd, 1st, 3rd]
+    const podiumProjects = [
+        { project: top3[1], rank: 2 },
+        { project: top3[0], rank: 1 },
+        { project: top3[2], rank: 3 }
+    ].filter(p => p.project);
+
+    const rest = projects.slice(3, 30);
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
+        <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black pb-20 overflow-x-hidden pt-10">
+            {/* Header Section */}
+            <div className="relative pt-20 pb-16 px-4 overflow-hidden">
+                {/* Background Decor */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/5 blur-[120px] rounded-full"></div>
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-white/5 blur-[100px] rounded-full"></div>
+                </div>
 
-            {/* Header */}
-            <div className="bg-slate-950 text-white py-12 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
-                    <div className="inline-flex items-center gap-2 bg-cyan-950/40 backdrop-blur-sm px-4 py-1.5 rounded-full border border-cyan-900/50 mb-4">
-                        <Trophy size={16} className="text-cyan-400" />
-                        <span className="text-sm font-semibold tracking-wide uppercase text-cyan-100">Leaderboard Oficial</span>
+                <div className="max-w-6xl mx-auto relative z-10">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center space-y-4"
+                    >
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 text-[10px] font-black tracking-widest uppercase">
+                            <Trophy size={14} className="text-white" />
+                            Official Leaderboard
+                        </div>
+                        <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-tight">
+                            RANKING <span className="text-white/20">PROYECTOS</span>
+                        </h1>
+                        <p className="text-white/40 max-w-2xl mx-auto text-lg font-medium tracking-tight">
+                            Explora los proyectos de mayor impacto evaluados por la comunidad académica.
+                        </p>
+                    </motion.div>
+
+                    {/* Filter Tabs (Structural for future) */}
+                    <div className="flex justify-center mt-12">
+                        <div className="inline-flex p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-xl">
+                            {['all', 'daily', 'monthly'].map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => setFilter(t)}
+                                    className={`px-10 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-500 ${
+                                        filter === t 
+                                        ? 'bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.2)]' 
+                                        : 'text-white/40 hover:text-white hover:bg-white/5'
+                                    }`}
+                                >
+                                    {t === 'all' ? 'General' : t === 'daily' ? 'Diario' : 'Mensual'}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
-                        Ranking de Proyectos
-                    </h1>
-                    <p className="text-slate-300 text-lg max-w-2xl mx-auto">
-                        Los mejores proyectos del ciclo escolar, votados por la comunidad y evaluados por expertos.
-                    </p>
                 </div>
             </div>
 
-            <div className="max-w-5xl mx-auto px-4 -mt-10 relative z-20">
+            <div className="max-w-6xl mx-auto px-4">
+                {/* 3D PODIUM */}
+                <div className="relative flex flex-col md:flex-row items-end justify-center gap-4 md:gap-0 mt-16 mb-32 min-h-[480px]">
+                    {podiumProjects.map(({ project, rank }, idx) => (
+                        <PodiumCard 
+                            key={project.id}
+                            project={project} 
+                            rank={rank} 
+                            height={rank === 1 ? "h-[380px]" : rank === 2 ? "h-[300px]" : "h-[250px]"} 
+                            delay={idx * 0.1}
+                            featured={rank === 1}
+                            onOpen={() => setSelectedProject(project)}
+                        />
+                    ))}
+                </div>
 
-                {/* PODIUM (Top 3) */}
-                {top3.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 items-end">
-                        {/* 2nd Place */}
-                        {top3[1] && (
-                            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden order-2 md:order-1 transform md:translate-y-4">
-                                <div className="bg-gray-200 py-2 text-center font-bold text-gray-700 flex items-center justify-center gap-2">
-                                    <Medal size={20} /> #2 Lugar
-                                </div>
-                                <div className="p-6 text-center">
-                                    <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full mb-4 flex items-center justify-center text-2xl font-bold text-gray-400 border-4 border-gray-200">
-                                        2
-                                    </div>
-                                    <h3 className="font-bold text-lg mb-1 truncate">{top3[1].titulo}</h3>
-                                    <p className="text-sm text-gray-500 mb-3">{top3[1].liderNombre}</p>
-                                    <div className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-bold text-sm">
-                                        <Star size={14} fill="currentColor" />
-                                        {top3[1].puntosTotales} pts
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 1st Place */}
-                        {top3[0] && (
-                            <div className="bg-white rounded-2xl shadow-2xl border-2 border-yellow-400 overflow-hidden order-1 md:order-2 transform scale-105 z-10">
-                                <div className="bg-gradient-to-r from-yellow-400 to-orange-400 py-3 text-center font-bold text-white flex items-center justify-center gap-2">
-                                    <Crown size={24} /> #1 Campeón
-                                </div>
-                                <div className="p-8 text-center bg-gradient-to-b from-yellow-50 to-white">
-                                    <div className="w-24 h-24 mx-auto bg-yellow-100 rounded-full mb-4 flex items-center justify-center text-4xl font-black text-yellow-600 border-4 border-yellow-400 shadow-inner">
-                                        1
-                                    </div>
-                                    <h3 className="font-black text-xl mb-1 truncate text-gray-900">{top3[0].titulo}</h3>
-                                    <p className="text-sm text-gray-600 mb-4 font-medium">{top3[0].liderNombre}</p>
-                                    <div className="inline-flex items-center gap-1 bg-yellow-400 text-yellow-900 px-5 py-2 rounded-full font-bold text-lg shadow-lg shadow-yellow-200">
-                                        <Trophy size={18} fill="currentColor" />
-                                        {top3[0].puntosTotales} pts
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 3rd Place */}
-                        {top3[2] && (
-                            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden order-3 md:order-3 transform md:translate-y-8">
-                                <div className="bg-orange-100 py-2 text-center font-bold text-orange-800 flex items-center justify-center gap-2">
-                                    <Medal size={20} /> #3 Lugar
-                                </div>
-                                <div className="p-6 text-center">
-                                    <div className="w-20 h-20 mx-auto bg-orange-50 rounded-full mb-4 flex items-center justify-center text-2xl font-bold text-orange-400 border-4 border-orange-200">
-                                        3
-                                    </div>
-                                    <h3 className="font-bold text-lg mb-1 truncate">{top3[2].titulo}</h3>
-                                    <p className="text-sm text-gray-500 mb-3">{top3[2].liderNombre}</p>
-                                    <div className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-bold text-sm">
-                                        <Star size={14} fill="currentColor" />
-                                        {top3[2].puntosTotales} pts
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                {/* RANKING LIST */}
+                <div className="space-y-3 relative">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-12 px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] text-white/20 border-b border-white/5">
+                        <div className="col-span-1">RANK</div>
+                        <div className="col-span-8 md:col-span-7">PROYECTO</div>
+                        <div className="hidden md:block col-span-2">LÍDER</div>
+                        <div className="col-span-3 md:col-span-2 text-right">SCORE</div>
                     </div>
+
+                    {rest.map((project, index) => (
+                        <motion.div
+                            key={project.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => setSelectedProject(project)}
+                            className="group grid grid-cols-12 items-center px-8 py-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.05] hover:border-white/20 transition-all duration-500 cursor-pointer"
+                        >
+                            <div className="col-span-1 font-black text-2xl text-white/10 group-hover:text-white/40 transition-colors">
+                                {index + 4}
+                            </div>
+                            <div className="col-span-8 md:col-span-7 pr-6">
+                                <div className="font-black text-xl tracking-tight group-hover:translate-x-1 transition-transform duration-500 uppercase">{project.titulo}</div>
+                                <div className="flex items-center gap-3 mt-1.5">
+                                    <div className="text-[10px] font-black tracking-widest text-white/30 uppercase bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                                        {project.materia}
+                                    </div>
+                                    <div className="md:hidden text-[10px] text-white/40 font-bold uppercase truncate max-w-[150px]">
+                                        {project.liderNombre}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="hidden md:flex col-span-2 items-center gap-2">
+                                <span className="text-sm font-bold text-white/40 group-hover:text-white/70 transition-colors truncate">{project.liderNombre}</span>
+                            </div>
+                            <div className="col-span-3 md:col-span-2 text-right">
+                                <div className="text-2xl font-black group-hover:scale-110 transition-transform origin-right">{project.puntosTotales}</div>
+                                <div className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em]">puntos</div>
+                            </div>
+                        </motion.div>
+                    ))}
+
+                    {projects.length === 0 && (
+                        <div className="text-center py-20 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
+                            <p className="text-white/20 font-black tracking-widest uppercase italic">No hay proyectos registrados aún</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Project Details Modal */}
+            <AnimatePresence>
+                {selectedProject && (
+                    <ProjectDetailsModal
+                        project={selectedProject}
+                        onClose={() => setSelectedProject(null)}
+                    />
                 )}
+            </AnimatePresence>
 
-                {/* Remaining List */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50 border-b border-gray-100">
-                                <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Posición</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Proyecto</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Líder</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Puntos Totales</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {rest.map((project, index) => (
-                                    <tr key={project.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-500 font-bold">
-                                            #{index + 4}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="font-bold text-gray-900">{project.titulo}</div>
-                                            <div className="text-xs text-gray-500">{project.materia}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {project.liderNombre}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <div className="inline-flex items-center gap-1 font-bold text-gray-900">
-                                                {project.puntosTotales} pts
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            <style>{`
+                @keyframes float {
+                    0% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                    100% { transform: translateY(0px); }
+                }
+                .floating {
+                    animation: float 4s ease-in-out infinite;
+                }
+            `}</style>
+        </div>
+    );
+}
+
+function PodiumCard({ project, rank, height, delay, featured = false, onOpen }) {
+    const Icon = rank === 1 ? Crown : rank === 2 ? Medal : Star;
+    const borderClass = rank === 1 ? 'border-white/30' : 'border-white/10';
+    const bgClass = rank === 1 ? 'bg-white/[0.04]' : 'bg-white/[0.02]';
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay, duration: 1, ease: [0.23, 1, 0.32, 1] }}
+            className={`relative flex flex-col items-center w-full md:w-72 group cursor-pointer ${featured ? 'z-20 scale-105 md:scale-110 mb-4 md:mb-8' : 'z-10 opacity-70 hover:opacity-100'}`}
+            onClick={onOpen}
+        >
+            {/* Avatar Section */}
+            <div className="relative mb-10">
+                <motion.div 
+                    whileHover={{ y: -10 }}
+                    className={`relative w-28 h-28 md:w-36 md:h-36 rounded-full p-1 border-2 transition-all duration-700 shadow-[0_0_50px_rgba(255,255,255,0.05)] ${
+                        rank === 1 ? 'border-white scale-110 bg-white/10' : 'border-white/20'
+                    }`}
+                >
+                    <div className="w-full h-full rounded-full bg-neutral-900 overflow-hidden relative border border-white/5">
+                        {project.liderFotoUrl ? (
+                            <img src={project.liderFotoUrl} alt={project.liderNombre} className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-5xl font-black text-white/5 italic select-none">
+                                {project.titulo?.charAt(0)}
+                            </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-4">
+                            <span className="text-[10px] font-black tracking-widest uppercase">Ver Detalles</span>
+                        </div>
+                    </div>
+                </motion.div>
+                
+                {/* Floating Rank Badge */}
+                <div className={`absolute -bottom-4 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 shadow-2xl backdrop-blur-xl transition-transform duration-500 group-hover:scale-110 ${
+                    rank === 1 ? 'bg-white text-black' : 'bg-neutral-900 text-white border border-white/20'
+                }`}>
+                    <Icon size={14} fill={rank === 1 ? "black" : "none"} />
+                    TOP {rank}
+                </div>
+            </div>
+
+            {/* Platform (Structure) */}
+            <div className={`w-full overflow-hidden transition-all duration-700 rounded-3xl border ${borderClass} ${bgClass} ${height} backdrop-blur-sm shadow-2xl flex flex-col`}>
+                <div className="p-8 flex flex-col items-center flex-1">
+                    <h3 className={`font-black tracking-tighter mb-2 text-center line-clamp-2 uppercase transition-all duration-500 ${rank === 1 ? 'text-2xl' : 'text-xl'}`}>
+                        {project.titulo}
+                    </h3>
+                    <div className="text-white/30 text-[9px] font-black uppercase tracking-[0.3em] mb-8 text-center px-4 line-clamp-1">
+                        {project.liderNombre}
+                    </div>
+                    
+                    <div className="mt-auto w-full pt-8 border-t border-white/5 space-y-1">
+                        <div className={`font-black tabular-nums transition-all duration-700 ${rank === 1 ? 'text-5xl group-hover:scale-110' : 'text-4xl'}`}>
+                            {project.puntosTotales}
+                        </div>
+                        <div className="text-[10px] text-white/20 font-black uppercase tracking-[0.4em]">
+                            PUNTOS
+                        </div>
                     </div>
                 </div>
 
+                {/* Aesthetic Detail at bottom */}
+                <div className="h-1 w-2/3 mx-auto bg-white/5 rounded-full mb-4"></div>
             </div>
-        </div>
+
+            {/* Reflection Shadow */}
+            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-4/5 h-8 bg-white/5 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+        </motion.div>
     );
 }
