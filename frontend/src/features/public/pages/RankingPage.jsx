@@ -4,6 +4,82 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../lib/axios';
 import { ProjectDetailsModal } from '../../projects/components/ProjectDetailsModal';
 
+// --- Particle Background (Canvas Optimized) ---
+const ParticleBackground = () => {
+    useEffect(() => {
+        const canvas = document.getElementById('ranking-particles');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        let particles = [];
+        const particleCount = 40;
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+
+        class Particle {
+            constructor() {
+                this.init();
+            }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedX = Math.random() * 0.3 - 0.15;
+                this.speedY = Math.random() * 0.3 - 0.15;
+                this.opacity = Math.random() * 0.4 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        const animate = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            animationFrameId = requestAnimationFrame(animate);
+        };
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+
+        return () => {
+            window.removeEventListener('resize', resize);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, []);
+
+    return <canvas id="ranking-particles" className="fixed inset-0 pointer-events-none opacity-40 z-0" />;
+};
+
+const Spotlight = () => (
+    <div className="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none z-0">
+        <div className="w-full h-full rounded-full bg-white/[0.04] blur-[120px] animate-pulse" />
+    </div>
+);
+
 export function RankingPage() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -48,6 +124,8 @@ export function RankingPage() {
 
     return (
         <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black pb-20 overflow-x-hidden pt-10">
+            <ParticleBackground />
+            <Spotlight />
             {/* Header Section */}
             <div className="relative pt-20 pb-16 px-4 overflow-hidden">
                 {/* Background Decor */}
@@ -67,7 +145,7 @@ export function RankingPage() {
                             Official Leaderboard
                         </div>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-tight">
-                            RANKING <span className="text-white/20">PROYECTOS</span>
+                            <span className="bg-gradient-to-t from-white/10 via-white/80 to-white bg-clip-text text-transparent">RANKING</span> <span className="text-white/20">PROYECTOS</span>
                         </h1>
                         <p className="text-white/40 max-w-2xl mx-auto text-lg font-medium tracking-tight">
                             Explora los proyectos de mayor impacto evaluados por la comunidad académica.
@@ -95,9 +173,14 @@ export function RankingPage() {
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto px-4">
+            <div className="max-w-6xl mx-auto px-4 relative">
+                {/* Spotlight focused on #1 */}
+                <div className="absolute top-[150px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] pointer-events-none z-0">
+                    <div className="w-full h-full rounded-full bg-white/[0.05] blur-[120px] animate-pulse" />
+                </div>
+
                 {/* 3D PODIUM */}
-                <div className="relative flex flex-col md:flex-row items-end justify-center gap-4 md:gap-0 mt-16 mb-32 min-h-[480px]">
+                <div className="relative flex flex-col md:flex-row items-end justify-center gap-4 md:gap-0 mt-16 mb-32 min-h-[480px] z-10">
                     {podiumProjects.map(({ project, rank }, idx) => (
                         <PodiumCard 
                             key={project.id}
@@ -145,7 +228,14 @@ export function RankingPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="hidden md:flex col-span-2 items-center gap-2">
+                            <div className="hidden md:flex col-span-2 items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-white/10 overflow-hidden shrink-0 group-hover:border-white/30 transition-colors">
+                                    {project.liderFotoUrl ? (
+                                        <img src={project.liderFotoUrl} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                                    ) : (
+                                        <span className="text-[10px] font-black text-white/40 uppercase">{project.liderNombre?.charAt(0) || 'U'}</span>
+                                    )}
+                                </div>
                                 <span className="text-sm font-bold text-white/40 group-hover:text-white/70 transition-colors truncate">{project.liderNombre}</span>
                             </div>
                             <div className="col-span-3 md:col-span-2 text-right">
@@ -189,8 +279,10 @@ export function RankingPage() {
 
 function PodiumCard({ project, rank, height, delay, featured = false, onOpen }) {
     const Icon = rank === 1 ? Crown : rank === 2 ? Medal : Star;
-    const borderClass = rank === 1 ? 'border-white/30' : 'border-white/10';
-    const bgClass = rank === 1 ? 'bg-white/[0.04]' : 'bg-white/[0.02]';
+    const borderClass = rank === 1 ? 'border-white/40' : 'border-white/10';
+    const bgClass = rank === 1 
+        ? 'bg-gradient-to-b from-white/10 via-white/[0.02] to-transparent' 
+        : 'bg-white/[0.02]';
 
     return (
         <motion.div
@@ -208,16 +300,16 @@ function PodiumCard({ project, rank, height, delay, featured = false, onOpen }) 
                         rank === 1 ? 'border-white scale-110 bg-white/10' : 'border-white/20'
                     }`}
                 >
-                    <div className="w-full h-full rounded-full bg-neutral-900 overflow-hidden relative border border-white/5">
+                    <div className="w-full h-full rounded-full bg-slate-800 overflow-hidden relative border border-white/5 flex items-center justify-center">
                         {project.liderFotoUrl ? (
                             <img src={project.liderFotoUrl} alt={project.liderNombre} className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-5xl font-black text-white/5 italic select-none">
-                                {project.titulo?.charAt(0)}
-                            </div>
+                            <span className="text-4xl font-black text-white/40 uppercase italic select-none">
+                                {project.liderNombre?.charAt(0) || project.titulo?.charAt(0) || 'U'}
+                            </span>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-4">
-                            <span className="text-[10px] font-black tracking-widest uppercase">Ver Detalles</span>
+                            <span className="text-[10px] font-black tracking-widest uppercase">Ver Proyecto</span>
                         </div>
                     </div>
                 </motion.div>
