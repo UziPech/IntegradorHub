@@ -9,8 +9,29 @@ import {
     ResponsiveContainer
 } from 'recharts';
 
+const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+        const { date, puntos } = payload[0].payload;
+        return (
+            <div className="bg-white/80 dark:bg-[#1a1d27]/80 p-3 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700/50 backdrop-blur-md">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                    {date}
+                </p>
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <p className="text-lg font-black text-gray-900 dark:text-white">
+                        {puntos} <span className="text-xs font-medium text-gray-500 dark:text-slate-400">puntos</span>
+                    </p>
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+
 export function ProjectTimelineChart({ project }) {
     const data = useMemo(() => {
+        // ... (data generation logic remains the same)
         if (!project) return [];
 
         const totalPoints = project.puntosTotales || 0;
@@ -18,25 +39,22 @@ export function ProjectTimelineChart({ project }) {
 
         let createdDate;
 
-        // Handle _seconds from timestamp or direct ISO strings
         if (project.createdAt?._seconds) {
             createdDate = new Date(project.createdAt._seconds * 1000);
         } else if (typeof project.createdAt === 'string') {
             createdDate = new Date(project.createdAt);
         } else {
-            createdDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago backfill
+            createdDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); 
         }
 
         const startDate = createdDate;
         const endDate = new Date();
         const daysDiff = Math.max(1, Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)));
 
-        // Generate simulated data points
         const points = [];
         let currentPoints = 0;
-
-        // Decide how many data points to show (e.g., max 7 or 14 for readability)
-        const numPoints = Math.min(daysDiff + 1, 10);
+        // Aseguramos al menos 2 puntos para que Recharts pueda trazar una línea y detectar hover correctamente
+        const numPoints = Math.max(2, Math.min(daysDiff + 1, 10));
 
         for (let i = 0; i < numPoints; i++) {
             const isLast = i === numPoints - 1;
@@ -44,16 +62,18 @@ export function ProjectTimelineChart({ project }) {
             if (isLast) {
                 currentPoints = totalPoints;
             } else {
-                // Add a random portion of the remaining points
                 const progress = (i + 1) / numPoints;
                 const expectedPoints = totalPoints * progress;
-                const variance = totalPoints * 0.1 * (Math.random() - 0.5); // +/- 5% variance
+                const variance = totalPoints * 0.1 * (Math.random() - 0.5); 
                 currentPoints = Math.max(currentPoints, Math.round(expectedPoints + variance));
             }
 
-            const pointDate = new Date(startDate.getTime() + (endDate.getTime() - startDate.getTime()) * (i / (numPoints - 1)));
+            // Evitar división por cero si numPoints es 1 (aunque Math.max asegura 2)
+            const divisor = numPoints > 1 ? numPoints - 1 : 1;
+            const pointDate = new Date(startDate.getTime() + (endDate.getTime() - startDate.getTime()) * (i / divisor));
 
             points.push({
+                index: i,
                 date: pointDate.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
                 puntos: currentPoints
             });
@@ -95,25 +115,23 @@ export function ProjectTimelineChart({ project }) {
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" opacity={0.1} />
                         <XAxis
-                            dataKey="date"
+                            dataKey="index"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#6b7280', fontSize: 12 }}
+                            tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }}
+                            tickFormatter={(idx) => data[idx]?.date || ''}
                             dy={10}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#6b7280', fontSize: 12 }}
+                            tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }}
                             dx={-10}
+                            domain={[0, 'auto']}
                         />
-                        <Tooltip
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            labelStyle={{ color: '#6b7280', marginBottom: '4px' }}
-                            itemStyle={{ color: '#111827', fontWeight: 'bold' }}
-                        />
+                        <Tooltip content={<CustomTooltip />} />
                         <Area
                             type="monotone"
                             dataKey="puntos"
@@ -122,6 +140,19 @@ export function ProjectTimelineChart({ project }) {
                             fillOpacity={1}
                             fill="url(#colorPuntos)"
                             animationDuration={1500}
+                            dot={{ 
+                                r: 4, 
+                                fill: '#1a1d27', 
+                                strokeWidth: 2, 
+                                stroke: '#3b82f6',
+                                fillOpacity: 1
+                            }}
+                            activeDot={{ 
+                                r: 6, 
+                                strokeWidth: 2,
+                                stroke: '#fff',
+                                fill: '#3b82f6'
+                            }}
                         />
                     </AreaChart>
                 </ResponsiveContainer>

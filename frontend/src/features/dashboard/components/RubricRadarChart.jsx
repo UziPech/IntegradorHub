@@ -29,7 +29,7 @@ export function RubricRadarChart({ project }) {
             return { hasVotes: false, data: [], highestCriterium: null };
         }
 
-        const maxPoints = votersCount * 5; // 5 estrellas máximo por criterio por evaluador
+        const maxPoints = votersCount * 12.5; // El backend suma hasta 12.5 pts por criterio (5 estrellas * 2.5)
 
         // Mapeo seguro en caso de que algún punto sea indefinido o nulo
         const getPct = (points) => {
