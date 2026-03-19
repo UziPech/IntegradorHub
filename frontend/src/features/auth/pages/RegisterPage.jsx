@@ -149,7 +149,7 @@ export function RegisterPage() {
         }
     };
 
-    const handleContinueToProfile = (e) => {
+    const handleContinueToProfile = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -163,7 +163,24 @@ export function RegisterPage() {
             return;
         }
 
-        setStep(2);
+        try {
+            setSubmitting(true);
+            const checkRes = await api.get(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
+            
+            if (checkRes.data.exists && checkRes.data.isFullyRegistered) {
+                setError('Este correo ya está registrado en el sistema. Intenta iniciar sesión.');
+                return;
+            }
+
+            setStep(2);
+        } catch (err) {
+            console.error('Error checking email:', err);
+            // Si falla el check, igual dejamos pasar al paso 2 para no bloquear si el backend cae, 
+            // el backend rechazará en el registro final si hay conflicto (doble capa de seguridad).
+            setStep(2);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleRegistroFinal = async (e) => {
@@ -354,9 +371,9 @@ export function RegisterPage() {
                                 </div>
                             )}
 
-                            <button type="submit" style={styles.primaryBtn} disabled={!email || !password || password.length < 6}>
-                                Continuar
-                                <ArrowRight size={18} style={{ marginLeft: '8px' }} />
+                            <button type="submit" style={styles.primaryBtn} disabled={!email || !password || password.length < 6 || submitting}>
+                                {submitting ? 'Verificando...' : 'Continuar'}
+                                {!submitting && <ArrowRight size={18} style={{ marginLeft: '8px' }} />}
                             </button>
 
                             <p style={styles.loginHint}>
