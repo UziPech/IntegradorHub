@@ -94,7 +94,12 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
         if (project?.grupoId) {
             fetchAvailableStudents();
         }
-    }, [project?.grupoId]);
+    }, [project?.id, project?.grupoId]);
+
+    // Sync internal state if the prop changes externally (e.g. from RankingPage)
+    useEffect(() => {
+        setProject(normalizeProjectData(initialProject));
+    }, [initialProject?.id]);
 
     const fetchAvailableStudents = async () => {
         setFetchingStudents(true);
