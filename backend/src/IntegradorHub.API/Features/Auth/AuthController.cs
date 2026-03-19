@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using IntegradorHub.API.Features.Auth.Login;
 using IntegradorHub.API.Features.Auth.Register;
+using IntegradorHub.API.Features.Auth.CheckEmail;
 using IntegradorHub.API.Shared.Domain.Entities;
 
 namespace IntegradorHub.API.Features.Auth;
@@ -38,6 +39,14 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Registra un usuario con información completa (grupo, matrícula, etc.)
     /// </summary>
+    [HttpGet("check-email")]
+    public async Task<IActionResult> CheckEmail([FromQuery] string email)
+    {
+        if (string.IsNullOrEmpty(email)) return BadRequest("Email is required");
+        var result = await _mediator.Send(new CheckEmailCommand(email));
+        return Ok(result);
+    }
+
     [HttpPost("register")]
     public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
     {

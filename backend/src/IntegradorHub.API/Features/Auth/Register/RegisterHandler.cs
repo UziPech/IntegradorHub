@@ -39,37 +39,46 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, RegisterResponse
 
     public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        // 1. Verificar si el usuario ya existe
+        // 1. Verificar si el usuario ya existe por UID (Casos de actualización o recuperación de sesión)
         Console.WriteLine($"[DEBUG] RegisterHandler: Verificando existencia de {request.Email} (UID: {request.FirebaseUid})");
-        var existingUser = await _userRepository.GetByIdAsync(request.FirebaseUid);
+        var existingUserById = await _userRepository.GetByIdAsync(request.FirebaseUid);
+        
+        // 2. Verificar si el correo ya está en uso por otro UID
+        var existingUserByEmail = await _userRepository.GetByEmailAsync(request.Email);
 
-        if (existingUser != null)
+        if (existingUserByEmail != null && existingUserByEmail.Id != request.FirebaseUid && !existingUserByEmail.IsFirstLogin)
+        {
+            Console.WriteLine($"[ERROR] RegisterHandler: Intento de registro con correo ya existente: {request.Email}");
+            return new RegisterResponse(false, "Este correo ya está registrado en el sistema. Por favor, inicia sesión.", null);
+        }
+
+        if (existingUserById != null)
         {
             // RACE CONDITION FIX:
             // Si el usuario ya existe, asumimos que fue creado parcialmente por el frontend (useAuth)
             // o es una corrección de datos. Actualizamos la información en lugar de rechazar.
             Console.WriteLine($"[DEBUG] RegisterHandler: Usuario ya existe (posible race condition). Actualizando datos...");
 
-            existingUser.Nombre = request.Nombre;
-            existingUser.ApellidoPaterno = request.ApellidoPaterno ?? string.Empty;
-            existingUser.ApellidoMaterno = request.ApellidoMaterno ?? string.Empty;
-            existingUser.Rol = request.Rol;
+            existingUserById.Nombre = request.Nombre;
+            existingUserById.ApellidoPaterno = request.ApellidoPaterno ?? string.Empty;
+            existingUserById.ApellidoMaterno = request.ApellidoMaterno ?? string.Empty;
+            existingUserById.Rol = request.Rol;
 
             // Actualizar campos específicos
-            existingUser.GrupoId = request.GrupoId;
-            existingUser.Matricula = request.Matricula;
-            existingUser.CarreraId = request.CarreraId;
-            existingUser.Profesion = request.Profesion;
-            existingUser.Organizacion = request.Organizacion;
-            existingUser.Asignaciones = request.Asignaciones;
+            existingUserById.GrupoId = request.GrupoId;
+            existingUserById.Matricula = request.Matricula;
+            existingUserById.CarreraId = request.CarreraId;
+            existingUserById.Profesion = request.Profesion;
+            existingUserById.Organizacion = request.Organizacion;
+            existingUserById.Asignaciones = request.Asignaciones;
             
-            existingUser.UpdatedAt = DateTime.UtcNow.ToString("o");
-            existingUser.IsFirstLogin = false; // Completó el registro
+            existingUserById.UpdatedAt = DateTime.UtcNow.ToString("o");
+            existingUserById.IsFirstLogin = false; // Completó el registro
 
-            await _userRepository.UpdateAsync(existingUser);
-            Console.WriteLine($"[DEBUG] RegisterHandler: Usuario {existingUser.Email} actualizado correctamente.");
+            await _userRepository.UpdateAsync(existingUserById);
+            Console.WriteLine($"[DEBUG] RegisterHandler: Usuario {existingUserById.Email} actualizado correctamente.");
 
-            return new RegisterResponse(true, "Usuario actualizado correctamente", existingUser.Id);
+            return new RegisterResponse(true, "Usuario actualizado correctamente", existingUserById.Id);
         }
 
         // 2. Crear nuevo usuario (si no existía)
