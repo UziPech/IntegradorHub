@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const TESTIMONIALS = [
     {
@@ -33,13 +33,43 @@ const TESTIMONIALS = [
     }
 ];
 
+/**
+ * Crossfade A/B hook — two layers alternate so there's always visible text.
+ * When the active layer fades out, the next layer with new content fades in
+ * simultaneously.  No "blank gap" ever.
+ */
+function useCrossfade(intervalMs, getNextIndex) {
+    // activeLayer: 'A' or 'B' — which layer is currently fully visible
+    const [activeLayer, setActiveLayer] = useState('A');
+    const [indexA, setIndexA] = useState(() => getNextIndex(-1));
+    const [indexB, setIndexB] = useState(() => getNextIndex(getNextIndex(-1)));
+
+    const swap = useCallback(() => {
+        setActiveLayer(prev => {
+            if (prev === 'A') {
+                // B is about to become visible — prep B with new content first
+                setIndexB(current => getNextIndex(current));
+                return 'B';
+            } else {
+                // A is about to become visible — prep A with new content
+                setIndexA(current => getNextIndex(current));
+                return 'A';
+            }
+        });
+    }, [getNextIndex]);
+
+    useEffect(() => {
+        const timer = setInterval(swap, intervalMs);
+        return () => clearInterval(timer);
+    }, [swap, intervalMs]);
+
+    return {
+        layerA: { index: indexA, isActive: activeLayer === 'A' },
+        layerB: { index: indexB, isActive: activeLayer === 'B' },
+    };
+}
+
 export function FloatingPhrases({ isDark }) {
-    const [leftIndex, setLeftIndex] = useState(0);
-    const [rightIndex, setRightIndex] = useState(1);
-    
-    const [leftVisible, setLeftVisible] = useState(true);
-    const [rightVisible, setRightVisible] = useState(true);
-    
     // Hide on tablets/mobile to prevent overlapping the login form
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1100);
 
@@ -49,65 +79,38 @@ export function FloatingPhrases({ isDark }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    useEffect(() => {
-        // Change left phrase every 5 seconds
-        const changeLeft = setInterval(() => {
-            setLeftVisible(false);
-            setTimeout(() => {
-                setLeftIndex(prev => (prev + 2) % TESTIMONIALS.length);
-                // Esperamos un momento breve antes de volver a mostrar para asegurar que el DOM actualizó el texto invisible
-                setTimeout(() => {
-                    setLeftVisible(true);
-                }, 50); 
-            }, 500); // 0.5s fade out duration coincidiendo con la transición CSS
-        }, 5000);
+    // Left side: cycles through even indices (0, 2, 4, 1, 3 ...)
+    const getNextLeft = useCallback((current) => {
+        if (current < 0) return 0;
+        return (current + 2) % TESTIMONIALS.length;
+    }, []);
 
-        // Change right phrase every 7 seconds
-        const changeRight = setInterval(() => {
-            setRightVisible(false);
-            setTimeout(() => {
-                setRightIndex(prev => {
-                    let next = (prev + 2) % TESTIMONIALS.length;
-                    if (next === leftIndex) next = (next + 1) % TESTIMONIALS.length; // avoid duplicates
-                    return next;
-                });
-                setTimeout(() => {
-                    setRightVisible(true);
-                }, 50);
-            }, 500); // 0.5s fade out duration
-        }, 7000);
+    // Right side: cycles through odd indices (1, 3, 0, 2, 4 ...)
+    const getNextRight = useCallback((current) => {
+        if (current < 0) return 1;
+        return (current + 2) % TESTIMONIALS.length;
+    }, []);
 
-        return () => {
-            clearInterval(changeLeft);
-            clearInterval(changeRight);
-        };
-    }, [leftIndex]);
+    const left = useCrossfade(8000, getNextLeft);   // 8 seconds
+    const right = useCrossfade(10000, getNextRight); // 10 seconds
 
     if (isMobile) return null;
 
     const textColor = isDark ? '#f9fafb' : '#111827';
-    // Muted color for tags and handle
-    const mutedColor = isDark ? '#9ca3af' : '#4b5563'; 
-    // Faint color for the large background quote mark
     const quoteColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
 
-    const Card = ({ item, isVisible, position }) => {
+    const Card = ({ item, isActive, position }) => {
         const isLeft = position === 'left';
-        
+
         return (
             <div style={{
                 position: 'absolute',
-                top: isLeft ? '28%' : '42%',
-                [isLeft ? 'left' : 'right']: '6%',
-                width: '320px',
-                opacity: isVisible ? 1 : 0,
-                // Combine a slight vertical float with the fade
-                transform: isVisible ? 'translateY(0)' : 'translateY(15px)',
-                transition: 'opacity 0.5s ease-in-out, transform 0.5s ease-in-out',
+                top: 0, left: 0, width: '100%', height: '100%',
+                opacity: isActive ? 1 : 0,
+                transform: isActive ? 'translateY(0)' : 'translateY(12px)',
+                transition: 'opacity 1s ease-in-out, transform 1s ease-in-out',
                 pointerEvents: 'none',
-                zIndex: 5,
-                display: 'flex',
-                flexDirection: 'column'
+                willChange: 'opacity, transform',
             }}>
                 {/* Large Background Quote Mark */}
                 <div style={{
@@ -122,9 +125,9 @@ export function FloatingPhrases({ isDark }) {
                     userSelect: 'none',
                     fontWeight: 700
                 }}>
-                    “
+                    &ldquo;
                 </div>
-                
+
                 {/* Main Phrase */}
                 <p style={{
                     fontSize: '22px',
@@ -137,7 +140,7 @@ export function FloatingPhrases({ isDark }) {
                 }}>
                     {item.text}
                 </p>
-                
+
                 {/* Hashtags */}
                 <p style={{
                     fontSize: '20px',
@@ -148,7 +151,7 @@ export function FloatingPhrases({ isDark }) {
                 }}>
                     {item.tags}
                 </p>
-                
+
                 {/* User Info Row */}
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div style={{
@@ -161,10 +164,10 @@ export function FloatingPhrases({ isDark }) {
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <img 
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.avatar}`} 
-                            alt="avatar" 
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        <img
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.avatar}`}
+                            alt="avatar"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                     </div>
                     <span style={{
@@ -181,15 +184,33 @@ export function FloatingPhrases({ isDark }) {
         );
     };
 
+    // Wrapper for a single side — contains the two crossfade layers
+    const CrossfadeSlot = ({ layerA, layerB, position }) => {
+        const isLeft = position === 'left';
+        return (
+            <div style={{
+                position: 'absolute',
+                top: isLeft ? '28%' : '42%',
+                [isLeft ? 'left' : 'right']: '6%',
+                width: '320px',
+                zIndex: 5,
+                pointerEvents: 'none',
+            }}>
+                <Card item={TESTIMONIALS[layerA.index]} isActive={layerA.isActive} position={position} />
+                <Card item={TESTIMONIALS[layerB.index]} isActive={layerB.isActive} position={position} />
+            </div>
+        );
+    };
+
     return (
         <div style={{
             position: 'absolute',
-            top: 0, left: 0, width: '100%', height: '100%', 
+            top: 0, left: 0, width: '100%', height: '100%',
             pointerEvents: 'none',
             zIndex: 10
         }}>
-            <Card item={TESTIMONIALS[leftIndex]} isVisible={leftVisible} position="left" />
-            <Card item={TESTIMONIALS[rightIndex]} isVisible={rightVisible} position="right" />
+            <CrossfadeSlot layerA={left.layerA} layerB={left.layerB} position="left" />
+            <CrossfadeSlot layerA={right.layerA} layerB={right.layerB} position="right" />
         </div>
     );
 }
