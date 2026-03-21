@@ -80,7 +80,7 @@ const Spotlight = () => (
     </div>
 );
 
-export function RankingPage() {
+export default function RankingPage() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState(null);

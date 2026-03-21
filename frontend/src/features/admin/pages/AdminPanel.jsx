@@ -6,7 +6,7 @@ import { signOut } from 'firebase/auth';
 import api from '../../../lib/axios';
 import { Plus, Edit2, Trash2, X, Check, LogOut } from 'lucide-react';
 
-export function AdminPanel() {
+export default function AdminPanel() {
     const { userData } = useAuth();
     const navigate = useNavigate();
     const [grupos, setGrupos] = useState([]);

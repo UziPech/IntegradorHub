@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-export function RoleGuard({ allowedRoles }) {
+export default function RoleGuard({ allowedRoles }) {
     const { userData, loading } = useAuth();
 
     if (loading) {

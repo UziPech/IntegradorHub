@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../lib/axios';
 
-export function GroupSelector({ userData, onComplete }) {
+export default function GroupSelector({ userData, onComplete }) {
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState('');
     const [loading, setLoading] = useState(true);

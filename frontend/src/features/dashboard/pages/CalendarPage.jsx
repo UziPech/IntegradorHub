@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export function CalendarPage() {
+export default function CalendarPage() {
     const [currentDate] = useState(new Date());
     
     // Get current month info

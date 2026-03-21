@@ -1,27 +1,40 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './features/auth/hooks/useAuth';
-import { GroupSelector } from './features/auth/components/GroupSelector';
-import { DashboardLayout } from './features/dashboard/components/DashboardLayout';
-import { DashboardPage } from './features/dashboard/pages/DashboardPage';
-import { ProjectsPage } from './features/projects/pages/ProjectsPage';
-import { TeamPage } from './features/dashboard/pages/TeamPage';
-import { CalendarPage } from './features/dashboard/pages/CalendarPage';
-import { ProfilePage } from './features/profile/pages/ProfilePage';
-import { ProjectEditorPage } from './features/projects/pages/ProjectEditorPage';
-import { ShowcasePage } from './features/public/pages/ShowcasePage';
-import { RankingPage } from './features/public/pages/RankingPage';
-import { AdminPanel } from './features/admin/pages/AdminPanel';
-import MateriasPanel from './features/admin/pages/MateriasPanel';
-import StudentsPanel from './features/admin/pages/StudentsPanel';
-import TeachersPanel from './features/admin/pages/TeachersPanel';
-import CarrerasPanel from './features/admin/pages/CarrerasPanel';
-import { LoginPage } from './features/auth/pages/LoginPage';
-import { RegisterPage } from './features/auth/pages/RegisterPage';
-import { AuthLayout } from './features/auth/components/AuthLayout';
-import { RoleGuard } from './features/auth/components/RoleGuard';
-import { EvaluationsPage } from './features/evaluations/pages/EvaluationsPage';
+import LoginPage from './features/auth/pages/LoginPage';
+import RegisterPage from './features/auth/pages/RegisterPage';
+import AuthLayout from './features/auth/components/AuthLayout';
 import './index.css';
+
+// ─── Lazy-loaded: cada ruta se descarga solo cuando el usuario navega a ella ───
+const GroupSelector = lazy(() => import('./features/auth/components/GroupSelector'));
+const DashboardLayout = lazy(() => import('./features/dashboard/components/DashboardLayout'));
+const RoleGuard = lazy(() => import('./features/auth/components/RoleGuard'));
+const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'));
+const ProjectsPage = lazy(() => import('./features/projects/pages/ProjectsPage'));
+const TeamPage = lazy(() => import('./features/dashboard/pages/TeamPage'));
+const CalendarPage = lazy(() => import('./features/dashboard/pages/CalendarPage'));
+const ProfilePage = lazy(() => import('./features/profile/pages/ProfilePage'));
+const ProjectEditorPage = lazy(() => import('./features/projects/pages/ProjectEditorPage'));
+const ShowcasePage = lazy(() => import('./features/public/pages/ShowcasePage'));
+const RankingPage = lazy(() => import('./features/public/pages/RankingPage'));
+const AdminPanel = lazy(() => import('./features/admin/pages/AdminPanel'));
+const MateriasPanel = lazy(() => import('./features/admin/pages/MateriasPanel'));
+const StudentsPanel = lazy(() => import('./features/admin/pages/StudentsPanel'));
+const TeachersPanel = lazy(() => import('./features/admin/pages/TeachersPanel'));
+const CarrerasPanel = lazy(() => import('./features/admin/pages/CarrerasPanel'));
+const EvaluationsPage = lazy(() => import('./features/evaluations/pages/EvaluationsPage'));
+
+// ─── Spinner minimalista entre rutas ───
+function RouteSpinner() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'inherit' }}>
+      <div style={{ width: 32, height: 32, border: '2px solid rgba(128,128,128,0.3)', borderTopColor: 'currentColor', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  );
+}
 
 // Componente de ruta protegida
 function ProtectedRoute({ children }) {
@@ -43,6 +56,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
+          <Suspense fallback={<RouteSpinner />}>
           <Routes>
             {/* Rutas de Autenticación con fondo 3D persistente */}
             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -127,6 +141,7 @@ function App() {
               }
             />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

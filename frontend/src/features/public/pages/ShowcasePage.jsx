@@ -7,7 +7,7 @@ import api from '../../../lib/axios';
 import { ShowcaseCard } from '../components/ShowcaseCard';
 import { ProjectDetailsModal } from '../../projects/components/ProjectDetailsModal';
 
-export function ShowcasePage() {
+export default function ShowcasePage() {
     const [projects, setProjects] = useState([]);
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);

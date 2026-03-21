@@ -11,7 +11,7 @@ import { UserAvatar } from '../../../components/UserAvatar';
 import { Link } from 'react-router-dom';
 import { User, Mail, GraduationCap } from 'lucide-react';
 
-export function ProjectsPage() {
+export default function ProjectsPage() {
     const { userData } = useAuth();
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
