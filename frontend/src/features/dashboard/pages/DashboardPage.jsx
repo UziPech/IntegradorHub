@@ -12,7 +12,7 @@ import { StudentDashboard } from '../components/StudentDashboard';
 import { TeacherDashboard } from '../components/TeacherDashboard';
 import { GuestDashboard } from '../components/GuestDashboard';
 
-export function DashboardPage() {
+export default function DashboardPage() {
     const { userData } = useAuth();
     const [projects, setProjects] = useState([]);
     const [groupName, setGroupName] = useState(null);

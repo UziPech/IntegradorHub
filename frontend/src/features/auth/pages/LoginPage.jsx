@@ -43,7 +43,7 @@ const detectarRol = (email) => {
     return 'Invitado';
 };
 
-export function LoginPage() {
+export default function LoginPage() {
     const { isAuthenticated, loading, rol } = useAuth();
     const { isDark, toggleTheme } = useTheme();
     const styles = getStyles(isDark);

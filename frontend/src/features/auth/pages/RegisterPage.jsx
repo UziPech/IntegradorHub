@@ -27,7 +27,7 @@ const extraerMatricula = (email) => {
     return match ? match[1] : null;
 };
 
-export function RegisterPage() {
+export default function RegisterPage() {
     const { isAuthenticated, loading, rol, refreshUserData } = useAuth();
     const { isDark, toggleTheme } = useTheme();
     const styles = getStyles(isDark);

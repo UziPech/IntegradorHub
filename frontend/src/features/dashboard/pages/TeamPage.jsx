@@ -6,7 +6,7 @@ import { UserAvatar } from '../../../components/UserAvatar';
 import api from '../../../lib/axios';
 import { useNavigate, Link } from 'react-router-dom';
 
-export function TeamPage() {
+export default function TeamPage() {
     const { userData } = useAuth();
     const navigate = useNavigate();
     const [students, setStudents] = useState([]);

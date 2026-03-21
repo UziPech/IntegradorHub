@@ -2,7 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { CityBackground } from '../../../components/ui/CityBackground';
 import { useTheme } from '../../../context/ThemeContext';
 
-export function AuthLayout() {
+export default function AuthLayout() {
     const { isDark } = useTheme();
     const location = useLocation();
     

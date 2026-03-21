@@ -5,7 +5,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { CanvasEditor } from '../components/CanvasEditor';
 import api from '../../../lib/axios';
 
-export function ProjectEditorPage() {
+export default function ProjectEditorPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { userData } = useAuth();

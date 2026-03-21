@@ -4,7 +4,7 @@ import api from '../../../lib/axios';
 import { EvaluationPanel } from '../components/EvaluationPanel';
 import { BookOpen, Users, ChevronRight } from 'lucide-react';
 
-export function EvaluationsPage() {
+export default function EvaluationsPage() {
     const { userData } = useAuth();
     const [project, setProject] = useState(null);
     const [teacherProjects, setTeacherProjects] = useState([]);

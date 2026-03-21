@@ -6,7 +6,7 @@ import { GlobeBanner } from '../components/GlobeBanner';
 import { Mail, Phone, MapPin, Calendar, Camera, Edit2, Shield, User as UserIcon, BookOpen, GraduationCap, Briefcase, Building, Loader2, Link as LinkIcon, Github, Linkedin, Twitter, Globe, Plus, Trash2, X, Save, Youtube } from 'lucide-react';
 import api from '../../../lib/axios';
 
-export function ProfilePage() {
+export default function ProfilePage() {
     const { userData: authData, refreshUserData } = useAuth();
     const { userId } = useParams();
     const isOwnProfile = !userId || (authData && userId === authData.userId);
