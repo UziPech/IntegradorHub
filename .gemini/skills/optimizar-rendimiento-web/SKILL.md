@@ -276,3 +276,177 @@ Después de aplicar estas optimizaciones, verificar:
 4. Verificación visual — modelo 3D y animaciones se ven igual que antes.
 5. Probar en modo dark y light.
 6. Probar en viewport < 1100px (mobile) — contenido pesado se oculta/simplifica.
+
+---
+
+## 7. Route-Level Code Splitting (Lazy Loading de Páginas Completas)
+
+**Problema**: Cuando `App.jsx` importa estáticamente 20+ páginas, **todo** el código (Dashboard, Admin, Editor, Evaluaciones…) se descarga junto al Login, aunque el usuario solo necesita ver el formulario de login.
+
+**Solución**: Usar `React.lazy()` para todas las rutas protegidas. Las páginas de autenticación (LoginPage, RegisterPage, AuthLayout) se mantienen como imports estáticos porque son la primera pantalla visible.
+
+### Patrón
+
+```jsx
+// App.jsx
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+// ─── Imports estáticos: páginas de la primera pantalla visible ───
+import LoginPage from './features/auth/pages/LoginPage';
+import RegisterPage from './features/auth/pages/RegisterPage';
+import AuthLayout from './features/auth/components/AuthLayout';
+
+// ─── Lazy-loaded: se descargan solo cuando el usuario navega a ellas ───
+const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'));
+const ProjectsPage = lazy(() => import('./features/projects/pages/ProjectsPage'));
+const AdminPanel = lazy(() => import('./features/admin/pages/AdminPanel'));
+// ... todas las demás rutas protegidas
+
+// ─── Spinner minimalista (inline styles, sin dependencias CSS externas) ───
+function RouteSpinner() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'inherit' }}>
+      <div style={{ width: 32, height: 32, border: '2px solid rgba(128,128,128,0.3)', borderTopColor: 'currentColor', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Suspense fallback={<RouteSpinner />}>
+        <Routes>
+          {/* Auth - estáticas */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
+
+          {/* Protegidas - lazy-loaded */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/admin" element={<AdminPanel />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  );
+}
+```
+
+### Reglas
+- **React.lazy()** solo funciona con `export default`. Los componentes DEBEN tener `export default function X()`.
+- **Suspense** debe envolver `<Routes>`, no cada `<Route>` individual.
+- Las páginas de la **primera pantalla visible** (login, registro) NUNCA se lazy-loadean.
+- El RouteSpinner debe usar **inline styles**, no clases de Tailwind/CSS que podrían no estar cargadas aún.
+- Verificar con DevTools → Network que al cargar `/login`, los chunks de Dashboard/Admin NO se descargan.
+
+---
+
+## 8. Optimización de Google Fonts
+
+**Problema**: Cargar 5 familias de fuentes en un solo `<link>` bloquea el primer render. Si solo se usa "Inter" en el login, las demás fuentes (Playfair, Dancing Script, Bodoni, Oswald) retrasan la pintura innecesariamente.
+
+**Solución**: Separar fuentes críticas de decorativas. Las decorativas se cargan con la técnica `media="print" onload`.
+
+### Patrón
+
+```html
+<head>
+  <!-- Fuente crítica: carga síncrona (necesaria para el primer render) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- Fuentes decorativas: carga diferida (no bloquean el render) -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Dancing+Script:wght@400;700&display=swap"
+    media="print" onload="this.media='all'" />
+</head>
+```
+
+### Reglas
+- Identificar cuáles fuentes se usan en la **primera pantalla visible** — solo ésas se cargan síncronamente.
+- Las demás se cargan con `media="print" onload="this.media='all'"`.
+- Incluir `display=swap` siempre para evitar FOIT (Flash of Invisible Text).
+- Combinar `preconnect` para `fonts.googleapis.com` Y `fonts.gstatic.com`.
+
+---
+
+## 9. Lazy Loading de Imágenes Externas
+
+**Problema**: Componentes como testimonios/testimonials hacen múltiples requests a APIs externas (ej: `api.dicebear.com`) para avatares durante la carga inicial, compitiendo con recursos críticos.
+
+**Solución**: Atributos nativos HTML `loading="lazy"` y `decoding="async"`.
+
+### Patrón
+
+```jsx
+<img
+    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.avatar}`}
+    alt="avatar"
+    loading="lazy"
+    decoding="async"
+    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+/>
+```
+
+### Reglas
+- `loading="lazy"` → el browser solo descarga la imagen cuando está cerca del viewport.
+- `decoding="async"` → la decodificación no bloquea el hilo principal.
+- Aplicar a **toda** imagen que no sea visible en el primer viewport (above the fold).
+- NO aplicar a logos, iconos del header, o imágenes críticas de la primera pantalla.
+
+---
+
+## 10. Reglas de Seguridad para Modificaciones en Masa
+
+> **CRÍTICO**: Estas reglas nacen de errores reales. Seguirlas previene romper la aplicación.
+
+### ❌ NUNCA hacer
+1. **Nunca usar scripts de shell** (`echo >>`) para modificar archivos JSX/JS en masa. Los scripts no verifican errores de sintaxis y pueden fallar silenciosamente.
+2. **Nunca cambiar `export function X` a `export default function X` sin verificar** que TODOS los archivos que importan `{ X }` (named import) sean actualizados a `import X` (default import).
+3. **Nunca lazy-loadear sin haber agregado `export default` primero**. `React.lazy()` sin default export genera: `TypeError: Cannot convert object to primitive value`.
+
+### ✅ SIEMPRE hacer
+1. **Usar la herramienta de edición de código** (replace_file_content) para cada archivo individual. Esto garantiza que el diff se aplica correctamente.
+2. **Buscar todas las referencias** de un componente antes de cambiar su tipo de export:
+   ```bash
+   grep -r "import { MiComponente }" src/
+   ```
+3. **Verificar en el navegador** después de cada grupo de cambios (máximo 5 archivos). Nunca esperar a modificar 15+ archivos sin verificar.
+4. **Test incremental**: Primero agregar `export default` a todos los archivos → verificar que la app funciona igual. LUEGO convertir a `lazy()` → verificar de nuevo.
+
+### Flujo seguro de migración a lazy loading
+```
+1. Agregar `export default` (uno por uno, con herramienta de edición)
+     ↓
+2. Verificar que la app sigue funcionando (sin cambiar nada más)
+     ↓
+3. Actualizar App.jsx: imports estáticos → lazy()
+     ↓
+4. Actualizar App.jsx: named imports → default imports
+     ↓
+5. Agregar <Suspense> con fallback
+     ↓
+6. Verificar en navegador
+```
+
+---
+
+## Checklist de Verificación Completa
+
+Después de aplicar cualquier optimización de este skill, verificar:
+
+1. `npm run build` — sin errores de compilación.
+2. `ls -lhS dist/assets/*.js` — chunks separados visibles (three-vendor, firebase-vendor, chunks de páginas).
+3. DevTools → Network → Hard refresh en `/login` — solo se descargan los chunks necesarios para login.
+4. DevTools → Console — **zero errores** (warnings de development son aceptables).
+5. Verificación visual — modelo 3D, animaciones, y UI se ven **exactamente igual** que antes.
+6. Probar en modo dark y light — colores y transiciones intactas.
+7. Probar navegación: login → dashboard → proyectos → admin → cerrar sesión → login.
+8. Probar en viewport < 1100px (mobile) — contenido pesado se oculta/simplifica.
+
