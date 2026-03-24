@@ -68,12 +68,12 @@ export function ShowcaseCard({ project, onClick }) {
         mediaItems.push({ type: 'image', url: project.thumbnailUrl });
     }
 
-    // Add Images from Canvas
+    // Add Images and Videos from Canvas
     if (project.canvas) {
-        const canvasImages = project.canvas
-            .filter(b => b.type === 'image' && b.content && b.content !== project.thumbnailUrl)
-            .map(b => ({ type: 'image', url: b.content }));
-        mediaItems.push(...canvasImages);
+        const canvasMedia = project.canvas
+            .filter(b => (b.type === 'image' || b.type === 'video') && b.content && b.content !== project.thumbnailUrl)
+            .map(b => ({ type: b.type, url: b.content }));
+        mediaItems.push(...canvasMedia);
     }
 
     // Default Placeholder if empty

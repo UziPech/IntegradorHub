@@ -281,10 +281,10 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
         mediaItems.push({ type: 'image', url: project.thumbnailUrl });
     }
     if (project.canvas) {
-        const canvasImages = project.canvas
-            .filter(b => b.type === 'image' && b.content && b.content !== project.thumbnailUrl)
-            .map(b => ({ type: 'image', url: b.content }));
-        mediaItems.push(...canvasImages);
+        const canvasMedia = project.canvas
+            .filter(b => (b.type === 'image' || b.type === 'video') && b.content && b.content !== project.thumbnailUrl)
+            .map(b => ({ type: b.type, url: b.content }));
+        mediaItems.push(...canvasMedia);
     }
     if (mediaItems.length === 0) mediaItems.push({ type: 'placeholder' });
 
