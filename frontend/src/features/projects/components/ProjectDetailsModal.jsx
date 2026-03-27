@@ -545,12 +545,8 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                     {creadorNombre}
                                                 </p>
                                             </Link>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <p className="text-[11px] font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-2">
-                                                    <span>Ciclo {project.ciclo} • {project.materia}</span>
-                                                </p>
-                                                <span className="text-gray-300 dark:text-slate-600">•</span>
-                                                {isLeader ? (
+                                            {isLeader && (
+                                                <div className="flex items-center gap-2 mt-0.5">
                                                     <button
                                                         onClick={handleVisibilityToggle}
                                                         className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${project.esPublico
@@ -561,12 +557,8 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                                     >
                                                         {project.esPublico ? '🌍 Público' : '🔒 Privado'}
                                                     </button>
-                                                ) : (
-                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${project.esPublico ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
-                                                        {project.esPublico ? '🌍 Público' : '🔒 Privado'}
-                                                    </span>
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -728,13 +720,16 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                             )
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-8 pt-4 border-t border-gray-50 dark:border-slate-800/30">
-                                        {(() => {
-                                            if (!project.createdAt) return null;
-                                            const date = project.createdAt.seconds ? new Date(project.createdAt.seconds * 1000) : new Date(project.createdAt);
-                                            return isNaN(date.getTime()) ? null : date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
-                                        })()}
-                                    </p>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-8 pt-4 border-t border-gray-50 dark:border-slate-800/30 gap-2">
+                                        <span>Ciclo {project.ciclo} • {project.materia}</span>
+                                        <span>
+                                            {(() => {
+                                                if (!project.createdAt) return null;
+                                                const date = project.createdAt.seconds ? new Date(project.createdAt.seconds * 1000) : new Date(project.createdAt);
+                                                return isNaN(date.getTime()) ? null : date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+                                            })()}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         )}
