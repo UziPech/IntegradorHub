@@ -7,6 +7,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../../../lib/firebase';
 import api from '../../../lib/axios';
+import { useIdleTimeout } from '../../../hooks/useIdleTimeout';
 
 const AuthContext = createContext(null);
 
@@ -114,6 +115,17 @@ export function AuthProvider({ children }) {
             throw error;
         }
     };
+
+    // Monitor de inactividad
+    useIdleTimeout({
+        enabled: !!user,
+        timeoutMin: 30, // 30 minutos
+        onTimeout: () => {
+            console.log('Cerrando sesión por inactividad...');
+            alert('Tu sesión ha expirado por inactividad por tu seguridad.');
+            logout();
+        }
+    });
 
     const refreshUserData = async () => {
         const currentUser = auth.currentUser;
