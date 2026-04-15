@@ -12,9 +12,12 @@ using IntegradorHub.API.Features.Projects.Rate;
 using IntegradorHub.API.Shared.Domain.Entities;
 using IntegradorHub.API.Features.Projects.GetPublic;
 using IntegradorHub.API.Features.Projects.GetByMember;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace IntegradorHub.API.Features.Projects;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ProjectsController : ControllerBase
@@ -26,9 +29,14 @@ public class ProjectsController : ControllerBase
         _mediator = mediator;
     }
 
+    private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                                  ?? User.Claims.FirstOrDefault(c => c.Type == "user_id")?.Value 
+                                  ?? throw new UnauthorizedAccessException("Usuario no autenticado");
+
     /// <summary>
     /// Obtiene todos los proyectos públicos para la galería.
     /// </summary>
+    [AllowAnonymous]
     [HttpGet("public")]
     public async Task<ActionResult<IEnumerable<PublicProjectDto>>> GetPublic()
     {
@@ -51,7 +59,7 @@ public class ProjectsController : ControllerBase
             request.StackTecnologico,
             request.RepositorioUrl,
             request.VideoUrl,
-            request.UserId,
+            GetUserId(), // Previene ID Spoofing
             request.UserGroupId,
             request.DocenteId,
             request.MiembrosIds ?? new List<string>()
@@ -115,7 +123,7 @@ public class ProjectsController : ControllerBase
     [HttpPost("{id}/members")]
     public async Task<ActionResult<AddMemberResponse>> AddMember(string id, [FromBody] AddMemberRequest request)
     {
-        var command = new AddMemberCommand(id, request.EmailOrMatricula, request.LeaderId);
+        var command = new AddMemberCommand(id, request.EmailOrMatricula, GetUserId());
         try 
         {
             var response = await _mediator.Send(command);
@@ -130,9 +138,9 @@ public class ProjectsController : ControllerBase
     /// Elimina un miembro del proyecto.
     /// </summary>
     [HttpDelete("{id}/members/{memberId}")]
-    public async Task<ActionResult<RemoveMemberResponse>> RemoveMember(string id, string memberId, [FromQuery] string requestingUserId)
+    public async Task<ActionResult<RemoveMemberResponse>> RemoveMember(string id, string memberId)
     {
-        var command = new RemoveMemberCommand(id, memberId, requestingUserId);
+        var command = new RemoveMemberCommand(id, memberId, GetUserId());
         try
         {
             var response = await _mediator.Send(command);
@@ -149,7 +157,7 @@ public class ProjectsController : ControllerBase
     [HttpPut("{id}/canvas")]
     public async Task<ActionResult<UpdateCanvasResponse>> UpdateCanvas(string id, [FromBody] UpdateCanvasRequest request)
     {
-        var command = new UpdateProjectCanvasCommand(id, request.Blocks, request.UserId);
+        var command = new UpdateProjectCanvasCommand(id, request.Blocks, GetUserId());
         try
         {
             var response = await _mediator.Send(command);
@@ -163,9 +171,9 @@ public class ProjectsController : ControllerBase
     /// Elimina un proyecto completamente y libera a sus miembros. (Solo Líder)
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<ActionResult<DeleteProjectResponse>> Delete(string id, [FromQuery] string requestingUserId)
+    public async Task<ActionResult<DeleteProjectResponse>> Delete(string id)
     {
-        var command = new DeleteProjectCommand(id, requestingUserId);
+        var command = new DeleteProjectCommand(id, GetUserId());
         try
         {
             var response = await _mediator.Send(command);
@@ -188,7 +196,7 @@ public class ProjectsController : ControllerBase
             request.VideoUrl,
             request.CanvasBlocks ?? new List<CanvasBlock>(), 
             request.EsPublico,
-            "temp-user-id" 
+            GetUserId()
         );
 
         try
@@ -205,9 +213,9 @@ public class ProjectsController : ControllerBase
     /// Obtiene el proyecto del usuario actual (si tiene).
     /// </summary>
     [HttpGet("my-project")]
-    public async Task<ActionResult<ProjectDetailsDto>> GetMyProject([FromQuery] string userId)
+    public async Task<ActionResult<ProjectDetailsDto>> GetMyProject()
     {
-        var query = new GetProjectByMemberQuery(userId);
+        var query = new GetProjectByMemberQuery(GetUserId());
         var response = await _mediator.Send(query);
         
         if (response == null) 
@@ -222,7 +230,7 @@ public class ProjectsController : ControllerBase
     [HttpPost("{id}/rate")]
     public async Task<ActionResult<RateProjectResponse>> RateProject(string id, [FromBody] RateProjectRequest request)
     {
-        var command = new RateProjectCommand(id, request.UserId, request.UIUX, request.Inovacion, request.Presentacion, request.Impacto);
+        var command = new RateProjectCommand(id, GetUserId(), request.UIUX, request.Inovacion, request.Presentacion, request.Impacto);
         try
         {
             var response = await _mediator.Send(command);

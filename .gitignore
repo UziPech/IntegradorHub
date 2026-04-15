@@ -1,0 +1,33 @@
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+backend/src/IntegradorHub.API/backend.log
+backend/src/IntegradorHub.API/backend_v2.log
+
+# Firebase/Secrets
+*.json
+!firebase.json
+!firestore.indexes.json
+!firestore.rules
+!storage.rules
+!package.json
+!package-lock.json
+!proj.json
+!restore_project.json
+integradorhub-dsm-firebase-adminsdk-*.json
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+bin/
+obj/
+node_modules/
+.vercel/

@@ -19,7 +19,7 @@ public class FirestoreContext
                     var localCredentialsPath = Path.Combine(
                         Directory.GetCurrentDirectory(), 
                         "..", "..", "..",
-                        "integradorhub-dsm-firebase-adminsdk-fbsvc-d89dd8625c.json"
+                        "firebase-admin.json"
                     );
                     
                     if (File.Exists(localCredentialsPath))
