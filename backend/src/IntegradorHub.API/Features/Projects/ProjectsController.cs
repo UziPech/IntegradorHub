@@ -12,15 +12,15 @@ using IntegradorHub.API.Features.Projects.Rate;
 using IntegradorHub.API.Shared.Domain.Entities;
 using IntegradorHub.API.Features.Projects.GetPublic;
 using IntegradorHub.API.Features.Projects.GetByMember;
+using IntegradorHub.API.Shared.Abstractions;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace IntegradorHub.API.Features.Projects;
 
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class ProjectsController : ControllerBase
+public class ProjectsController : BaseApiController
 {
     private readonly IMediator _mediator;
 
@@ -28,10 +28,6 @@ public class ProjectsController : ControllerBase
     {
         _mediator = mediator;
     }
-
-    private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                                  ?? User.Claims.FirstOrDefault(c => c.Type == "user_id")?.Value 
-                                  ?? throw new UnauthorizedAccessException("Usuario no autenticado");
 
     /// <summary>
     /// Obtiene todos los proyectos públicos para la galería.
@@ -242,7 +238,7 @@ public class ProjectsController : ControllerBase
     }
 }
 
-public record RateProjectRequest(string UserId, int UIUX, int Inovacion, int Presentacion, int Impacto);
+public record RateProjectRequest(int UIUX, int Inovacion, int Presentacion, int Impacto);
 
 public record UpdateProjectRequest(
     string Titulo,
@@ -251,7 +247,7 @@ public record UpdateProjectRequest(
     bool? EsPublico
 );
 
-public record UpdateCanvasRequest(List<CanvasBlock> Blocks, string UserId);
+public record UpdateCanvasRequest(List<CanvasBlock> Blocks);
 
 public record CreateProjectRequest(
     string Titulo,
@@ -261,10 +257,9 @@ public record CreateProjectRequest(
     List<string> StackTecnologico,
     string? RepositorioUrl,
     string? VideoUrl,
-    string UserId,
     string UserGroupId,
     string? DocenteId,
     List<string>? MiembrosIds 
 );
 
-public record AddMemberRequest(string LeaderId, string EmailOrMatricula);
+public record AddMemberRequest(string EmailOrMatricula);

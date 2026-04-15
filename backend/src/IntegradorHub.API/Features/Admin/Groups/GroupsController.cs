@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using IntegradorHub.API.Shared.Domain.Entities;
 using IntegradorHub.API.Shared.Domain.Interfaces;
+using IntegradorHub.API.Shared.Abstractions;
 using Google.Cloud.Firestore;
 
 namespace IntegradorHub.API.Features.Admin.Groups;
 
+[Authorize]
 [ApiController]
 [Route("api/admin/groups")]
-public class GroupsController : ControllerBase
+public class GroupsController : BaseApiController
 {
     private readonly IGroupRepository _repository;
 

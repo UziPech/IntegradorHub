@@ -11,22 +11,41 @@ const api = axios.create({
 // Interceptor para agregar token de autenticación
 api.interceptors.request.use(
     async (config) => {
-        const token = await auth.currentUser?.getIdToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        try {
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                // forceRefresh=true para garantizar que el token NO esté expirado.
+                const token = await currentUser.getIdToken(true);
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        } catch (error) {
+            console.error('Error obteniendo token JWT:', error);
         }
         return config;
     },
     (error) => Promise.reject(error)
 );
 
-// Interceptor para manejar errores
+// Interceptor para manejar errores de autenticación
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         if (error.response?.status === 401) {
-            // TODO: Redirigir a login
-            console.error('No autorizado');
+            console.error('No autorizado — Token JWT rechazado por el backend');
+            
+            // Si el usuario tiene sesión activa pero el token fue rechazado,
+            // intentar forzar un refresh y reintentar UNA vez.
+            const originalRequest = error.config;
+            if (auth.currentUser && !originalRequest._retry) {
+                originalRequest._retry = true;
+                try {
+                    const freshToken = await auth.currentUser.getIdToken(true);
+                    originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+                    return api(originalRequest);
+                } catch (refreshError) {
+                    console.error('Error al refrescar token:', refreshError);
+                }
+            }
         }
         return Promise.reject(error);
     }

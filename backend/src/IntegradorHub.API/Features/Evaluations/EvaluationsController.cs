@@ -1,14 +1,17 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using IntegradorHub.API.Features.Evaluations.Create;
 using IntegradorHub.API.Features.Evaluations.GetByProject;
 using IntegradorHub.API.Features.Evaluations.Visibility;
+using IntegradorHub.API.Shared.Abstractions;
 
 namespace IntegradorHub.API.Features.Evaluations;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class EvaluationsController : ControllerBase
+public class EvaluationsController : BaseApiController
 {
     private readonly IMediator _mediator;
 
@@ -19,13 +22,14 @@ public class EvaluationsController : ControllerBase
 
     /// <summary>
     /// Crea una nueva evaluación para un proyecto.
+    /// El DocenteId se extrae del JWT para prevenir spoofing.
     /// </summary>
     [HttpPost]
     public async Task<ActionResult<CreateEvaluationResponse>> Create([FromBody] CreateEvaluationRequest request)
     {
         var command = new CreateEvaluationCommand(
             request.ProjectId,
-            request.DocenteId,
+            GetUserId(), // Previene ID Spoofing: DocenteId viene del JWT
             request.DocenteNombre,
             request.Tipo,
             request.Contenido,
@@ -54,11 +58,12 @@ public class EvaluationsController : ControllerBase
     }
     /// <summary>
     /// Cambia la visibilidad de una evaluación (Público/Privado).
+    /// El UserId se extrae del JWT para prevenir spoofing.
     /// </summary>
     [HttpPatch("{id}/visibility")]
     public async Task<ActionResult<UpdateEvaluationVisibilityResponse>> ChangeVisibility(string id, [FromBody] ChangeVisibilityRequest request)
     {
-        var command = new UpdateEvaluationVisibilityCommand(id, request.UserId, request.EsPublico);
+        var command = new UpdateEvaluationVisibilityCommand(id, GetUserId(), request.EsPublico);
         try
         {
             var response = await _mediator.Send(command);
@@ -69,11 +74,11 @@ public class EvaluationsController : ControllerBase
     }
 }
 
-public record ChangeVisibilityRequest(string UserId, bool EsPublico);
+// DTOs limpios: sin campos UserId/DocenteId que el backend extrae del JWT
+public record ChangeVisibilityRequest(bool EsPublico);
 
 public record CreateEvaluationRequest(
     string ProjectId,
-    string DocenteId,
     string DocenteNombre,
     string Tipo,
     string Contenido,

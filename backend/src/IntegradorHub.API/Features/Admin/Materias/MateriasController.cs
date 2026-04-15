@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using IntegradorHub.API.Shared.Domain.Entities;
 using IntegradorHub.API.Shared.Domain.Interfaces;
+using IntegradorHub.API.Shared.Abstractions;
 using Google.Cloud.Firestore;
 
 namespace IntegradorHub.API.Features.Admin.Materias;
 
+[Authorize]
 [ApiController]
 [Route("api/admin/materias")]
-public class MateriasController : ControllerBase
+public class MateriasController : BaseApiController
 {
     private readonly IMateriaRepository _repository;
 

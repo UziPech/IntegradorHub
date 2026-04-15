@@ -1,13 +1,16 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using IntegradorHub.API.Shared.Domain.Entities;
 using IntegradorHub.API.Shared.Domain.Interfaces;
+using IntegradorHub.API.Shared.Abstractions;
 
 namespace IntegradorHub.API.Features.Admin.Carreras;
 
+[Authorize]
 [ApiController]
 [Route("api/admin/carreras")]
-public class CarrerasController : ControllerBase
+public class CarrerasController : BaseApiController
 {
     private readonly ICarreraRepository _repository;
 

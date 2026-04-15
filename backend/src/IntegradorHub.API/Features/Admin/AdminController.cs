@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using IntegradorHub.API.Shared.Abstractions;
 
 namespace IntegradorHub.API.Features.Admin;
 
+[Authorize]
 [ApiController]
 [Route("api/admin")]
-public class AdminController : ControllerBase
+public class AdminController : BaseApiController
 {
     // =====================
     // ADMIN SEED (TEMPORAL)
@@ -13,6 +16,7 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Crea el usuario admin inicial en Firestore.
     /// SOLO usar una vez para setup inicial.
+    /// Requiere autenticación JWT válida.
     /// </summary>
     [HttpPost("seed-admin")]
     public async Task<ActionResult> SeedAdmin([FromBody] SeedAdminRequest request)

@@ -1,14 +1,17 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using IntegradorHub.API.Features.Users.UpdateProfilePhoto;
 using IntegradorHub.API.Features.Users.UpdateSocialLinks;
 using IntegradorHub.API.Features.Users.GetPublicProfile;
+using IntegradorHub.API.Shared.Abstractions;
 
 namespace IntegradorHub.API.Features.Users;
 
+[Authorize]
 [ApiController]
 [Route("api/users")]
-public class UsersProfileController : ControllerBase
+public class UsersProfileController : BaseApiController
 {
     private readonly IMediator _mediator;
 
@@ -19,7 +22,9 @@ public class UsersProfileController : ControllerBase
 
     /// <summary>
     /// Gets a user's public profile data.
+    /// Público: cualquier usuario autenticado puede ver perfiles.
     /// </summary>
+    [AllowAnonymous]
     [HttpGet("{userId}/profile")]
     public async Task<IActionResult> GetPublicProfile(string userId)
     {
@@ -46,14 +51,15 @@ public class UsersProfileController : ControllerBase
 
     /// <summary>
     /// Updates the user's profile photo URL.
-    /// The image should already be uploaded to Supabase Storage via /api/storage/upload.
+    /// SEGURIDAD: Solo el dueño del perfil puede cambiar su foto.
     /// </summary>
     [HttpPut("{userId}/photo")]
     public async Task<IActionResult> UpdateProfilePhoto(string userId, [FromBody] UpdatePhotoRequest request)
     {
-        if (string.IsNullOrWhiteSpace(userId))
+        // Validación de ownership: solo puedes modificar TU perfil
+        if (userId != GetUserId())
         {
-            return BadRequest(new { error = "User ID is required." });
+            return Forbid("No tienes permiso para modificar este perfil.");
         }
 
         if (string.IsNullOrWhiteSpace(request?.FotoUrl))
@@ -76,23 +82,24 @@ public class UsersProfileController : ControllerBase
             return StatusCode(500, new { error = "Error updating profile photo." });
         }
     }
+
+    /// <summary>
+    /// Updates the user's social links.
+    /// SEGURIDAD: Solo el dueño del perfil puede cambiar sus redes sociales.
+    /// </summary>
     [HttpPut("{userId}/social")]
     public async Task<IActionResult> UpdateSocialLinks(string userId, [FromBody] UpdateSocialLinksRequest request)
     {
-        if (string.IsNullOrWhiteSpace(userId))
+        // Validación de ownership: solo puedes modificar TU perfil
+        if (userId != GetUserId())
         {
-            return BadRequest(new { error = "User ID is required." });
+            return Forbid("No tienes permiso para modificar este perfil.");
         }
 
         if (request?.RedesSociales == null)
         {
             Console.WriteLine("[DEBUG] UpdateSocialLinks: request.RedesSociales is NULL");
             return BadRequest(new { error = "RedesSociales dictionary is required." });
-        }
-
-        Console.WriteLine($"[DEBUG] UpdateSocialLinks: UserId={userId}, Links Count={request.RedesSociales.Count}");
-        foreach(var kv in request.RedesSociales) {
-            Console.WriteLine($"[DEBUG] Link: {kv.Key} -> {kv.Value}");
         }
 
         try

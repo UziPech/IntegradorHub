@@ -140,8 +140,7 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
         
         try {
             const response = await api.post(`/api/Projects/${project.id}/members`, {
-                emailOrMatricula: newMemberEmail,
-                leaderId: userData.userId
+                emailOrMatricula: newMemberEmail
             });
             console.log('[MEMBER-DEBUG] Member added response:', response.data);
             await fetchDetails();

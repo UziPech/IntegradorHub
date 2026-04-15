@@ -57,7 +57,6 @@ export function EvaluationPanel({ projectId }) {
         try {
             await api.post('/api/evaluations', {
                 projectId,
-                docenteId: userId,
                 docenteNombre: userName,
                 tipo: tipoFinal,
                 contenido,
@@ -80,7 +79,6 @@ export function EvaluationPanel({ projectId }) {
     const toggleVisibility = async (evaluation) => {
         try {
             await api.patch(`/api/evaluations/${evaluation.id}/visibility`, {
-                userId: userId,
                 esPublico: !evaluation.esPublico
             });
             setEvaluations(prev => prev.map(e =>

@@ -1,21 +1,22 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using IntegradorHub.API.Features.Teams.GetAvailableStudents;
 using IntegradorHub.API.Features.Teams.GetAvailableTeachers;
+using IntegradorHub.API.Shared.Abstractions;
 
 namespace IntegradorHub.API.Features.Teams;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class TeamsController : ControllerBase
+public class TeamsController : BaseApiController
 {
     private readonly IMediator _mediator;
-    private readonly IntegradorHub.API.Shared.Domain.Interfaces.IUserRepository _userRepository;
 
-    public TeamsController(IMediator mediator, IntegradorHub.API.Shared.Domain.Interfaces.IUserRepository userRepository)
+    public TeamsController(IMediator mediator)
     {
         _mediator = mediator;
-        _userRepository = userRepository;
     }
 
     /// <summary>
@@ -30,15 +31,6 @@ public class TeamsController : ControllerBase
         var students = await _mediator.Send(query);
         
         return Ok(students);
-    }
-
-    [HttpGet("debug-user/{matricula}")]
-    public async Task<ActionResult> DebugUser(string matricula)
-    {
-        var users = await _userRepository.GetByRoleAsync("Alumno");
-        var user = users.FirstOrDefault(u => u.Matricula == matricula);
-        if (user == null) return NotFound("User not found");
-        return Ok(user);
     }
 
     /// <summary>

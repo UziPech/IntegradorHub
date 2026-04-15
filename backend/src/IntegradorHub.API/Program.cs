@@ -49,17 +49,51 @@ builder.Services.AddRateLimiter(options =>
 
 // Authentication (Firebase JWT)
 var projectId = builder.Configuration["Firebase:ProjectId"] ?? "integradorhub-dsm";
+
+// Cache para las signing keys de Google (se refrescan cada hora)
+IList<SecurityKey>? _cachedSigningKeys = null;
+DateTime _keysCachedAt = DateTime.MinValue;
+var _keysLock = new object();
+
+IEnumerable<SecurityKey> ResolveSigningKeys(string token, SecurityToken securityToken, string kid, TokenValidationParameters parameters)
+{
+    lock (_keysLock)
+    {
+        if (_cachedSigningKeys == null || DateTime.UtcNow - _keysCachedAt > TimeSpan.FromHours(1))
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                var json = httpClient.GetStringAsync(
+                    "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+                ).ConfigureAwait(false).GetAwaiter().GetResult();
+                _cachedSigningKeys = new JsonWebKeySet(json).Keys.Cast<SecurityKey>().ToList();
+                _keysCachedAt = DateTime.UtcNow;
+            }
+            catch (Exception)
+            {
+                if (_cachedSigningKeys != null) return _cachedSigningKeys;
+                throw;
+            }
+        }
+        return _cachedSigningKeys;
+    }
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = $"https://securetoken.google.com/{projectId}";
+        options.Authority = null;
+        options.RequireHttpsMetadata = false;
+        
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuer = $"https://securetoken.google.com/{projectId}",
             ValidateAudience = true,
             ValidAudience = projectId,
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            IssuerSigningKeyResolver = ResolveSigningKeys
         };
     });
 

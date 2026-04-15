@@ -1,11 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using IntegradorHub.API.Shared.Abstractions;
 
 namespace IntegradorHub.API.Features.Admin.Users;
 
+[Authorize]
 [ApiController]
 [Route("api/admin/users")]
-public class UsersController : ControllerBase
+public class UsersController : BaseApiController
 {
     private readonly IMediator _mediator;
 

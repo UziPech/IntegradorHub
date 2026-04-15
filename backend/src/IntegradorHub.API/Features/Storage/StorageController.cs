@@ -1,11 +1,14 @@
 using IntegradorHub.API.Shared.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using IntegradorHub.API.Shared.Abstractions;
 
 namespace IntegradorHub.API.Features.Storage;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class StorageController : ControllerBase
+public class StorageController : BaseApiController
 {
     private readonly IStorageService _storageService;
     private readonly ILogger<StorageController> _logger;

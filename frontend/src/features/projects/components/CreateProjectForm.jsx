@@ -109,14 +109,14 @@ export function CreateProjectForm({ onClose, onSuccess }) {
             const selectedTeacher = availableTeachers.find(t => t.id === form.docenteId);
 
             // Fix: Map fields to match Backend 'CreateProjectRequest' DTO
+            // userId is no longer sent — backend extracts it from JWT
             await api.post('/api/projects', {
                 titulo: form.titulo,
                 materia: selectedTeacher?.asignatura || form.materia,
                 materiaId: selectedTeacher?.materiaId || 'MAT-DEFAULT',
                 docenteId: form.docenteId,
                 ciclo: form.ciclo,
-                userId: userData.userId, // Was 'liderId'
-                userGroupId: userData.grupoId, // Was 'grupoId'
+                userGroupId: userData.grupoId,
                 stackTecnologico: form.stackTecnologico.split(',').map(s => s.trim()).filter(Boolean),
                 miembrosIds: form.miembrosIds,
                 videoUrl: videoUrl,
