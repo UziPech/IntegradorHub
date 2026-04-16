@@ -180,7 +180,54 @@ app.MapGet("/api/health", () => new { status = "ok", timestamp = DateTime.UtcNow
 
 app.MapGet("/api/health/jwt", () => new { 
     KeysCached = _cachedSigningKeys?.Count ?? 0, 
-    LastUpdate = _keysCachedAt.ToString("o")
+    LastUpdate = _keysCachedAt.ToString("o"),
+    ConfiguredProjectId = projectId,
+    ExpectedIssuer = $"https://securetoken.google.com/{projectId}"
+});
+
+// Endpoint para diagnosticar por qué fallan los tokens en producción
+app.MapPost("/api/health/test-token", async (context) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+    if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+    {
+        await context.Response.WriteAsJsonAsync(new { status = "error", message = "No se proporcionó un Bearer token." });
+        return;
+    }
+
+    var tokenString = authHeader.Substring("Bearer ".Length).Trim();
+    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+    
+    var validationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = $"https://securetoken.google.com/{projectId}",
+        ValidateAudience = true,
+        ValidAudience = projectId,
+        ValidateLifetime = true,
+        IssuerSigningKeyResolver = ResolveSigningKeys
+    };
+
+    try
+    {
+        var principal = handler.ValidateToken(tokenString, validationParameters, out var validatedToken);
+        var uid = principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+               ?? principal.Claims.FirstOrDefault(c => c.Type == "user_id")?.Value;
+        
+        await context.Response.WriteAsJsonAsync(new { 
+            status = "success", 
+            message = "El token es completamente válido en el backend.", 
+            uid = uid 
+        });
+    }
+    catch (Exception ex)
+    {
+        await context.Response.WriteAsJsonAsync(new { 
+            status = "validation_failed", 
+            exceptionType = ex.GetType().Name,
+            message = ex.Message 
+        });
+    }
 });
 
 app.Run();
