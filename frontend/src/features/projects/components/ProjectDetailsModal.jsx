@@ -329,14 +329,22 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                     <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
                         {/* 🌟 EFECTO CINE BACKGROUND 🌟 */}
                         {currentMedia.type === 'video' ? (
-                            <video
-                                src={currentMedia.url}
-                                muted
-                                loop
-                                playsInline
-                                autoPlay
-                                className="absolute inset-0 w-full h-full object-cover scale-150 opacity-40 blur-[60px] z-0 pointer-events-none"
-                            />
+                            currentMedia.thumbnail ? (
+                                <img
+                                    src={currentMedia.thumbnail}
+                                    alt=""
+                                    className="absolute inset-0 w-full h-full object-cover scale-150 opacity-40 blur-[60px] z-0 pointer-events-none filter"
+                                />
+                            ) : (
+                                <video
+                                    src={currentMedia.url}
+                                    muted
+                                    loop
+                                    playsInline
+                                    className="absolute inset-0 w-full h-full object-cover scale-150 opacity-40 blur-[60px] z-0 pointer-events-none"
+                                    preload="metadata"
+                                />
+                            )
                         ) : currentMedia.type === 'image' ? (
                             <img
                                 src={currentMedia.url}
@@ -359,6 +367,8 @@ export function ProjectDetailsModal({ project: initialProject, onClose, onUpdate
                                     <video
                                         ref={videoRef}
                                         src={currentMedia.url}
+                                        poster={currentMedia.thumbnail}
+                                        preload="metadata"
                                         loop
                                         muted
                                         playsInline

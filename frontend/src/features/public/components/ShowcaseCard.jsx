@@ -55,23 +55,29 @@ export function ShowcaseCard({ project, onClick }) {
     // Read font from first text block in canvas (safe, no layout changes)
     const titleFont = getProjectTitleFont(project);
 
+    const isValidStr = (str) => str && typeof str === 'string' && str.trim() !== '' && str !== 'null';
+
     // 2. Gather Media Items (Video + Thumbnail + Canvas Images)
     const mediaItems = [];
 
     // Add Video Pitch if exists
-    if (project.videoUrl) {
-        mediaItems.push({ type: 'video', url: project.videoUrl, thumbnail: project.thumbnailUrl });
+    if (isValidStr(project.videoUrl)) {
+        mediaItems.push({ 
+            type: 'video', 
+            url: project.videoUrl, 
+            thumbnail: isValidStr(project.thumbnailUrl) ? project.thumbnailUrl : null 
+        });
     }
 
     // Add Project Thumbnail (if not used as video thumb) OR just as an image
-    if (project.thumbnailUrl && !mediaItems.some(item => item.url === project.thumbnailUrl)) {
+    if (isValidStr(project.thumbnailUrl) && !mediaItems.some(item => item.url === project.thumbnailUrl)) {
         mediaItems.push({ type: 'image', url: project.thumbnailUrl });
     }
 
     // Add Images and Videos from Canvas
     if (project.canvas) {
         const canvasMedia = project.canvas
-            .filter(b => (b.type === 'image' || b.type === 'video') && b.content && b.content !== project.thumbnailUrl)
+            .filter(b => (b.type === 'image' || b.type === 'video') && isValidStr(b.content) && b.content !== project.thumbnailUrl)
             .map(b => ({ type: b.type, url: b.content }));
         mediaItems.push(...canvasMedia);
     }
@@ -195,14 +201,22 @@ export function ShowcaseCard({ project, onClick }) {
                 {/* Fondo Difuminado (Efecto Cine) */}
                 {currentMedia.url && currentMedia.type !== 'placeholder' && (
                     currentMedia.type === 'video' ? (
-                        <video
-                            src={currentMedia.url}
-                            className="absolute inset-0 w-full h-full object-cover scale-[1.2] opacity-40 blur-[50px] z-0 pointer-events-none"
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                        />
+                        currentMedia.thumbnail ? (
+                            <img
+                                src={currentMedia.thumbnail}
+                                className="absolute inset-0 w-full h-full object-cover scale-[1.2] opacity-40 blur-[50px] z-0 pointer-events-none filter"
+                                alt=""
+                            />
+                        ) : (
+                            <video
+                                src={currentMedia.url}
+                                className="absolute inset-0 w-full h-full object-cover scale-[1.2] opacity-40 blur-[50px] z-0 pointer-events-none"
+                                preload="metadata"
+                                muted
+                                loop
+                                playsInline
+                            />
+                        )
                     ) : (
                         <img
                             src={currentMedia.url}
@@ -225,6 +239,8 @@ export function ShowcaseCard({ project, onClick }) {
                         <video
                             ref={videoRef}
                             src={currentMedia.url}
+                            poster={currentMedia.thumbnail}
+                            preload="metadata"
                             loop
                             muted
                             playsInline

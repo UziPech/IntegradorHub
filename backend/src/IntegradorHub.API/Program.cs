@@ -64,9 +64,12 @@ IEnumerable<SecurityKey> ResolveSigningKeys(string token, SecurityToken security
             try
             {
                 using var httpClient = new HttpClient();
-                var json = httpClient.GetStringAsync(
-                    "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
-                ).ConfigureAwait(false).GetAwaiter().GetResult();
+                var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com");
+                using var response = httpClient.Send(request);
+                response.EnsureSuccessStatusCode();
+                using var stream = response.Content.ReadAsStream();
+                using var reader = new StreamReader(stream);
+                var json = reader.ReadToEnd();
                 _cachedSigningKeys = new JsonWebKeySet(json).Keys.Cast<SecurityKey>().ToList();
                 _keysCachedAt = DateTime.UtcNow;
             }
@@ -174,5 +177,10 @@ app.MapControllers();
 app.MapGet("/api/health", () => new { status = "ok", timestamp = DateTime.UtcNow })
    .WithName("HealthCheck")
    .WithOpenApi();
+
+app.MapGet("/api/health/jwt", () => new { 
+    KeysCached = _cachedSigningKeys?.Count ?? 0, 
+    LastUpdate = _keysCachedAt.ToString("o")
+});
 
 app.Run();
